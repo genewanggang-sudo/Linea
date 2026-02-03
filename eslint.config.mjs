@@ -26,6 +26,7 @@ export default [
             'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
             'no-trailing-spaces': 'error',
             '@stylistic/comma-spacing': ['error', { before: false, after: true }],
+            '@stylistic/indent': ['error', INDENT, { SwitchCase: 1 }],
             '@stylistic/key-spacing': ['error', { beforeColon: false, afterColon: true }],
             '@stylistic/keyword-spacing': ['error', { before: true, after: true }],
             '@stylistic/no-multi-spaces': 'error',
@@ -34,7 +35,7 @@ export default [
         },
     },
     {
-        files: ['**/*.{ts,tsx}'],
+        files: ['**/*.{ts,tsx,vue}'],
         languageOptions: {
             parserOptions: {
                 projectService: true,
@@ -56,15 +57,7 @@ export default [
             parserOptions: {
                 extraFileExtensions: ['.vue'],
                 parser: tseslint.parser,
-                projectService: true,
-                tsconfigRootDir: ROOT_DIR,
             },
-        },
-    },
-    {
-        files: ['**/*.{js,cjs,mjs,ts,tsx}'],
-        rules: {
-            '@stylistic/indent': ['error', INDENT, { SwitchCase: 1 }],
         },
     },
 ]
