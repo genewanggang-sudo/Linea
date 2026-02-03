@@ -2,13 +2,17 @@ import js from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
 import tseslint from 'typescript-eslint'
 import vue from 'eslint-plugin-vue'
+import vueParser from 'vue-eslint-parser'
+import { fileURLToPath } from 'node:url'
+import { dirname } from 'node:path'
 
 const INDENT = 4
+const ROOT_DIR = dirname(fileURLToPath(import.meta.url))
 
 export default [
     { ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.vite/**', '**/coverage/**'] },
     js.configs.recommended,
-    ...tseslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
     ...vue.configs['flat/recommended'],
     {
         files: ['**/*.{js,cjs,mjs,ts,tsx,vue}'],
@@ -30,6 +34,15 @@ export default [
         },
     },
     {
+        files: ['**/*.{ts,tsx}'],
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: ROOT_DIR,
+            },
+        },
+    },
+    {
         files: ['**/*.vue'],
         rules: {
             'vue/max-attributes-per-line': 'off',
@@ -39,8 +52,11 @@ export default [
             'vue/script-indent': ['error', INDENT, { baseIndent: 0, switchCase: 1 }],
         },
         languageOptions: {
+            parser: vueParser,
             parserOptions: {
                 parser: tseslint.parser,
+                projectService: true,
+                tsconfigRootDir: ROOT_DIR,
             },
         },
     },
