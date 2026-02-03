@@ -68,3 +68,17 @@ math/
 - `MathUtils.clamp(...)`
 - `MathUtils.lerp(...)`
 - `MathUtils.almostEqual(...)`
+
+---
+
+## tests（测试方案）
+
+**目标**：保障几何算法在持续迭代中的稳定性与可回归性。
+
+建议方案（先规划，不实现）：
+- 使用 Vitest 作为测试框架
+- 测试覆盖：
+  - core：向量/矩阵/坐标系的基本运算与边界
+  - curves：长度、点采样（tessellate）、bbox、端点与参数化一致性
+  - utils：Precision（EPS）与常用工具函数
+- 采用固定数据 + 随机数据（Property-based 思路）组合
