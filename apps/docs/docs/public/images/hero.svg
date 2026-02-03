@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="240" viewBox="0 0 900 240">
-  <rect width="900" height="240" fill="#0f172a"/>
-  <circle cx="120" cy="120" r="70" fill="#38bdf8"/>
-  <circle cx="220" cy="120" r="50" fill="#f59e0b"/>
-  <text x="320" y="135" font-family="Arial, sans-serif" font-size="48" fill="#e2e8f0">Linea Docs</text>
-</svg>
