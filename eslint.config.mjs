@@ -54,6 +54,7 @@ export default [
         languageOptions: {
             parser: vueParser,
             parserOptions: {
+                extraFileExtensions: ['.vue'],
                 parser: tseslint.parser,
                 projectService: true,
                 tsconfigRootDir: ROOT_DIR,
