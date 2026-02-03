@@ -9,7 +9,18 @@
     "build": "pnpm -r build",
     "build:web": "pnpm --filter web build",
     "lint": "pnpm -r lint",
+    "lint:web": "pnpm --filter web lint",
+    "lint:utils": "pnpm --filter @linea/utils lint",
+    "lint:fix": "pnpm -r lint:fix",
     "test": "pnpm -r test",
     "preview:web": "pnpm --filter web preview"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@stylistic/eslint-plugin": "5.7.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.7.0",
+    "typescript-eslint": "^8.54.0",
+    "vue-eslint-parser": "^10.2.0"
   }
 }
