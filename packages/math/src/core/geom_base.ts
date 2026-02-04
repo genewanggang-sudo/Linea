@@ -7,10 +7,12 @@ import type { IDB, IDumpable, ILoadable } from '../serialize'
 
 export interface IGeom extends IDumpable {
     getType(): string
+    clone(): IGeom
 }
 
 export abstract class GeomBase implements IGeom {
     public abstract dump(): IDB
+    public abstract clone(): IGeom
 
     /** 获取实例类型标识 */
     public getType() {

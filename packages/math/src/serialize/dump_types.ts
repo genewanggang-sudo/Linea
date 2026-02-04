@@ -14,3 +14,12 @@ export type IDBVec2 = IDB & {
     x: number
     y: number
 }
+
+export type IDBMat3 = IDB & {
+    type: EN_GEO_TYPE.Mat3
+    elements: readonly [
+        number, number, number,
+        number, number, number,
+        number, number, number,
+    ]
+}
