@@ -123,7 +123,7 @@ export class Vec2 extends GeomBase {
     }
 
     /** 序列化为结构对象 */
-    public dump() {
+    public dump():IDBVec2 {
         return { type: Vec2.type, x: this.x, y: this.y }
     }
 
