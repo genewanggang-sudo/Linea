@@ -94,6 +94,35 @@ describe('Vec2', () => {
         expect(a.equals(b, 1e-9)).toBe(true)
     })
 
+
+
+    it('negate/distanceToSq', () => {
+        const a = new Vec2(3, -4)
+        const n = a.negate()
+        expect(n.x).toBe(-3)
+        expect(n.y).toBe(4)
+
+        const b = new Vec2(6, 0)
+        expect(a.distanceToSq(b)).toBe(25)
+    })
+
+    it('project', () => {
+        const a = new Vec2(3, 4)
+        const on = new Vec2(1, 0)
+        const p1 = a.project(on)
+        expect(p1.equals(new Vec2(3, 0))).toBe(true)
+
+        const zero = a.project(Vec2.zero())
+        expect(zero.equals(Vec2.zero())).toBe(true)
+    })
+
+    it('angle', () => {
+        const a = new Vec2(1, 0)
+        const b = new Vec2(0, 1)
+        expect(a.angle()).toBeCloseTo(0, 12)
+        expect(b.angle()).toBeCloseTo(Math.PI / 2, 12)
+    })
+
     it('toArray', () => {
         const v = new Vec2(7, 8)
         expect(v.toArray()).toEqual([7, 8])

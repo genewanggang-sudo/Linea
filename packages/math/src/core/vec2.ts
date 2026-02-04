@@ -60,6 +60,11 @@ export class Vec2 extends GeomBase {
         return new Vec2(this.x - v.x, this.y - v.y)
     }
 
+    /** 反向量（取相反方向） */
+    public negate() {
+        return new Vec2(-this.x, -this.y)
+    }
+
     /** 标量缩放 */
     public scale(s: number) {
         return new Vec2(this.x * s, this.y * s)
@@ -97,12 +102,44 @@ export class Vec2 extends GeomBase {
         return Math.hypot(this.x - v.x, this.y - v.y)
     }
 
+    /** 到目标向量的距离平方（避免开方，更高效） */
+    public distanceToSq(v: Vec2) {
+        const dx = this.x - v.x
+        const dy = this.y - v.y
+        return dx * dx + dy * dy
+    }
+
+    /**
+     * 向量投影（投影到目标向量上）
+     * - 若目标向量为零向量，则返回零向量
+     * - 结果与目标向量共线
+     */
+    public project(on: Vec2, eps = Precision.LEN_EPS) {
+        const denom = on.lenSq()
+        if (denom < eps) return Vec2.zero()
+        const scale = this.dot(on) / denom
+        return on.scale(scale)
+    }
+
+    /**
+     * 返回向量的方向角（弧度）
+     * - 相对于 +X 轴的角度
+     * - 结果范围为 [-PI, PI]
+     */
+    public angle() {
+        return Math.atan2(this.y, this.x)
+    }
+
     /** 线性插值 */
     public lerp(v: Vec2, t: number) {
         return new Vec2(this.x + (v.x - this.x) * t, this.y + (v.y - this.y) * t)
     }
 
-    /** 计算到目标向量的夹角（弧度） */
+    /**
+     * 计算当前向量到目标向量的夹角（弧度）
+     * - 结果范围为 [-PI, PI]
+     * - 使用 atan2(cross, dot)，保留方向（顺时针/逆时针）
+     */
     public angleTo(v: Vec2) {
         const dot = this.dot(v)
         const det = this.cross(v)
