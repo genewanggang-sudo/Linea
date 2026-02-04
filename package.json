@@ -15,6 +15,9 @@
     "lint:utils": "pnpm --filter @linea/utils lint",
     "lint:fix": "pnpm -r lint:fix",
     "test": "pnpm -r test",
+    "test:math": "pnpm --filter @linea/math test",
+    "test:math:run": "pnpm --filter @linea/math test:run",
+    "test:math:coverage": "pnpm --filter @linea/math test:coverage",
     "preview:web": "pnpm --filter web preview",
     "preview:docs": "pnpm --filter docs preview"
   },
