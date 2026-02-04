@@ -42,7 +42,7 @@ export default [
         files: ['**/*.{ts,tsx,vue}'],
         languageOptions: {
             parserOptions: {
-                projectService: true,
+                project: ['tsconfig.eslint.json'],
                 tsconfigRootDir: ROOT_DIR,
             },
         },
