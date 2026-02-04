@@ -9,7 +9,7 @@ export type IDB = {
     type: EN_GEO_TYPE
 }
 
-export type Vec2Dump = IDB & {
+export type IDBVec2 = IDB & {
     type: EN_GEO_TYPE.Vec2
     x: number
     y: number

@@ -5,7 +5,7 @@
 
 import { GeomBase } from './geom_base'
 import { EN_GEO_TYPE } from '../constants/geom_type'
-import { RegisterGeom, type Vec2Dump } from '../serialize'
+import { RegisterGeom, type IDBVec2 } from '../serialize'
 
 @RegisterGeom
 export class Vec2 extends GeomBase {
@@ -128,7 +128,7 @@ export class Vec2 extends GeomBase {
     }
 
     /** 从结构对象反序列化 */
-    public static load(data: Vec2Dump) {
+    public static load(data: IDBVec2) {
         return new Vec2(data.x, data.y)
     }
 }
