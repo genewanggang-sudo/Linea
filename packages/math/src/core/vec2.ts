@@ -8,9 +8,10 @@ import { EN_GEO_TYPE } from '../constants/geom_type'
 import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBVec2 } from '../serialize/dump_types'
 import { Precision } from '../utils/precision'
+import type { IVec2 } from '../types/type_define'
 
 @RegisterGeom
-export class Vec2 extends GeomBase {
+export class Vec2 extends GeomBase implements IVec2 {
     /** 序列化类型标识 */
     public static readonly type = EN_GEO_TYPE.Vec2
     /** X 分量 */
@@ -31,7 +32,7 @@ export class Vec2 extends GeomBase {
     }
 
     /** 从对象结构创建向量 */
-    public static from(obj: { x: number; y: number }) {
+    public static from(obj: IVec2) {
         return new Vec2(obj.x, obj.y)
     }
 
