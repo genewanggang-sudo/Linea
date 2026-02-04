@@ -58,6 +58,13 @@ describe('Vec2', () => {
         expect(n.len()).toBeCloseTo(1, 12)
     })
 
+    it('normalize on near-zero vector returns zero', () => {
+        const v = new Vec2(1e-15, -1e-15)
+        const n = v.normalize(1e-12)
+        expect(n.x).toBe(0)
+        expect(n.y).toBe(0)
+    })
+
     it('distanceTo', () => {
         const a = new Vec2(1, 2)
         const b = new Vec2(4, 6)
