@@ -9,6 +9,7 @@ import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBMat3 } from '../serialize/dump_types'
 import { Vec2 } from './vec2'
 import type { Num3x3 } from '../types/type_guard'
+import { Precision } from '../utils/precision'
 
 @RegisterGeom
 export class Mat3 extends GeomBase {
@@ -152,7 +153,7 @@ export class Mat3 extends GeomBase {
     }
 
     /** 逆矩阵（不可逆抛错） */
-    public invert(eps = 1e-12) {
+    public invert(eps = Precision.LEN_EPS) {
         const det = this.determinant()
         if (Math.abs(det) <= eps) {
             throw new Error('Mat3.invert: matrix is not invertible')
@@ -180,19 +181,19 @@ export class Mat3 extends GeomBase {
     }
 
     /** 近似相等 */
-    public equals(m: Mat3, eps = 1e-9) {
+    public equals(m: Mat3, eps = Precision.EPS) {
         const a = this.elements
         const b = m.elements
         return (
-            Math.abs(a[0] - b[0]) <= eps &&
-            Math.abs(a[1] - b[1]) <= eps &&
-            Math.abs(a[2] - b[2]) <= eps &&
-            Math.abs(a[3] - b[3]) <= eps &&
-            Math.abs(a[4] - b[4]) <= eps &&
-            Math.abs(a[5] - b[5]) <= eps &&
-            Math.abs(a[6] - b[6]) <= eps &&
-            Math.abs(a[7] - b[7]) <= eps &&
-            Math.abs(a[8] - b[8]) <= eps
+            Precision.equal(a[0], b[0], eps) &&
+            Precision.equal(a[1], b[1], eps) &&
+            Precision.equal(a[2], b[2], eps) &&
+            Precision.equal(a[3], b[3], eps) &&
+            Precision.equal(a[4], b[4], eps) &&
+            Precision.equal(a[5], b[5], eps) &&
+            Precision.equal(a[6], b[6], eps) &&
+            Precision.equal(a[7], b[7], eps) &&
+            Precision.equal(a[8], b[8], eps)
         )
     }
 

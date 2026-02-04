@@ -7,6 +7,7 @@ import { GeomBase } from './geom_base'
 import { EN_GEO_TYPE } from '../constants/geom_type'
 import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBVec2 } from '../serialize/dump_types'
+import { Precision } from '../utils/precision'
 
 @RegisterGeom
 export class Vec2 extends GeomBase {
@@ -85,7 +86,7 @@ export class Vec2 extends GeomBase {
     }
 
     /** 归一化，极短向量返回零向量 */
-    public normalize(eps = 1e-12) {
+    public normalize(eps = Precision.LEN_EPS) {
         const l = this.len()
         if (l < eps) return Vec2.zero()
         return this.scale(1 / l)
@@ -114,8 +115,8 @@ export class Vec2 extends GeomBase {
     }
 
     /** 判断是否近似相等 */
-    public equals(v: Vec2, eps = 1e-9) {
-        return Math.abs(this.x - v.x) <= eps && Math.abs(this.y - v.y) <= eps
+    public equals(v: Vec2, eps = Precision.EPS) {
+        return Precision.equal(this.x, v.x, eps) && Precision.equal(this.y, v.y, eps)
     }
 
     /** 转为元组 */

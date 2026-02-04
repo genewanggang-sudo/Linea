@@ -8,6 +8,7 @@ import { EN_GEO_TYPE } from '../constants/geom_type'
 import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBBox2 } from '../serialize/dump_types'
 import { Vec2 } from './vec2'
+import { Precision } from '../utils/precision'
 
 @RegisterGeom
 export class Box2 extends GeomBase {
@@ -183,14 +184,14 @@ export class Box2 extends GeomBase {
     }
 
     /** 近似相等 */
-    public equals(b: Box2, eps = 1e-9) {
+    public equals(b: Box2, eps = Precision.EPS) {
         if (this.isEmpty() && b.isEmpty()) return true
         if (this.isEmpty() || b.isEmpty()) return false
         return (
-            Math.abs(this.minX - b.minX) <= eps &&
-            Math.abs(this.minY - b.minY) <= eps &&
-            Math.abs(this.maxX - b.maxX) <= eps &&
-            Math.abs(this.maxY - b.maxY) <= eps
+            Precision.equal(this.minX, b.minX, eps) &&
+            Precision.equal(this.minY, b.minY, eps) &&
+            Precision.equal(this.maxX, b.maxX, eps) &&
+            Precision.equal(this.maxY, b.maxY, eps)
         )
     }
 
