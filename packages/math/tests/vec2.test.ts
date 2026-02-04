@@ -92,9 +92,8 @@ describe('Vec2', () => {
         expect(a.isFinite()).toBe(true)
         expect(c.isFinite()).toBe(false)
         expect(a.equals(b, 1e-9)).toBe(true)
+        expect(a.equals(new Vec2(1.1, 2), 1e-9)).toBe(false)
     })
-
-
 
     it('negate/distanceToSq', () => {
         const a = new Vec2(3, -4)
@@ -114,6 +113,17 @@ describe('Vec2', () => {
 
         const zero = a.project(Vec2.zero())
         expect(zero.equals(Vec2.zero())).toBe(true)
+
+        const nearZero = a.project(new Vec2(1e-13, 0))
+        expect(nearZero.equals(Vec2.zero())).toBe(true)
+    })
+
+    it('angleTo sign', () => {
+        const a = new Vec2(1, 0)
+        const b = new Vec2(0, 1)
+        const c = new Vec2(0, -1)
+        expect(a.angleTo(b)).toBeCloseTo(Math.PI / 2, 10)
+        expect(a.angleTo(c)).toBeCloseTo(-Math.PI / 2, 10)
     })
 
     it('angle', () => {

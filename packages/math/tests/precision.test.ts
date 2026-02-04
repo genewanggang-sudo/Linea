@@ -12,6 +12,8 @@ describe('Precision', () => {
     it('nearlyZero and angleEqual', () => {
         expect(Precision.nearlyZero(1e-13)).toBe(true)
         expect(Precision.nearlyZero(1e-9)).toBe(false)
+        expect(Precision.nearlyZeroSq(1e-24)).toBe(true)
+        expect(Precision.nearlyZeroSq(1e-18)).toBe(false)
         expect(Precision.angleEqual(0, 5e-7)).toBe(true)
         expect(Precision.angleEqual(0, 5e-5)).toBe(false)
     })

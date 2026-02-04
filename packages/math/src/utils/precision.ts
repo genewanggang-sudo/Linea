@@ -26,6 +26,11 @@ export class Precision {
         return Math.abs(x) <= eps
     }
 
+    /** 近似为零（平方量），用于长度平方比较 */
+    public static nearlyZeroSq(x: number, eps = Precision.LEN_EPS) {
+        return x <= eps * eps
+    }
+
     /** 角度近似相等（弧度） */
     public static angleEqual(a: number, b: number, eps = Precision.ANG_EPS) {
         return Precision.equal(a, b, eps)

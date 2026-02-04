@@ -117,7 +117,7 @@ export class Vec2 extends GeomBase implements IVec2 {
      */
     public project(on: Vec2, eps = Precision.LEN_EPS) {
         const denom = on.lenSq()
-        if (denom < eps) return Vec2.zero()
+        if (Precision.nearlyZeroSq(denom, eps)) return Vec2.zero()
         const scale = this.dot(on) / denom
         return on.scale(scale)
     }
