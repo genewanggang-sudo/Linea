@@ -23,3 +23,11 @@ export type IDBMat3 = IDB & {
         number, number, number,
     ]
 }
+
+export type IDBBox2 = IDB & {
+    type: EN_GEO_TYPE.Box2
+    minX: number
+    minY: number
+    maxX: number
+    maxY: number
+}
