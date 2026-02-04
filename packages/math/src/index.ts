@@ -1,4 +1,2 @@
-export * from './core'
-export * from './curves'
-export * from './utils'
-export * from './serialize'
+export { Vec2, GeomBase } from './core'
+export { GeomMgr } from './serialize'
