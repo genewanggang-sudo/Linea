@@ -4,15 +4,17 @@
  */
 
 /** 序列化结构的最小约束 */
-export type Serialized = { type: string }
+export type DumpData = {
+    type: string
+}
 
 /** 可序列化对象协议（实例侧） */
-export interface Serializable<TDump extends Serialized = Serialized> {
+export interface IDumpable<TDump extends DumpData = DumpData> {
     dump(): TDump
 }
 
 /** 可反序列化类协议（类型注册用） */
-export interface Deserializer<TDump extends Serialized, T> {
+export interface ILoadable<TDump extends DumpData, T> {
     readonly type: string
     load(data: TDump): T
 }
@@ -21,16 +23,16 @@ export interface Deserializer<TDump extends Serialized, T> {
  * 几何类型管理器：维护可序列化类型的注册与分发
  */
 export class GeomMgr {
-    private readonly map = new Map<string, Deserializer<Serialized, unknown>>()
+    private readonly map = new Map<string, ILoadable<DumpData, unknown>>()
 
     /** 注册类型到反序列化表 */
-    public register<TDump extends Serialized, T>(ctor: Deserializer<TDump, T>) {
-        this.map.set(ctor.type, ctor as Deserializer<Serialized, unknown>)
+    public register<TDump extends DumpData, T>(ctor: ILoadable<TDump, T>) {
+        this.map.set(ctor.type, ctor as ILoadable<DumpData, unknown>)
         return this
     }
 
     /** 统一入口反序列化 */
-    public load<T>(data: Serialized & Record<string, unknown>) {
+    public load<T>(data: DumpData & Record<string, unknown>) {
         const ctor = this.map.get(data.type)
         if (!ctor) {
             throw new Error(`Unknown type: ${data.type}`)
@@ -41,3 +43,11 @@ export class GeomMgr {
 
 /** 全局注册表实例 */
 export const geomRegistry = new GeomMgr()
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Ctor = abstract new (...args: any[]) => unknown
+
+/** 装饰器：自动注册几何类型 */
+export function RegisterGeom<T extends Ctor & ILoadable<DumpData, unknown>>(Ctor: T) {
+    geomRegistry.register(Ctor)
+}

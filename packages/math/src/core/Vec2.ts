@@ -4,7 +4,7 @@
  */
 
 import { GeomBase } from './geom_base'
-import { RegisterGeom, type Serialized } from '../serialize'
+import { RegisterGeom, type DumpData } from '../serialize'
 
 @RegisterGeom
 export class Vec2 extends GeomBase {
@@ -131,7 +131,7 @@ export class Vec2 extends GeomBase {
     }
 
     /** 从结构对象反序列化 */
-    public static load(data: Serialized & Record<string, unknown>) {
+    public static load(data: DumpData & Record<string, unknown>) {
         const x = data.x
         const y = data.y
         if (typeof x !== 'number' || typeof y !== 'number') {
