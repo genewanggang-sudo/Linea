@@ -82,3 +82,12 @@ math/
   - curves：长度、点采样（tessellate）、bbox、端点与参数化一致性
   - utils：Precision（EPS）与常用工具函数
 - 采用固定数据 + 随机数据（Property-based 思路）组合
+
+---
+
+## TODO（基础能力补充）
+
+- MathUtils：`clamp` / `lerp` / `almostEqual`
+- Vec2：`perp` / `project` / `reflect` / `angle`
+- Mat3：`fromTRS`（平移/旋转/缩放组合）
+- 常量/辅助：`DEG2RAD` / `RAD2DEG` / `TAU`
