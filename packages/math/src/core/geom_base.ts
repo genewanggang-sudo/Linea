@@ -1,14 +1,20 @@
-/*
+﻿/*
  * Linea Math - Core
  * 几何基类：统一序列化协议
  */
 
-/**
- * 几何基类：统一序列化协议
- * 子类需实现 dump()，静态 load() 由注册表约束
- */
-import type { DumpData, IDumpable } from '../serialize'
+import type { IDB, IDumpable, ILoadable } from '../serialize'
 
-export abstract class GeomBase implements IDumpable{
-    public abstract dump(): DumpData
+export interface IGeom extends IDumpable {
+    getType(): string
+}
+
+export abstract class GeomBase implements IGeom {
+    public abstract dump(): IDB
+
+    /** 获取实例类型标识 */
+    public getType() {
+        const ctor = this.constructor as unknown as ILoadable<IDB, unknown>
+        return ctor.type
+    }
 }

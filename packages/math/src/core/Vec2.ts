@@ -4,16 +4,13 @@
  */
 
 import { GeomBase } from './geom_base'
-import { RegisterGeom, type DumpData } from '../serialize'
+import { EN_GEO_TYPE } from '../constants/geom_type'
+import { RegisterGeom, type Vec2Dump } from '../serialize'
 
 @RegisterGeom
 export class Vec2 extends GeomBase {
     /** 序列化类型标识 */
-    public static readonly type = 'Vec2'
-    /** 实例类型标识（用于运行时检查/序列化） */
-    public get type() {
-        return Vec2.type
-    }
+    public static readonly type = EN_GEO_TYPE.Vec2
     /** X 分量 */
     public readonly x: number
     /** Y 分量 */
@@ -131,12 +128,7 @@ export class Vec2 extends GeomBase {
     }
 
     /** 从结构对象反序列化 */
-    public static load(data: DumpData & Record<string, unknown>) {
-        const x = data.x
-        const y = data.y
-        if (typeof x !== 'number' || typeof y !== 'number') {
-            throw new Error('Vec2.load: invalid data')
-        }
-        return new Vec2(x, y)
+    public static load(data: Vec2Dump) {
+        return new Vec2(data.x, data.y)
     }
 }
