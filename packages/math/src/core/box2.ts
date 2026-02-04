@@ -1,6 +1,6 @@
 /*
  * Linea Math - Core
- * Box2: 2D axis-aligned bounding box (AABB), immutable
+ * Box2：二维轴对齐包围盒（AABB），不可变设计
  */
 
 import { GeomBase } from './geom_base'

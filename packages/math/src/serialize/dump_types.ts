@@ -4,6 +4,7 @@
  */
 
 import { EN_GEO_TYPE } from '../constants/geom_type'
+import type { Num3x3 } from '../types/type_guard'
 
 export type IDB = {
     type: EN_GEO_TYPE
@@ -17,11 +18,7 @@ export type IDBVec2 = IDB & {
 
 export type IDBMat3 = IDB & {
     type: EN_GEO_TYPE.Mat3
-    elements: readonly [
-        number, number, number,
-        number, number, number,
-        number, number, number,
-    ]
+    elements: Num3x3
 }
 
 export type IDBBox2 = IDB & {

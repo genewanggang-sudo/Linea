@@ -40,9 +40,9 @@ export class GeomMgr {
 }
 
 /** 全局注册表实例 */
-export const geomRegistry = new GeomMgr()
+export const geomMgr = new GeomMgr()
 
 /** 装饰器：自动注册几何类型 */
 export function RegisterGeom<T extends Ctor & ILoadable<IDB, unknown>>(Ctor: T) {
-    geomRegistry.register(Ctor)
+    geomMgr.register(Ctor)
 }
