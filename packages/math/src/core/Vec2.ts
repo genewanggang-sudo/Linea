@@ -6,8 +6,8 @@
 import { GeomBase } from './geom_base'
 import { RegisterGeom, type Serialized } from '../serialize'
 
-@RegisterGeom()
-export class Vec2 extends GeomBase<{ type: string; x: number; y: number }> {
+@RegisterGeom
+export class Vec2 extends GeomBase {
     /** 序列化类型标识 */
     public static readonly type = 'Vec2'
     /** 实例类型标识（用于运行时检查/序列化） */

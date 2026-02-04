@@ -38,3 +38,6 @@ export class GeomMgr {
         return ctor.load(data) as T
     }
 }
+
+/** 全局注册表实例 */
+export const geomRegistry = new GeomMgr()

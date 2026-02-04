@@ -4,17 +4,15 @@
  */
 
 import type { Deserializer, Serialized } from './geom_mgr'
-import { geomRegistry } from './registry'
+import { geomRegistry } from './geom_mgr'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Ctor = abstract new (...args: any[]) => unknown
 
-export function RegisterGeom() {
-    return function (Ctor: Ctor) {
-        const ctor = Ctor as unknown as Deserializer<Serialized, unknown> & { type?: string }
-        if (!ctor.type) {
-            throw new Error('RegisterGeom: missing static type')
-        }
-        geomRegistry.register(ctor)
+export function RegisterGeom(Ctor: Ctor) {
+    const ctor = Ctor as unknown as Deserializer<Serialized, unknown> & { type?: string }
+    if (!ctor.type) {
+        throw new Error('RegisterGeom: missing static type')
     }
+    geomRegistry.register(ctor)
 }
