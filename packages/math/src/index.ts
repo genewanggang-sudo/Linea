@@ -1,5 +1,5 @@
-export { Vec2 } from './core/Vec2'
-export { Mat3 } from './core/Mat3'
+export { Vec2 } from './core/vec2'
+export { Mat3 } from './core/mat3'
 export { GeomBase } from './core/geom_base'
 export { GeomMgr, geomRegistry, RegisterGeom } from './serialize/geom_mgr'
 export type { IDumpable, ILoadable } from './serialize/geom_mgr'

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { Vec2 } from '../src/core/Vec2'
+import { Vec2 } from '../src/core/vec2'
 
 describe('Vec2', () => {
     it('creates and clones', () => {

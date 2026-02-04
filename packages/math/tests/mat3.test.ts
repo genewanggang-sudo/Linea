@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { Mat3 } from '../src/core/Mat3'
-import { Vec2 } from '../src/core/Vec2'
+import { Mat3 } from '../src/core/mat3'
+import { Vec2 } from '../src/core/vec2'
 
 describe('Mat3', () => {
     it('单位矩阵不改变点坐标', () => {
