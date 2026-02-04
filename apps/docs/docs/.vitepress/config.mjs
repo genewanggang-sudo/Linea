@@ -5,6 +5,7 @@ export default {
         nav: [
             { text: '项目说明', link: '/' },
             { text: '数学库', link: '/math-lib' },
+            { text: '更新记录', link: '/math-lib-update' },
         ],
         sidebar: [
             {
@@ -12,6 +13,7 @@ export default {
                 items: [
                     { text: '项目说明', link: '/' },
                     { text: '数学库方案', link: '/math-lib' },
+                    { text: '数学库更新记录', link: '/math-lib-update' },
                 ],
             },
         ],
