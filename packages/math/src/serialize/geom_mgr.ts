@@ -1,7 +1,9 @@
-/*
+﻿/*
  * Linea Math - Serialize
  * 统一序列化协议与反序列化入口注册表
  */
+
+import type { Ctor } from '../types/type_guard'
 
 /** 序列化结构的最小约束 */
 export type DumpData = {
@@ -43,9 +45,6 @@ export class GeomMgr {
 
 /** 全局注册表实例 */
 export const geomRegistry = new GeomMgr()
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Ctor = abstract new (...args: any[]) => unknown
 
 /** 装饰器：自动注册几何类型 */
 export function RegisterGeom<T extends Ctor & ILoadable<DumpData, unknown>>(Ctor: T) {
