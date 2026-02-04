@@ -5,7 +5,8 @@
 
 import { GeomBase } from './geom_base'
 import { EN_GEO_TYPE } from '../constants/geom_type'
-import { RegisterGeom, type IDBVec2 } from '../serialize'
+import { RegisterGeom } from '../serialize/geom_mgr'
+import type { IDBVec2 } from '../serialize/dump_types'
 
 @RegisterGeom
 export class Vec2 extends GeomBase {

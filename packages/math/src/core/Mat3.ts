@@ -5,7 +5,8 @@
 
 import { GeomBase } from './geom_base'
 import { EN_GEO_TYPE } from '../constants/geom_type'
-import { RegisterGeom, type IDBMat3 } from '../serialize'
+import { RegisterGeom } from '../serialize/geom_mgr'
+import type { IDBMat3 } from '../serialize/dump_types'
 import { Vec2 } from './Vec2'
 import type { Num3x3 } from '../types/type_guard'
 

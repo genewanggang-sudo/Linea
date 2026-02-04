@@ -3,7 +3,8 @@
  * 几何基类：统一序列化协议
  */
 
-import type { IDB, IDumpable, ILoadable } from '../serialize'
+import type { IDB } from '../serialize/dump_types'
+import type { IDumpable, ILoadable } from '../serialize/geom_mgr'
 
 export interface IGeom extends IDumpable {
     getType(): string

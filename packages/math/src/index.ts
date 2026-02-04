@@ -1,2 +1,6 @@
-export { Vec2, Mat3, GeomBase } from './core'
-export { GeomMgr } from './serialize'
+export { Vec2 } from './core/Vec2'
+export { Mat3 } from './core/Mat3'
+export { GeomBase } from './core/geom_base'
+export { GeomMgr, geomRegistry, RegisterGeom } from './serialize/geom_mgr'
+export type { IDumpable, ILoadable } from './serialize/geom_mgr'
+export type { IDB, IDBVec2, IDBMat3 } from './serialize/dump_types'
