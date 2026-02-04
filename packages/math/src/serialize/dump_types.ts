@@ -31,3 +31,10 @@ export type IDBBox2 = IDB & {
     maxX: number
     maxY: number
 }
+
+export type IDBCoord2D = IDB & {
+    type: EN_GEO_TYPE.Coord2D
+    origin: { x: number; y: number }
+    xAxis: { x: number; y: number }
+    yAxis: { x: number; y: number }
+}
