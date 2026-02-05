@@ -192,6 +192,23 @@ export class Mat3 extends GeomBase implements IMat3 {
         return v.clone().applyMat3(this)
     }
 
+    /** 变换向量（就地修改，不含平移） */
+    public transformVector(v: Vec2) {
+        const x = this.at(0, 0) * v.x + this.at(0, 1) * v.y
+        const y = this.at(1, 0) * v.x + this.at(1, 1) * v.y
+        v.x = x
+        v.y = y
+        return v
+    }
+
+    /** 变换向量（返回新对象，不含平移） */
+    public transformedVector(v: Vec2) {
+        return new Vec2(
+            this.at(0, 0) * v.x + this.at(0, 1) * v.y,
+            this.at(1, 0) * v.x + this.at(1, 1) * v.y,
+        )
+    }
+
     /** 行列式 */
     public determinant() {
         const a = this.at(0, 0), b = this.at(0, 1), c = this.at(0, 2)

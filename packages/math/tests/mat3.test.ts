@@ -33,6 +33,14 @@ describe('Mat3', () => {
         expect(r.y).toBe(3)
     })
 
+    it('transformVector 不包含平移', () => {
+        const m = Mat3.translation(10, 0)
+        const v = new Vec2(1, 2)
+        const r = m.transformedVector(v)
+        expect(r.x).toBe(1)
+        expect(r.y).toBe(2)
+    })
+
     it('右乘顺序：右侧先作用', () => {
         const m = Mat3.identity()
             .translate(10, 0)
