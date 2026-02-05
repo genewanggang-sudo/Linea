@@ -9,6 +9,7 @@ import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBVec2 } from '../serialize/dump_types'
 import { Precision } from '../utils/precision'
 import type { IVec2 } from '../types/type_define'
+import type { Mat3 } from './mat3'
 
 @RegisterGeom
 export class Vec2 extends GeomBase implements IVec2 {
@@ -234,6 +235,21 @@ export class Vec2 extends GeomBase implements IVec2 {
     /** 归一化（返回新对象） */
     public normalized(eps = Precision.LEN_EPS) {
         return this.clone().normalize(eps)
+    }
+
+    /**
+     * 应用 Mat3 变换（就地修改）
+     */
+    public applyMat3(m: Mat3) {
+        const r = m.transformPoint(this)
+        this.x = r.x
+        this.y = r.y
+        return this
+    }
+
+    /** 应用 Mat3 变换（返回新对象） */
+    public appliedMat3(m: Mat3) {
+        return this.clone().applyMat3(m)
     }
 
     /** 到目标向量的距离 */

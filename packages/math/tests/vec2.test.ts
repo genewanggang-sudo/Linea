@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 
 import { Vec2 } from '../src/core/vec2'
+import { Mat3 } from '../src/core/mat3'
 
 describe('Vec2', () => {
     it('creates and clones', () => {
@@ -148,6 +149,14 @@ describe('Vec2', () => {
 
         const nearZero = a.projected(new Vec2(1e-13, 0))
         expect(nearZero.equals(new Vec2(0, 0))).toBe(true)
+    })
+
+    it('applyMat3', () => {
+        const a = new Vec2(1, 0)
+        const m = Mat3.rotation(Math.PI / 2)
+        const r = a.appliedMat3(m)
+        expect(r.x).toBeCloseTo(0, 10)
+        expect(r.y).toBeCloseTo(1, 10)
     })
 
     it('angleTo sign', () => {
