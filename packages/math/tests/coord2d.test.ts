@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 
 import { Coord2D } from '../src/core/coord2d'
 import { Vec2 } from '../src/core/vec2'
+import { Mat3 } from '../src/core/mat3'
 
 describe('Coord2D', () => {
-    it('默认坐标系为单位正交基', () => {
+    it('default coord is identity', () => {
         const c = new Coord2D()
         const p = new Vec2(3, 4)
         const w = c.toWorld(p)
@@ -13,7 +14,7 @@ describe('Coord2D', () => {
         expect(l.equals(p)).toBe(true)
     })
 
-    it('toWorld/toLocal 互为逆变换', () => {
+    it('toWorld/toLocal are inverse', () => {
         const c = new Coord2D(
             new Vec2(10, -5),
             new Vec2(2, 0),
@@ -25,7 +26,7 @@ describe('Coord2D', () => {
         expect(l.equals(p, 1e-9)).toBe(true)
     })
 
-    it('toMat3 与 toWorld 一致', () => {
+    it('toMat3 matches toWorld', () => {
         const c = new Coord2D(
             new Vec2(1, 2),
             new Vec2(2, 1),
@@ -37,7 +38,7 @@ describe('Coord2D', () => {
         expect(w1.equals(w2, 1e-9)).toBe(true)
     })
 
-    it('序列化与反序列化', () => {
+    it('dump/load', () => {
         const c = new Coord2D(
             new Vec2(1, 2),
             new Vec2(0, 1),
@@ -48,7 +49,7 @@ describe('Coord2D', () => {
         expect(restored.equals(c)).toBe(true)
     })
 
-    it('clone/equals/with*', () => {
+    it('clone/equals/set*', () => {
         const c = new Coord2D(
             new Vec2(1, 2),
             new Vec2(2, 0),
@@ -58,18 +59,17 @@ describe('Coord2D', () => {
         expect(cloned).not.toBe(c)
         expect(cloned.equals(c)).toBe(true)
 
-        const moved = c.withOrigin(new Vec2(5, 6))
-        expect(moved.origin.equals(new Vec2(5, 6))).toBe(true)
-        expect(moved.equals(c)).toBe(false)
+        c.setOrigin(new Vec2(5, 6))
+        expect(c.getOrigin().equals(new Vec2(5, 6))).toBe(true)
 
-        const xRepl = c.withXAxis(new Vec2(1, 1))
-        expect(xRepl.xAxis.equals(new Vec2(1, 1))).toBe(true)
+        c.setXAxis(new Vec2(1, 1))
+        expect(c.getDx().equals(new Vec2(1, 1))).toBe(true)
 
-        const yRepl = c.withYAxis(new Vec2(-1, 0))
-        expect(yRepl.yAxis.equals(new Vec2(-1, 0))).toBe(true)
+        c.setYAxis(new Vec2(-1, 0))
+        expect(c.getDy().equals(new Vec2(-1, 0))).toBe(true)
     })
 
-    it('isValid 与 toLocal 退化分支', () => {
+    it('isValid and toLocal degenerate', () => {
         const deg = new Coord2D(
             new Vec2(0, 0),
             new Vec2(1, 0),
@@ -79,7 +79,7 @@ describe('Coord2D', () => {
         expect(() => deg.toLocal(new Vec2(1, 2))).toThrow()
     })
 
-    it('isValid 边界与 toLocal eps 边界', () => {
+    it('isValid eps boundary', () => {
         const nearDeg = new Coord2D(
             new Vec2(0, 0),
             new Vec2(1, 0),
@@ -91,7 +91,7 @@ describe('Coord2D', () => {
         expect(() => nearDeg.toLocal(new Vec2(1, 0), 1e-14)).not.toThrow()
     })
 
-    it('equals 的容差边界', () => {
+    it('equals eps boundary', () => {
         const a = new Coord2D(
             new Vec2(1, 2),
             new Vec2(1, 0),
@@ -106,7 +106,7 @@ describe('Coord2D', () => {
         expect(a.equals(b, 1e-12)).toBe(false)
     })
 
-    it('toWorld/toLocal 在非正交基下仍可逆', () => {
+    it('toWorld/toLocal works for non-orthogonal basis', () => {
         const c = new Coord2D(
             new Vec2(-3, 4),
             new Vec2(2, 1),
@@ -116,5 +116,68 @@ describe('Coord2D', () => {
         const w = c.toWorld(p)
         const l = c.toLocal(w)
         expect(l.equals(p, 1e-9)).toBe(true)
+    })
+
+    it('constructor overloads', () => {
+        const base = new Coord2D(
+            new Vec2(1, 2),
+            new Vec2(2, 0),
+            new Vec2(0, 3),
+        )
+
+        const copy = new Coord2D(base)
+        expect(copy.equals(base)).toBe(true)
+
+        const m = base.toMat3()
+        const fromMat = new Coord2D(m)
+        expect(fromMat.equals(base, 1e-9)).toBe(true)
+
+        const fromAxes = new Coord2D(new Vec2(5, 6), new Vec2(3, 0))
+        expect(fromAxes.getOrigin().equals(new Vec2(5, 6))).toBe(true)
+        expect(fromAxes.getDx().equals(new Vec2(3, 0))).toBe(true)
+        expect(fromAxes.getDy().equals(new Vec2(0, 3))).toBe(true)
+    })
+
+    it('transform/transformed', () => {
+        const c = new Coord2D(
+            new Vec2(1, 2),
+            new Vec2(2, 0),
+            new Vec2(0, 3),
+        )
+        const m = Mat3.translation(5, -4)
+        const t = c.transformed(m)
+        expect(t).not.toBe(c)
+        expect(t.getOrigin().equals(new Vec2(6, -2))).toBe(true)
+        expect(t.getDx().equals(new Vec2(2, 0))).toBe(true)
+        expect(t.getDy().equals(new Vec2(0, 3))).toBe(true)
+    })
+
+    it('inverse', () => {
+        const c = new Coord2D(
+            new Vec2(10, -5),
+            new Vec2(2, 0),
+            new Vec2(0, 3),
+        )
+        const inv = c.inverse()
+        const p = new Vec2(1, 2)
+        const w = c.toWorld(p)
+        const l = inv.toWorld(w)
+        expect(l.equals(p, 1e-9)).toBe(true)
+    })
+
+    it('getScale/setScale', () => {
+        const c = new Coord2D(
+            new Vec2(0, 0),
+            new Vec2(2, 0),
+            new Vec2(0, 3),
+        )
+        const s = c.getScale()
+        expect(s.equals(new Vec2(2, 3))).toBe(true)
+
+        c.setScale(4, 5)
+        const s2 = c.getScale()
+        expect(s2.equals(new Vec2(4, 5))).toBe(true)
+        expect(c.getDx().equals(new Vec2(4, 0))).toBe(true)
+        expect(c.getDy().equals(new Vec2(0, 5))).toBe(true)
     })
 })
