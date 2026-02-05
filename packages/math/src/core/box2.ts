@@ -23,11 +23,47 @@ export class Box2 extends GeomBase {
     public readonly maxY: number
 
     /** 创建 Box2（默认为空盒） */
+    constructor()
+    constructor(b: Box2)
+    constructor(min: Vec2, max: Vec2)
+    constructor(points: readonly Vec2[])
+    constructor(minX: number, minY: number, maxX: number, maxY: number)
     constructor(
-        minX = Infinity, minY = Infinity,
-        maxX = -Infinity, maxY = -Infinity,
+        a0?: Box2 | Vec2 | readonly Vec2[] | number,
+        a1?: Vec2 | number,
+        a2?: number,
+        a3?: number,
     ) {
         super()
+        if (a0 instanceof Box2) {
+            this.minX = a0.minX
+            this.minY = a0.minY
+            this.maxX = a0.maxX
+            this.maxY = a0.maxY
+            return
+        }
+
+        if (a0 instanceof Vec2 && a1 instanceof Vec2) {
+            this.minX = a0.x
+            this.minY = a0.y
+            this.maxX = a1.x
+            this.maxY = a1.y
+            return
+        }
+
+        if (Array.isArray(a0)) {
+            const b = Box2.fromPoints(a0)
+            this.minX = b.minX
+            this.minY = b.minY
+            this.maxX = b.maxX
+            this.maxY = b.maxY
+            return
+        }
+
+        const minX = typeof a0 === 'number' ? a0 : Infinity
+        const minY = typeof a1 === 'number' ? a1 : Infinity
+        const maxX = typeof a2 === 'number' ? a2 : -Infinity
+        const maxY = typeof a3 === 'number' ? a3 : -Infinity
         this.minX = minX
         this.minY = minY
         this.maxX = maxX
@@ -186,17 +222,21 @@ export class Box2 extends GeomBase {
 
     /** 变换（返回新对象） */
     public transform(m: Mat3) {
-        return this.transformed(m)
-    }
-
-    /** 变换（返回新对象） */
-    public transformed(m: Mat3) {
         if (this.isEmpty()) return this.clone()
         const p1 = m.transformedPoint(new Vec2(this.minX, this.minY))
         const p2 = m.transformedPoint(new Vec2(this.minX, this.maxY))
         const p3 = m.transformedPoint(new Vec2(this.maxX, this.minY))
         const p4 = m.transformedPoint(new Vec2(this.maxX, this.maxY))
-        return Box2.fromPoints([p1, p2, p3, p4])
+        const minX = Math.min(p1.x, p2.x, p3.x, p4.x)
+        const minY = Math.min(p1.y, p2.y, p3.y, p4.y)
+        const maxX = Math.max(p1.x, p2.x, p3.x, p4.x)
+        const maxY = Math.max(p1.y, p2.y, p3.y, p4.y)
+        return new Box2(minX, minY, maxX, maxY)
+    }
+
+    /** 变换（返回新对象） */
+    public transformed(m: Mat3) {
+        return this.transform(m)
     }
 
     /** 点到盒子的最短距离 */
@@ -222,13 +262,11 @@ export class Box2 extends GeomBase {
     /** 交集盒 */
     public intersect(b: Box2) {
         if (this.isEmpty() || b.isEmpty()) return Box2.empty()
-        if (!this.intersects(b)) return Box2.empty()
-        return new Box2(
-            Math.max(this.minX, b.minX),
-            Math.max(this.minY, b.minY),
-            Math.min(this.maxX, b.maxX),
-            Math.min(this.maxY, b.maxY),
-        )
+        const minX = Math.max(this.minX, b.minX)
+        const minY = Math.max(this.minY, b.minY)
+        const maxX = Math.min(this.maxX, b.maxX)
+        const maxY = Math.min(this.maxY, b.maxY)
+        return minX > maxX || minY > maxY ? Box2.empty() : new Box2(minX, minY, maxX, maxY)
     }
 
     /** 近似相等 */

@@ -101,11 +101,17 @@ describe('Box2', () => {
 
     it('transform/transformed', () => {
         const b = new Box2(0, 0, 2, 4)
-        const t = b.transformed(Mat3.translation(3, -1))
-        expect(t.minX).toBe(3)
-        expect(t.minY).toBe(-1)
-        expect(t.maxX).toBe(5)
-        expect(t.maxY).toBe(3)
+        const t1 = b.transform(Mat3.translation(3, -1))
+        expect(t1.minX).toBe(3)
+        expect(t1.minY).toBe(-1)
+        expect(t1.maxX).toBe(5)
+        expect(t1.maxY).toBe(3)
+
+        const t2 = b.transformed(Mat3.translation(3, -1))
+        expect(t2.minX).toBe(3)
+        expect(t2.minY).toBe(-1)
+        expect(t2.maxX).toBe(5)
+        expect(t2.maxY).toBe(3)
     })
 
     it('distanceToPoint/clampPoint', () => {
