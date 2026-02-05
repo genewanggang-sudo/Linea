@@ -33,7 +33,7 @@ describe('Coord2D', () => {
         )
         const p = new Vec2(3, -1)
         const w1 = c.toWorld(p)
-        const w2 = c.toMat3().transformPoint(p)
+        const w2 = c.toMat3().transformedPoint(p)
         expect(w1.equals(w2, 1e-9)).toBe(true)
     })
 

@@ -7,28 +7,28 @@ describe('Mat3', () => {
     it('单位矩阵不改变点坐标', () => {
         const m = Mat3.identity()
         const p = new Vec2(3, 4)
-        const r = m.transformPoint(p)
+        const r = m.transformedPoint(p)
         expect(r.x).toBe(3)
         expect(r.y).toBe(4)
     })
 
     it('平移矩阵正确作用于点', () => {
         const m = Mat3.translation(10, -5)
-        const r = m.transformPoint(new Vec2(1, 2))
+        const r = m.transformedPoint(new Vec2(1, 2))
         expect(r.x).toBe(11)
         expect(r.y).toBe(-3)
     })
 
     it('绕原点旋转 90°', () => {
         const m = Mat3.rotation(Math.PI / 2)
-        const r = m.transformPoint(new Vec2(1, 0))
+        const r = m.transformedPoint(new Vec2(1, 0))
         expect(r.x).toBeCloseTo(0, 10)
         expect(r.y).toBeCloseTo(1, 10)
     })
 
     it('缩放矩阵正确作用于点', () => {
         const m = Mat3.scaling(2, 3)
-        const r = m.transformPoint(new Vec2(2, 1))
+        const r = m.transformedPoint(new Vec2(2, 1))
         expect(r.x).toBe(4)
         expect(r.y).toBe(3)
     })
@@ -37,7 +37,7 @@ describe('Mat3', () => {
         const m = Mat3.identity()
             .translate(10, 0)
             .rotate(Math.PI / 2)
-        const r = m.transformPoint(new Vec2(1, 0))
+        const r = m.transformedPoint(new Vec2(1, 0))
         expect(r.x).toBeCloseTo(10, 10)
         expect(r.y).toBeCloseTo(1, 10)
     })
@@ -46,7 +46,7 @@ describe('Mat3', () => {
         const m = Mat3.translation(5, -2).rotate(0.3).scale(2, 3)
         const inv = m.inverted()
         const p = new Vec2(7, 9)
-        const r = inv.transformPoint(m.transformPoint(p))
+        const r = inv.transformedPoint(m.transformedPoint(p))
         expect(r.x).toBeCloseTo(p.x, 9)
         expect(r.y).toBeCloseTo(p.y, 9)
         expect(m.determinant()).not.toBe(0)
@@ -69,8 +69,8 @@ describe('Mat3', () => {
         const right = t.multiplied(r)
         const left = t.premultiplied(r)
         const p = new Vec2(1, 0)
-        const pr = right.transformPoint(p)
-        const pl = left.transformPoint(p)
+        const pr = right.transformedPoint(p)
+        const pl = left.transformedPoint(p)
         expect(pr.equals(pl)).toBe(false)
     })
 

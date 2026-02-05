@@ -241,10 +241,7 @@ export class Vec2 extends GeomBase implements IVec2 {
      * 应用 Mat3 变换（就地修改）
      */
     public applyMat3(m: Mat3) {
-        const r = m.transformPoint(this)
-        this.x = r.x
-        this.y = r.y
-        return this
+        return m.transformPoint(this)
     }
 
     /** 应用 Mat3 变换（返回新对象） */

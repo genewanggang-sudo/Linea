@@ -178,11 +178,18 @@ export class Mat3 extends GeomBase implements IMat3 {
         return this.clone().scale(sx, sy)
     }
 
-    /** 变换点（列向量） */
+    /** 变换点（就地修改） */
     public transformPoint(v: Vec2) {
         const x = this.at(0, 0) * v.x + this.at(0, 1) * v.y + this.at(0, 2)
         const y = this.at(1, 0) * v.x + this.at(1, 1) * v.y + this.at(1, 2)
-        return new Vec2(x, y)
+        v.x = x
+        v.y = y
+        return v
+    }
+
+    /** 变换点（返回新对象） */
+    public transformedPoint(v: Vec2) {
+        return v.clone().applyMat3(this)
     }
 
     /** 行列式 */
