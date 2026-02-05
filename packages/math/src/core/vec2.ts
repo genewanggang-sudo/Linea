@@ -14,15 +14,20 @@ import type { IVec2 } from '../types/type_define'
 export class Vec2 extends GeomBase implements IVec2 {
     /** 序列化类型标识 */
     public static readonly type = EN_GEO_TYPE.Vec2
+
     /** X 分量 */
     public readonly x: number
+
     /** Y 分量 */
     public readonly y: number
 
     /** 创建一个向量实例 */
     constructor()
+
     constructor(x: number, y: number)
+
     constructor(obj: IVec2)
+
     constructor(xOrObj: number | IVec2 = 0, y = 0) {
         super()
         if (typeof xOrObj === 'number') {
@@ -74,9 +79,39 @@ export class Vec2 extends GeomBase implements IVec2 {
         return new Vec2(this.x - v.x, this.y - v.y)
     }
 
+    /**
+     * 向量线性叠加：this + v * s
+     * - 常用于积分、插值、偏移等计算
+     */
+    public addScaled(v: Vec2, s: number) {
+        return new Vec2(this.x + v.x * s, this.y + v.y * s)
+    }
+
     /** 反向量（取相反方向） */
     public negate() {
         return new Vec2(-this.x, -this.y)
+    }
+
+    /**
+     * 绕原点旋转（弧度）
+     * - 逆时针为正方向
+     */
+    public rotate(rad: number) {
+        const c = Math.cos(rad)
+        const s = Math.sin(rad)
+        return new Vec2(
+            this.x * c - this.y * s,
+            this.x * s + this.y * c,
+        )
+    }
+
+    /**
+     * 垂直向量（默认逆时针 90°）
+     * - (x, y) -> (-y, x)
+     * - 若需顺时针方向，可对结果取反
+     */
+    public perp() {
+        return new Vec2(-this.y, this.x)
     }
 
     /** 标量缩放 */
@@ -102,6 +137,16 @@ export class Vec2 extends GeomBase implements IVec2 {
     /** 向量长度 */
     public len() {
         return Math.hypot(this.x, this.y)
+    }
+
+    /**
+     * 设置向量长度（保持方向）
+     * - 零向量返回零向量
+     */
+    public setLength(len: number, eps = Precision.LEN_EPS) {
+        const l = this.len()
+        if (l < eps) return new Vec2(0, 0)
+        return this.scale(len / l)
     }
 
     /** 归一化，极短向量返回零向量 */

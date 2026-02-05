@@ -44,12 +44,15 @@ describe('Vec2', () => {
         const add = a.add(b)
         const sub = b.sub(a)
         const s = a.scale(2)
+        const as = a.addScaled(b, 0.5)
         expect(add.x).toBe(4)
         expect(add.y).toBe(6)
         expect(sub.x).toBe(2)
         expect(sub.y).toBe(2)
         expect(s.x).toBe(2)
         expect(s.y).toBe(4)
+        expect(as.x).toBe(2.5)
+        expect(as.y).toBe(4)
     })
 
     it('dot/cross', () => {
@@ -65,6 +68,12 @@ describe('Vec2', () => {
         expect(v.len()).toBe(5)
         const n = v.normalize()
         expect(n.len()).toBeCloseTo(1, 12)
+    })
+
+    it('setLength', () => {
+        const v = new Vec2(3, 4)
+        const s = v.setLength(10)
+        expect(s.len()).toBeCloseTo(10, 12)
     })
 
     it('normalize on near-zero vector returns zero', () => {
@@ -112,6 +121,20 @@ describe('Vec2', () => {
 
         const b = new Vec2(6, 0)
         expect(a.distanceToSq(b)).toBe(25)
+    })
+
+    it('rotate', () => {
+        const a = new Vec2(1, 0)
+        const r = a.rotate(Math.PI / 2)
+        expect(r.x).toBeCloseTo(0, 10)
+        expect(r.y).toBeCloseTo(1, 10)
+    })
+
+    it('perp', () => {
+        const a = new Vec2(2, 3)
+        const p = a.perp()
+        expect(p.x).toBe(-3)
+        expect(p.y).toBe(2)
     })
 
     it('project', () => {
