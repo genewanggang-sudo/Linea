@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-02-05
+
+### Vec2
+
+- 新增单位向量静态方法（`unitX` / `unitY`）。
+- 新增 `addScaled`，并补充相关测试。
+- 调整为可变 API 并补充变换相关方法。
+- 新增 `rotateAround(center, rad)` 并补测。
+
+### Mat3
+
+- 新增最小 `Mat3` 接口定义。
+- 调整为可变 API，补充常用变换方法与接口调整。
+- 增加向量变换接口并更新测试。
+- 新增 `decompose()`（平移/旋转/缩放分解，假定无剪切）并补测。
+
+### Coord2D
+
+- 构造函数新增重载：空参、复制、从 `Mat3`、`origin + xAxis(+ yAxis)`。
+- 新增 `transform` / `transformed`、`inverse`、`getScale` / `setScale`。
+- 修复中文注释乱码，补全测试用例覆盖新方法。
+
+### Box2
+
+- 新增 `transform` / `transformed`、`distanceToPoint`、`clampPoint`、`intersect`。
+- 构造函数增加重载（复制、`min/max` 两点、点集）。
+- 精简实现：构造分支复用 `fromPoints`，`transform` 与 `intersect` 逻辑更简洁。
+- 增补对应测试用例。
+
+### 测试
+
+- 更新 `Vec2` / `Mat3` / `Coord2D` / `Box2` 测试覆盖。
+
 ## 2026-02-04
 
 ### ESLint / TS 配置
