@@ -41,6 +41,22 @@ describe('Mat3', () => {
         expect(r.y).toBe(2)
     })
 
+    it('decompose', () => {
+        const tx = 3
+        const ty = -2
+        const rot = Math.PI / 6
+        const sx = 2
+        const sy = 3
+        const m = new Mat3()
+            .translate(tx, ty)
+            .rotate(rot)
+            .scale(sx, sy)
+        const d = m.decompose()
+        expect(d.translation.equals(new Vec2(tx, ty), 1e-10)).toBe(true)
+        expect(d.rotation).toBeCloseTo(rot, 10)
+        expect(d.scale.equals(new Vec2(sx, sy), 1e-10)).toBe(true)
+    })
+
     it('右乘顺序：右侧先作用', () => {
         const m = Mat3.identity()
             .translate(10, 0)

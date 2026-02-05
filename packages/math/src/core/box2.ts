@@ -8,6 +8,7 @@ import { EN_GEO_TYPE } from '../constants/geom_type'
 import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBBox2 } from '../serialize/dump_types'
 import { Vec2 } from './vec2'
+import { Mat3 } from './mat3'
 import { Precision } from '../utils/precision'
 
 @RegisterGeom
@@ -180,6 +181,53 @@ export class Box2 extends GeomBase {
             this.minY + dy,
             this.maxX + dx,
             this.maxY + dy,
+        )
+    }
+
+    /** 变换（返回新对象） */
+    public transform(m: Mat3) {
+        return this.transformed(m)
+    }
+
+    /** 变换（返回新对象） */
+    public transformed(m: Mat3) {
+        if (this.isEmpty()) return this.clone()
+        const p1 = m.transformedPoint(new Vec2(this.minX, this.minY))
+        const p2 = m.transformedPoint(new Vec2(this.minX, this.maxY))
+        const p3 = m.transformedPoint(new Vec2(this.maxX, this.minY))
+        const p4 = m.transformedPoint(new Vec2(this.maxX, this.maxY))
+        return Box2.fromPoints([p1, p2, p3, p4])
+    }
+
+    /** 点到盒子的最短距离 */
+    public distanceToPoint(p: Vec2) {
+        if (this.isEmpty()) return Infinity
+        const dx =
+            p.x < this.minX ? this.minX - p.x :
+                p.x > this.maxX ? p.x - this.maxX : 0
+        const dy =
+            p.y < this.minY ? this.minY - p.y :
+                p.y > this.maxY ? p.y - this.maxY : 0
+        return Math.hypot(dx, dy)
+    }
+
+    /** 将点限制在盒子范围内 */
+    public clampPoint(p: Vec2) {
+        if (this.isEmpty()) return p.clone()
+        const x = Math.min(this.maxX, Math.max(this.minX, p.x))
+        const y = Math.min(this.maxY, Math.max(this.minY, p.y))
+        return new Vec2(x, y)
+    }
+
+    /** 交集盒 */
+    public intersect(b: Box2) {
+        if (this.isEmpty() || b.isEmpty()) return Box2.empty()
+        if (!this.intersects(b)) return Box2.empty()
+        return new Box2(
+            Math.max(this.minX, b.minX),
+            Math.max(this.minY, b.minY),
+            Math.min(this.maxX, b.maxX),
+            Math.min(this.maxY, b.maxY),
         )
     }
 

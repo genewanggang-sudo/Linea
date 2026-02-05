@@ -272,6 +272,36 @@ export class Mat3 extends GeomBase implements IMat3 {
         return Mat3.toRowMajor(this.elements)
     }
 
+    /**
+     * 分解为平移/旋转/缩放
+     * - 假定矩阵不包含剪切
+     * - 旋转角为弧度
+     */
+    public decompose() {
+        const e = this.toArray()
+        const m00 = e[0], m01 = e[1], m02 = e[2]
+        const m10 = e[3], m11 = e[4], m12 = e[5]
+
+        const tx = m02
+        const ty = m12
+
+        const sx = Math.hypot(m00, m10)
+        let sy = Math.hypot(m01, m11)
+
+        const det = m00 * m11 - m01 * m10
+        if (det < 0) {
+            sy = -sy
+        }
+
+        const rotation = Math.atan2(m10, m00)
+
+        return {
+            translation: new Vec2(tx, ty),
+            rotation,
+            scale: new Vec2(sx, sy),
+        }
+    }
+
     /** 序列化为结构对象 */
     public dump(): IDBMat3 {
         return {

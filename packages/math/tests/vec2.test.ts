@@ -131,6 +131,14 @@ describe('Vec2', () => {
         expect(r.y).toBeCloseTo(1, 10)
     })
 
+    it('rotateAround', () => {
+        const a = new Vec2(2, 1)
+        const c = new Vec2(1, 1)
+        a.rotateAround(c, Math.PI / 2)
+        expect(a.x).toBeCloseTo(1, 10)
+        expect(a.y).toBeCloseTo(2, 10)
+    })
+
     it('perp', () => {
         const a = new Vec2(2, 3)
         const p = a.perped()

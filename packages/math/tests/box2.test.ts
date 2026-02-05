@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Box2 } from '../src/core/box2'
 import { Vec2 } from '../src/core/vec2'
+import { Mat3 } from '../src/core/mat3'
 
 describe('Box2', () => {
     it('默认创建为空盒', () => {
@@ -96,5 +97,43 @@ describe('Box2', () => {
         expect(dumped.type).toBe(Box2.type)
         const restored = Box2.load(dumped)
         expect(restored.equals(b)).toBe(true)
+    })
+
+    it('transform/transformed', () => {
+        const b = new Box2(0, 0, 2, 4)
+        const t = b.transformed(Mat3.translation(3, -1))
+        expect(t.minX).toBe(3)
+        expect(t.minY).toBe(-1)
+        expect(t.maxX).toBe(5)
+        expect(t.maxY).toBe(3)
+    })
+
+    it('distanceToPoint/clampPoint', () => {
+        const b = new Box2(0, 0, 10, 10)
+        const p1 = new Vec2(5, 5)
+        const p2 = new Vec2(15, 5)
+        const p3 = new Vec2(-3, -4)
+
+        expect(b.distanceToPoint(p1)).toBe(0)
+        expect(b.distanceToPoint(p2)).toBe(5)
+        expect(b.distanceToPoint(p3)).toBe(5)
+
+        const c1 = b.clampPoint(p2)
+        expect(c1.equals(new Vec2(10, 5))).toBe(true)
+    })
+
+    it('intersect', () => {
+        const a = new Box2(0, 0, 10, 10)
+        const b = new Box2(5, -5, 12, 6)
+        const c = new Box2(20, 20, 30, 30)
+
+        const ab = a.intersect(b)
+        expect(ab.minX).toBe(5)
+        expect(ab.minY).toBe(0)
+        expect(ab.maxX).toBe(10)
+        expect(ab.maxY).toBe(6)
+
+        const ac = a.intersect(c)
+        expect(ac.isEmpty()).toBe(true)
     })
 })

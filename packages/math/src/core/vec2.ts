@@ -153,6 +153,20 @@ export class Vec2 extends GeomBase implements IVec2 {
     }
 
     /**
+     * 绕指定点旋转（弧度）
+     * - 先平移到原点旋转，再平移回去
+     */
+    public rotateAround(center: Vec2, rad: number) {
+        const x = this.x - center.x
+        const y = this.y - center.y
+        const c = Math.cos(rad)
+        const s = Math.sin(rad)
+        this.x = x * c - y * s + center.x
+        this.y = x * s + y * c + center.y
+        return this
+    }
+
+    /**
      * 垂直向量（默认逆时针 90°）
      * - (x, y) -> (-y, x)
      * - 若需顺时针方向，可对结果取反
