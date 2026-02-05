@@ -44,7 +44,7 @@ describe('Mat3', () => {
 
     it('可逆矩阵求逆后可还原', () => {
         const m = Mat3.translation(5, -2).rotate(0.3).scale(2, 3)
-        const inv = m.invert()
+        const inv = m.inverted()
         const p = new Vec2(7, 9)
         const r = inv.transformPoint(m.transformPoint(p))
         expect(r.x).toBeCloseTo(p.x, 9)
@@ -66,8 +66,8 @@ describe('Mat3', () => {
     it('左乘与右乘结果符合预期', () => {
         const t = Mat3.translation(2, 0)
         const r = Mat3.rotation(Math.PI / 2)
-        const right = t.multiply(r)
-        const left = t.premultiply(r)
+        const right = t.multiplied(r)
+        const left = t.premultiplied(r)
         const p = new Vec2(1, 0)
         const pr = right.transformPoint(p)
         const pl = left.transformPoint(p)

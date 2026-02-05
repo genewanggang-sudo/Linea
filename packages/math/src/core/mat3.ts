@@ -21,7 +21,7 @@ export class Mat3 extends GeomBase implements IMat3 {
      * 矩阵元素（列主序存储）
      * 对外输入/输出使用行主序
      */
-    public readonly elements: Num3x3
+    public elements: Num3x3
 
     /** 创建一个 3x3 矩阵（对外行主序输入，内部列主序存储） */
     constructor(
@@ -53,6 +53,12 @@ export class Mat3 extends GeomBase implements IMat3 {
             e[1], e[4], e[7],
             e[2], e[5], e[8],
         ] as const
+    }
+
+    /** 使用行主序数组设置矩阵 */
+    private setFromRowMajor(e: Num3x3) {
+        this.elements = Mat3.toColumnMajor(e)
+        return this
     }
 
     /** 取行列元素（row/col 从 0 开始） */
@@ -104,7 +110,7 @@ export class Mat3 extends GeomBase implements IMat3 {
         )
     }
 
-    /** 右乘：this * m（列向量约定，链式时右侧先作用） */
+    /** 右乘：this * m（就地修改） */
     public multiply(m: Mat3) {
         const a00 = this.at(0, 0) * m.at(0, 0) + this.at(0, 1) * m.at(1, 0) + this.at(0, 2) * m.at(2, 0)
         const a01 = this.at(0, 0) * m.at(0, 1) + this.at(0, 1) * m.at(1, 1) + this.at(0, 2) * m.at(2, 1)
@@ -115,27 +121,61 @@ export class Mat3 extends GeomBase implements IMat3 {
         const a20 = this.at(2, 0) * m.at(0, 0) + this.at(2, 1) * m.at(1, 0) + this.at(2, 2) * m.at(2, 0)
         const a21 = this.at(2, 0) * m.at(0, 1) + this.at(2, 1) * m.at(1, 1) + this.at(2, 2) * m.at(2, 1)
         const a22 = this.at(2, 0) * m.at(0, 2) + this.at(2, 1) * m.at(1, 2) + this.at(2, 2) * m.at(2, 2)
-        return new Mat3(a00, a01, a02, a10, a11, a12, a20, a21, a22)
+        return this.setFromRowMajor([a00, a01, a02, a10, a11, a12, a20, a21, a22])
     }
 
-    /** 左乘：m * this */
+    /** 右乘：this * m（返回新对象） */
+    public multiplied(m: Mat3) {
+        return this.clone().multiply(m)
+    }
+
+    /** 左乘：m * this（就地修改） */
     public premultiply(m: Mat3) {
-        return m.multiply(this)
+        const a00 = m.at(0, 0) * this.at(0, 0) + m.at(0, 1) * this.at(1, 0) + m.at(0, 2) * this.at(2, 0)
+        const a01 = m.at(0, 0) * this.at(0, 1) + m.at(0, 1) * this.at(1, 1) + m.at(0, 2) * this.at(2, 1)
+        const a02 = m.at(0, 0) * this.at(0, 2) + m.at(0, 1) * this.at(1, 2) + m.at(0, 2) * this.at(2, 2)
+        const a10 = m.at(1, 0) * this.at(0, 0) + m.at(1, 1) * this.at(1, 0) + m.at(1, 2) * this.at(2, 0)
+        const a11 = m.at(1, 0) * this.at(0, 1) + m.at(1, 1) * this.at(1, 1) + m.at(1, 2) * this.at(2, 1)
+        const a12 = m.at(1, 0) * this.at(0, 2) + m.at(1, 1) * this.at(1, 2) + m.at(1, 2) * this.at(2, 2)
+        const a20 = m.at(2, 0) * this.at(0, 0) + m.at(2, 1) * this.at(1, 0) + m.at(2, 2) * this.at(2, 0)
+        const a21 = m.at(2, 0) * this.at(0, 1) + m.at(2, 1) * this.at(1, 1) + m.at(2, 2) * this.at(2, 1)
+        const a22 = m.at(2, 0) * this.at(0, 2) + m.at(2, 1) * this.at(1, 2) + m.at(2, 2) * this.at(2, 2)
+        return this.setFromRowMajor([a00, a01, a02, a10, a11, a12, a20, a21, a22])
     }
 
-    /** 平移（右乘） */
+    /** 左乘：m * this（返回新对象） */
+    public premultiplied(m: Mat3) {
+        return this.clone().premultiply(m)
+    }
+
+    /** 平移（右乘，就地修改） */
     public translate(tx: number, ty: number) {
         return this.multiply(Mat3.translation(tx, ty))
     }
 
-    /** 旋转（右乘） */
+    /** 平移（右乘，返回新对象） */
+    public translated(tx: number, ty: number) {
+        return this.clone().translate(tx, ty)
+    }
+
+    /** 旋转（右乘，就地修改） */
     public rotate(rad: number) {
         return this.multiply(Mat3.rotation(rad))
     }
 
-    /** 缩放（右乘） */
+    /** 旋转（右乘，返回新对象） */
+    public rotated(rad: number) {
+        return this.clone().rotate(rad)
+    }
+
+    /** 缩放（右乘，就地修改） */
     public scale(sx: number, sy: number) {
         return this.multiply(Mat3.scaling(sx, sy))
+    }
+
+    /** 缩放（右乘，返回新对象） */
+    public scaled(sx: number, sy: number) {
+        return this.clone().scale(sx, sy)
     }
 
     /** 变换点（列向量） */
@@ -153,7 +193,7 @@ export class Mat3 extends GeomBase implements IMat3 {
         return a * e * i + b * f * g + c * d * h - c * e * g - b * d * i - a * f * h
     }
 
-    /** 逆矩阵（不可逆抛错） */
+    /** 逆矩阵（就地修改，不可逆抛错） */
     public invert(eps = Precision.LEN_EPS) {
         const det = this.determinant()
         if (Math.abs(det) <= eps) {
@@ -174,11 +214,16 @@ export class Mat3 extends GeomBase implements IMat3 {
         const I = a * e - b * d
 
         const invDet = 1 / det
-        return new Mat3(
+        return this.setFromRowMajor([
             A * invDet, B * invDet, C * invDet,
             D * invDet, E * invDet, F * invDet,
             G * invDet, H * invDet, I * invDet,
-        )
+        ])
+    }
+
+    /** 逆矩阵（返回新对象） */
+    public inverted(eps = Precision.LEN_EPS) {
+        return this.clone().invert(eps)
     }
 
     /** 近似相等 */
