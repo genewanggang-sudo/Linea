@@ -20,10 +20,18 @@ export class Vec2 extends GeomBase implements IVec2 {
     public readonly y: number
 
     /** 创建一个向量实例 */
-    constructor(x: number, y: number) {
-        super();
-        this.x = x
-        this.y = y
+    constructor()
+    constructor(x: number, y: number)
+    constructor(obj: IVec2)
+    constructor(xOrObj: number | IVec2 = 0, y = 0) {
+        super()
+        if (typeof xOrObj === 'number') {
+            this.x = xOrObj
+            this.y = y
+        } else {
+            this.x = xOrObj.x
+            this.y = xOrObj.y
+        }
     }
 
     /** 零向量 */
@@ -31,9 +39,14 @@ export class Vec2 extends GeomBase implements IVec2 {
         return new Vec2(0, 0)
     }
 
-    /** 从对象结构创建向量 */
-    public static from(obj: IVec2) {
-        return new Vec2(obj.x, obj.y)
+    /** 单位向量 X */
+    public static unitX() {
+        return new Vec2(1, 0)
+    }
+
+    /** 单位向量 Y */
+    public static unitY() {
+        return new Vec2(0, 1)
     }
 
     /** 克隆当前向量 */

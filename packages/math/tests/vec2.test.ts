@@ -11,14 +11,23 @@ describe('Vec2', () => {
         expect(c.y).toBe(2)
     })
 
-    it('zero and from', () => {
-        const z = Vec2.zero()
+    it('constructors', () => {
+        const z = new Vec2()
         expect(z.x).toBe(0)
         expect(z.y).toBe(0)
 
-        const f = Vec2.from({ x: 3, y: 4 })
+        const f = new Vec2({ x: 3, y: 4 })
         expect(f.x).toBe(3)
         expect(f.y).toBe(4)
+    })
+
+    it('unitX/unitY', () => {
+        const ux = Vec2.unitX()
+        const uy = Vec2.unitY()
+        expect(ux.x).toBe(1)
+        expect(ux.y).toBe(0)
+        expect(uy.x).toBe(0)
+        expect(uy.y).toBe(1)
     })
 
     it('withX/withY', () => {
@@ -111,11 +120,11 @@ describe('Vec2', () => {
         const p1 = a.project(on)
         expect(p1.equals(new Vec2(3, 0))).toBe(true)
 
-        const zero = a.project(Vec2.zero())
-        expect(zero.equals(Vec2.zero())).toBe(true)
+        const zero = a.project(new Vec2(0, 0))
+        expect(zero.equals(new Vec2(0, 0))).toBe(true)
 
         const nearZero = a.project(new Vec2(1e-13, 0))
-        expect(nearZero.equals(Vec2.zero())).toBe(true)
+        expect(nearZero.equals(new Vec2(0, 0))).toBe(true)
     })
 
     it('angleTo sign', () => {
