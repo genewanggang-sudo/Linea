@@ -9,10 +9,11 @@ import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBMat3 } from '../serialize/dump_types'
 import { Vec2 } from './vec2'
 import type { Num3x3 } from '../types/type_guard'
+import type { IMat3 } from '../types/type_define'
 import { Precision } from '../utils/precision'
 
 @RegisterGeom
-export class Mat3 extends GeomBase {
+export class Mat3 extends GeomBase implements IMat3 {
     /** 序列化类型标识 */
     public static readonly type = EN_GEO_TYPE.Mat3
 

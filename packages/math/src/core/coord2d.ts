@@ -59,7 +59,9 @@ export class Coord2D extends GeomBase {
 
     /** 局部坐标 -> 世界坐标 */
     public toWorld(p: Vec2) {
-        return this.origin.add(this.xAxis.scale(p.x)).add(this.yAxis.scale(p.y))
+        return this.origin
+            .added(this.xAxis.scaled(p.x))
+            .added(this.yAxis.scaled(p.y))
     }
 
     /** 世界坐标 -> 局部坐标 */

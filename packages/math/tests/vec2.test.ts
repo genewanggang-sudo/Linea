@@ -38,13 +38,13 @@ describe('Vec2', () => {
         expect(v.withY(7).y).toBe(7)
     })
 
-    it('add/sub/scale', () => {
+    it('add/subtract/scale (ed 返回新对象)', () => {
         const a = new Vec2(1, 2)
         const b = new Vec2(3, 4)
-        const add = a.add(b)
-        const sub = b.sub(a)
-        const s = a.scale(2)
-        const as = a.addScaled(b, 0.5)
+        const add = a.added(b)
+        const sub = b.subtracted(a)
+        const s = a.scaled(2)
+        const as = a.addScaleded(b, 0.5)
         expect(add.x).toBe(4)
         expect(add.y).toBe(6)
         expect(sub.x).toBe(2)
@@ -66,21 +66,21 @@ describe('Vec2', () => {
         const v = new Vec2(3, 4)
         expect(v.lenSq()).toBe(25)
         expect(v.len()).toBe(5)
-        const n = v.normalize()
+        const n = v.normalized()
         expect(n.len()).toBeCloseTo(1, 12)
     })
 
     it('setLength', () => {
         const v = new Vec2(3, 4)
-        const s = v.setLength(10)
-        expect(s.len()).toBeCloseTo(10, 12)
+        v.setLength(10)
+        expect(v.len()).toBeCloseTo(10, 12)
     })
 
     it('normalize on near-zero vector returns zero', () => {
         const v = new Vec2(1e-15, -1e-15)
-        const n = v.normalize(1e-12)
-        expect(n.x).toBe(0)
-        expect(n.y).toBe(0)
+        v.normalize(1e-12)
+        expect(v.x).toBe(0)
+        expect(v.y).toBe(0)
     })
 
     it('distanceTo', () => {
@@ -115,24 +115,24 @@ describe('Vec2', () => {
 
     it('negate/distanceToSq', () => {
         const a = new Vec2(3, -4)
-        const n = a.negate()
-        expect(n.x).toBe(-3)
-        expect(n.y).toBe(4)
+        a.negate()
+        expect(a.x).toBe(-3)
+        expect(a.y).toBe(4)
 
         const b = new Vec2(6, 0)
-        expect(a.distanceToSq(b)).toBe(25)
+        expect(a.distanceToSq(b)).toBe(97)
     })
 
     it('rotate', () => {
         const a = new Vec2(1, 0)
-        const r = a.rotate(Math.PI / 2)
+        const r = a.rotated(Math.PI / 2)
         expect(r.x).toBeCloseTo(0, 10)
         expect(r.y).toBeCloseTo(1, 10)
     })
 
     it('perp', () => {
         const a = new Vec2(2, 3)
-        const p = a.perp()
+        const p = a.perped()
         expect(p.x).toBe(-3)
         expect(p.y).toBe(2)
     })
@@ -140,13 +140,13 @@ describe('Vec2', () => {
     it('project', () => {
         const a = new Vec2(3, 4)
         const on = new Vec2(1, 0)
-        const p1 = a.project(on)
+        const p1 = a.projected(on)
         expect(p1.equals(new Vec2(3, 0))).toBe(true)
 
-        const zero = a.project(new Vec2(0, 0))
+        const zero = a.projected(new Vec2(0, 0))
         expect(zero.equals(new Vec2(0, 0))).toBe(true)
 
-        const nearZero = a.project(new Vec2(1e-13, 0))
+        const nearZero = a.projected(new Vec2(1e-13, 0))
         expect(nearZero.equals(new Vec2(0, 0))).toBe(true)
     })
 

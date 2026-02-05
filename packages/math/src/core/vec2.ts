@@ -16,10 +16,10 @@ export class Vec2 extends GeomBase implements IVec2 {
     public static readonly type = EN_GEO_TYPE.Vec2
 
     /** X 分量 */
-    public readonly x: number
+    public x: number
 
     /** Y 分量 */
-    public readonly y: number
+    public y: number
 
     /** 创建一个向量实例 */
     constructor()
@@ -69,14 +69,40 @@ export class Vec2 extends GeomBase implements IVec2 {
         return new Vec2(this.x, y)
     }
 
-    /** 向量相加 */
-    public add(v: Vec2) {
-        return new Vec2(this.x + v.x, this.y + v.y)
+    /** 设置 X 分量（就地修改） */
+    public setX(x: number) {
+        this.x = x
+        return this
     }
 
-    /** 向量相减 */
-    public sub(v: Vec2) {
-        return new Vec2(this.x - v.x, this.y - v.y)
+    /** 设置 Y 分量（就地修改） */
+    public setY(y: number) {
+        this.y = y
+        return this
+    }
+
+    /** 向量相加（就地修改） */
+    public add(v: Vec2) {
+        this.x += v.x
+        this.y += v.y
+        return this
+    }
+
+    /** 向量相加（返回新对象） */
+    public added(v: Vec2) {
+        return this.clone().add(v)
+    }
+
+    /** 向量相减（就地修改） */
+    public subtract(v: Vec2) {
+        this.x -= v.x
+        this.y -= v.y
+        return this
+    }
+
+    /** 向量相减（返回新对象） */
+    public subtracted(v: Vec2) {
+        return this.clone().subtract(v)
     }
 
     /**
@@ -84,12 +110,26 @@ export class Vec2 extends GeomBase implements IVec2 {
      * - 常用于积分、插值、偏移等计算
      */
     public addScaled(v: Vec2, s: number) {
-        return new Vec2(this.x + v.x * s, this.y + v.y * s)
+        this.x += v.x * s
+        this.y += v.y * s
+        return this
+    }
+
+    /** 向量线性叠加（返回新对象） */
+    public addScaleded(v: Vec2, s: number) {
+        return this.clone().addScaled(v, s)
     }
 
     /** 反向量（取相反方向） */
     public negate() {
-        return new Vec2(-this.x, -this.y)
+        this.x = -this.x
+        this.y = -this.y
+        return this
+    }
+
+    /** 反向量（返回新对象） */
+    public negated() {
+        return this.clone().negate()
     }
 
     /**
@@ -99,10 +139,16 @@ export class Vec2 extends GeomBase implements IVec2 {
     public rotate(rad: number) {
         const c = Math.cos(rad)
         const s = Math.sin(rad)
-        return new Vec2(
-            this.x * c - this.y * s,
-            this.x * s + this.y * c,
-        )
+        const x = this.x * c - this.y * s
+        const y = this.x * s + this.y * c
+        this.x = x
+        this.y = y
+        return this
+    }
+
+    /** 绕原点旋转（返回新对象） */
+    public rotated(rad: number) {
+        return this.clone().rotate(rad)
     }
 
     /**
@@ -111,12 +157,28 @@ export class Vec2 extends GeomBase implements IVec2 {
      * - 若需顺时针方向，可对结果取反
      */
     public perp() {
-        return new Vec2(-this.y, this.x)
+        const x = -this.y
+        const y = this.x
+        this.x = x
+        this.y = y
+        return this
+    }
+
+    /** 垂直向量（返回新对象） */
+    public perped() {
+        return this.clone().perp()
     }
 
     /** 标量缩放 */
     public scale(s: number) {
-        return new Vec2(this.x * s, this.y * s)
+        this.x *= s
+        this.y *= s
+        return this
+    }
+
+    /** 标量缩放（返回新对象） */
+    public scaled(s: number) {
+        return this.clone().scale(s)
     }
 
     /** 点积 */
@@ -145,15 +207,33 @@ export class Vec2 extends GeomBase implements IVec2 {
      */
     public setLength(len: number, eps = Precision.LEN_EPS) {
         const l = this.len()
-        if (l < eps) return new Vec2(0, 0)
+        if (l < eps) {
+            this.x = 0
+            this.y = 0
+            return this
+        }
         return this.scale(len / l)
+    }
+
+    /** 设置向量长度（返回新对象） */
+    public setLengthed(len: number, eps = Precision.LEN_EPS) {
+        return this.clone().setLength(len, eps)
     }
 
     /** 归一化，极短向量返回零向量 */
     public normalize(eps = Precision.LEN_EPS) {
         const l = this.len()
-        if (l < eps) return Vec2.zero()
+        if (l < eps) {
+            this.x = 0
+            this.y = 0
+            return this
+        }
         return this.scale(1 / l)
+    }
+
+    /** 归一化（返回新对象） */
+    public normalized(eps = Precision.LEN_EPS) {
+        return this.clone().normalize(eps)
     }
 
     /** 到目标向量的距离 */
@@ -175,9 +255,20 @@ export class Vec2 extends GeomBase implements IVec2 {
      */
     public project(on: Vec2, eps = Precision.LEN_EPS) {
         const denom = on.lenSq()
-        if (Precision.nearlyZeroSq(denom, eps)) return Vec2.zero()
+        if (Precision.nearlyZeroSq(denom, eps)) {
+            this.x = 0
+            this.y = 0
+            return this
+        }
         const scale = this.dot(on) / denom
-        return on.scale(scale)
+        this.x = on.x * scale
+        this.y = on.y * scale
+        return this
+    }
+
+    /** 向量投影（返回新对象） */
+    public projected(on: Vec2, eps = Precision.LEN_EPS) {
+        return this.clone().project(on, eps)
     }
 
     /**
