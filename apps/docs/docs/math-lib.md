@@ -1,93 +1,122 @@
-# 数学库方案
+﻿# Math 曲线基础设计方案
 
-## 分层结构（宏观）
+## 目的
 
-```
-math/
-  core/        基础类型与代数
-  curves/      曲线与几何对象
-  serialize/   序列化与反序列化
-  utils/       公共工具与数值容差
-```
+- 明确 `Curve2` 基类与参数域（`Interval` / `PeriodInterval`）的职责与方法，便于快速发现缺口并讨论改进。
 
 ---
 
-## core（基础类型与代数）
+## 需要设计的类
 
-**定位**：为上层提供最小且稳定的数学基石。
-
-包含主要类：
-- `Vec2` / `Vec3`：向量
-- `Matrix2D` / `Matrix3D`：矩阵与变换（2D/3D）
-- `Euler`：欧拉角
-- `Quat`：四元数
-- `Box2`（二维包围盒，轴对齐）
-- `Box3`（三维包围盒，轴对齐）
-- `Coord2D`（二维坐标系）
+1. `Curve2`（二维曲线基类）
+2. `Interval`（普通参数域）
+3. `PeriodInterval`（周期参数域，继承 Interval）
 
 ---
 
-## curves（曲线与几何对象）
+## 商用标准：解析优先，数值兜底
 
-**定位**：二维编辑器中的几何对象抽象。
-
-包含主要类：
-- `Line`（直线）
-- `Arc`（圆弧）
-- `Circle`（圆）
-- `Ellipse`（椭圆）
-- `EllipseArc`（椭圆弧）
-
-统一能力：
-- `tessellate(options)`：将曲线离散为点集，用于渲染与测量
-- `length()`：曲线长度（测量）
-- `pointAt(t)`：参数化取点（0~1）
-- `tangentAt(t)`：切线方向（方向/标注）
-- `bbox()`：包围盒（选择/裁剪）
+- 能解析的曲线（直线、圆等）使用解析算法。
+- 无解析解或过于复杂的曲线（椭圆弧、B 样条等）使用数值/迭代。
+- 所有数值算法都需显式支持容差参数。
 
 ---
 
-## serialize（序列化与反序列化）
+## Curve2
 
-**定位**：为编辑器与存储层提供统一的持久化入口。
+### 方法分类
 
-设计要点：
-- 抽象基类 `GeomBase`，约定 `dump()` / `load()` 协议
-- 不提供全局 Serializer/Deserializer，避免过度集中
-- 每个具体类自行实现 `dump()` / `load()`
-- 序列化结构包含 `type` 字段，便于还原与调试
+**A. 参数与取点（原生参数）**
+- `getParamRange()`：返回参数域（`Interval` 或 `PeriodInterval`）。
+- `pointAtParam(u)`：原生参数取点。
+- `tangentAtParam(u)`：原生参数切向（方向向量，是否单位化由实现决定）。
+
+**B. 导数与曲率**
+- `derivatives(u, n)`：返回 0..n 阶导（至少支持 0/1/2）。
+- `curvatureAt(u)`：曲率。
+
+**C. 长度与参数换算**
+- `length(range?)`：曲线长度（解析优先，数值兜底）。
+- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）。
+- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差）。
+
+**D. 切割与方向**
+- `split(u)`：按参数切分。
+- `trim(range)`：裁剪到参数区间。
+- `reverse()`：反转参数方向。
+
+**E. 几何有效性与复制**
+- `isValid(eps?)`：判定曲线是否退化/非法。
+- `clone()`：克隆。
+
+**F. 变换**
+- `transform(m)`：矩阵变换（就地）。
+- `transformed(m)`：矩阵变换（返回新对象）。
+
+**G. 通用查询**
+- `closestPoint(p, tol?)`：返回最近点、参数、距离（解析优先，数值兜底）。
+- `closestParam(p, tol?)`：仅返回最近参数。
+- `distanceToPoint(p, tol?)`：点到曲线距离。
+- `boundingBox(samples?)`：曲线包围盒。
+
+### 方法含义简述
+
+- `pointAtParam` / `tangentAtParam` / `derivatives`：**几何定义核心**。
+- `length` / `paramAtLength`：用于等弧长采样与动画路径。
+- `split` / `trim` / `reverse`：用于编辑、布尔等曲线处理。
+- `closestPoint` / `distanceToPoint`：投影与距离查询（解析优先，数值兜底，容差可控）。
+
+### 暂缓实现
+
+- 曲线离散（如 `toPolyline`）暂不纳入本轮实现，后续作为单独专题设计。
 
 ---
 
-## utils（工具与容差）
+## Interval（普通参数域）
 
-**定位**：提供通用数值工具与容差控制。
+### 方法
+- `length()`：区间长度。
+- `contains(u, eps?)`：判断参数是否落在区间内。
+- `clamp(u)`：把参数夹到区间内。
+- `equals(other, eps?)`：区间近似相等判断。
+- `expand(delta)` / `expanded(delta)`：区间扩展（用于容差）。
+- `intersect(other)`：区间相交。
+- `union(other)`：区间合并。
+- `split(u)`：在参数处拆分区间。
 
-包含主要内容：
-- `Precision`（精度策略集合，如 EPS、舍入规则等）
-- `MathUtils.clamp(...)`
-- `MathUtils.lerp(...)`
-- `MathUtils.almostEqual(...)`
-
----
-
-## tests（测试方案）
-
-**目标**：保障几何算法在持续迭代中的稳定性与可回归性。
-
-建议方案（先规划，不实现）：
-- 使用 Vitest 作为测试框架
-- 测试覆盖：
-  - core：向量/矩阵/坐标系的基本运算与边界
-  - curves：长度、点采样（tessellate）、bbox、端点与参数化一致性
-  - utils：Precision（EPS）与常用工具函数
-- 采用固定数据 + 随机数据（Property-based 思路）组合
+### 适用曲线
+- 直线、线段、B 样条等非周期参数曲线。
 
 ---
 
-## TODO（基础能力补充）
+## PeriodInterval（周期参数域）
 
-- MathUtils：`clamp` / `lerp` / `almostEqual`
-- Vec2：`perp` / `project` / `reflect` / `angle`
-- Mat3：`fromTRS`（平移/旋转/缩放组合）
-- 常量/辅助：`DEG2RAD` / `RAD2DEG` / `TAU`
+### 继承关系
+
+- `PeriodInterval` 继承 `Interval`。
+- 复用 `Interval` 的区间能力，并在周期语义上做增强。
+
+### 表示规则
+
+- 统一将参数归一化到 `[0, period)`。
+- 允许“跨周期区间”表示，例如 `[350°, 30°]`。
+- 判断与长度计算必须考虑跨周期情况。
+
+### 方法（商用级建议）
+
+**A. 新增能力**
+- `normalize(u)`：归一化到 `[0, period)`。
+- `shift(offset)`：区间整体平移。
+
+**B. 重写以支持周期语义**
+- `contains(u, eps?)`
+- `length()`
+- `clamp(u)`
+- `intersect(other)`
+- `union(other)`：按“最短覆盖单区间”策略返回，允许跨周期表达。
+- `split(u)`
+- `equals(other, eps?)`
+
+### 适用曲线
+- 圆、椭圆、圆弧、椭圆弧等周期曲线。
+
