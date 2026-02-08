@@ -1,5 +1,10 @@
 ﻿# Math 曲线基础设计方案
 
+## TODO
+- `PeriodInterval.union(other)` 最短覆盖的具体规则（正向最短？保持 start？）
+- `contains(u, eps?)` / `equals(other, eps?)` 的 `eps` 语义（参数容差还是角度/长度容差）
+- `paramAtLength(s, tol?)` / `closestPoint(p, tol?)` 的 `tol` 语义（距离容差还是参数容差）
+
 ## 目的
 
 - 明确 `Curve2` 基类与参数域（`Interval` / `PeriodInterval`）的职责与方法，便于快速发现缺口并讨论改进。
