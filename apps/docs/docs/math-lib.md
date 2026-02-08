@@ -29,35 +29,36 @@
 **A. 参数与取点（原生参数）**
 - `getParamRange()`：返回参数域（`Interval` 或 `PeriodInterval`）。
 - `pointAtParam(u)`：原生参数取点。
-- `tangentAtParam(u)`：原生参数切向（方向向量，是否单位化由实现决定）。
+- `tangentAtParam(u)`：原生参数切向（返回一阶导数向量，不单位化）。
 
 **B. 导数与曲率**
-- `derivatives(u, n)`：返回 0..n 阶导（至少支持 0/1/2）。
-- `curvatureAt(u)`：曲率。
+- `derivatives(u, n)`：返回 0..n 阶导（至少支持 0/1/2），采用数组顺序 `[d0, d1, d2, ...]`。
+- `derivativeAt(u, n)`：返回第 n 阶导数（单值接口）。
+- `curvatureAt(u)`：曲率；当一阶导数长度为 0 时返回 `null` 表示不可定义。
 
 **C. 长度与参数换算**
 - `length(range?)`：曲线长度（解析优先，数值兜底）。
-- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）。
-- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差）。
+- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）；当 `u` 超出参数域时返回 `null` 表示失败。
+- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差）；当 `s` 超出 `[0, length]` 时返回 `null` 表示失败。
 
 **D. 切割与方向**
-- `split(u)`：按参数切分。
-- `trim(range)`：裁剪到参数区间。
-- `reverse()`：反转参数方向。
+- `split(u)`：按参数切分；当 `u` 超出参数域时返回 `null` 表示失败。
+- `trim(range)`：裁剪到参数区间；与参数域无交集时返回 `null`。
+- `reverse()`：反转参数方向（参数域保持不变，例如 `[0,1]` 仍为 `[0,1]`，但点序反向）。
 
 **E. 几何有效性与复制**
-- `isValid(eps?)`：判定曲线是否退化/非法。
+- `isValid(eps?)`：判定曲线是否退化/非法（具体标准由子类定义）。
 - `clone()`：克隆。
 
 **F. 变换**
-- `transform(m)`：矩阵变换（就地）。
-- `transformed(m)`：矩阵变换（返回新对象）。
+- `transform(m)`：矩阵变换（就地），仅支持 2D 仿射矩阵 `Mat3`。
+- `transformed(m)`：矩阵变换（返回新对象），仅支持 2D 仿射矩阵 `Mat3`。
 
 **G. 通用查询**
-- `closestPoint(p, tol?)`：返回最近点、参数、距离（解析优先，数值兜底）。
-- `closestParam(p, tol?)`：仅返回最近参数。
-- `distanceToPoint(p, tol?)`：点到曲线距离。
-- `boundingBox(samples?)`：曲线包围盒。
+- `closestPoint(p, tol?)`：返回 `{ point, param, distance }`（解析优先，数值兜底）；失败返回 `null`。
+- `closestParam(p, tol?)`：仅返回最近参数；失败返回 `null`。
+- `distanceToPoint(p, tol?)`：点到曲线距离；失败返回 `null`。
+- `boundingBox(accurate?)`：曲线包围盒（解析优先，采样兜底）；`accurate=true` 时精度优先，`accurate=false` 或缺省时性能优先。
 
 ### 方法含义简述
 
@@ -87,6 +88,9 @@
 ### 适用曲线
 - 直线、线段、B 样条等非周期参数曲线。
 
+### 规则补充
+- 采用闭区间 `[a, b]` 语义：`contains(a)` 与 `contains(b)` 都为 `true`。
+
 ---
 
 ## PeriodInterval（周期参数域）
@@ -98,9 +102,9 @@
 
 ### 表示规则
 
-- 统一将参数归一化到 `[0, period)`。
+- 统一将参数归一化到 `[0, period)`（半开区间）。
 - 允许“跨周期区间”表示，例如 `[350°, 30°]`。
-- 判断与长度计算必须考虑跨周期情况。
+- 判断与长度计算必须考虑跨周期情况；`length()` 定义为沿参数正方向从 start 到 end 的长度，跨周期则 `length = (period - start) + end`。
 
 ### 方法（商用级建议）
 
