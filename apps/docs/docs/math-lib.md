@@ -3,9 +3,9 @@
 ## 通用约定
 - `eps` 为参数容差，默认使用 `Precision.EPS`。
 - `tol` 为距离容差，默认使用 `Precision.LEN_EPS`。
-- 数值算法遵循“解析优先、数值兜底”，并有迭代上限（默认建议 50）。
-- 默认接口尽量保证返回；超范围时进行 `clamp` 或使用采样/端点兜底。
+- 数值算法遵循“解析优先、数值兜底”，并有迭代上限（`maxIter` 内部固定默认 50，不对外暴露）。
 - 结构性操作（如 `split` / `trim`）若无结果，返回空数组。
+- 异常统一由 `MathError` 抛出（见 `apps/docs/docs/math-lib-errors.md`）。
 
 ## 目的
 
@@ -41,16 +41,16 @@
 **B. 导数与曲率**
 - `derivatives(u, n)`：返回 0..n 阶导（至少支持 0/1/2），采用数组顺序 `[d0, d1, d2, ...]`。
 - `derivativeAt(u, n)`：返回第 n 阶导数（单值接口）。
-- `curvatureAt(u)`：曲率；曲线应在构造阶段保证有效性。数值退化时返回 `0` 并记录警告。
+- `curvatureAt(u)`：曲率；曲线应在构造阶段保证有效性。数值退化视为异常，抛出 `MathError`。
 
 **C. 长度与参数换算**
-- `length(range?)`：曲线长度（解析优先，数值兜底）。
-- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）；当 `u` 超出参数域时进行 `clamp`。
-- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差）；当 `s` 超出 `[0, length]` 时进行 `clamp`。
+- `length(range?: Interval)`：曲线长度（解析优先，数值兜底）；周期曲线可传 `PeriodInterval`（其为 `Interval` 子类）。
+- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）；当 `u` 超出参数域时抛 `MathError`。
+- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差，未传则使用默认 `tol`）；当 `s` 超出 `[0, length]` 时抛 `MathError`。
 
 **D. 切割与方向**
-- `split(u)`：按参数切分；当 `u` 超出参数域时进行 `clamp`；若切到边界导致无有效切分，返回空数组。
-- `trim(range)`：裁剪到参数区间；与参数域无交集时返回空数组。
+- `split(u)`：按参数切分，返回 `Curve2[]`（通常为 2 段）；当 `u` 超出参数域时抛 `MathError`；当 `u` 在边界（或与边界的差小于 `eps`）导致无有效切分时，返回空数组。
+- `trim(range: Interval)`：裁剪到参数区间，返回 `Curve2[]`（通常为 1 段）；与参数域无交集时返回空数组。
 - `reverse()`：反转参数方向（参数域保持不变，例如 `[0,1]` 仍为 `[0,1]`，但点序反向）。
 
 **E. 几何有效性与复制**
@@ -62,10 +62,10 @@
 - `transformed(m)`：矩阵变换（返回新对象），仅支持 2D 仿射矩阵 `Mat3`。
 
 **G. 通用查询**
-- `closestPoint(p, tol?)`：返回 `{ point: Vec2; param: number; distance: number }`（解析优先，数值兜底）；数值失败时使用采样/端点兜底，保证返回。
-- `closestParam(p, tol?)`：仅返回最近参数；数值失败时使用采样/端点兜底，保证返回。
-- `distanceToPoint(p, tol?)`：点到曲线距离；数值失败时使用采样/端点兜底，保证返回。
-- `boundingBox(accurate?)`：曲线包围盒（解析优先，采样兜底）；`accurate=true` 时精度优先，`accurate=false` 或缺省时性能优先。
+- `closestPoint(p, tol?)`：返回 `{ point: Vec2; param: number; distance: number }`（解析优先，数值兜底）；当迭代超过 `maxIter` 或误差仍大于 `tol` 时抛 `MathError`。
+- `closestParam(p, tol?)`：仅返回最近参数；当迭代超过 `maxIter` 或误差仍大于 `tol` 时抛 `MathError`。
+- `distanceToPoint(p, tol?)`：点到曲线距离；当迭代超过 `maxIter` 或误差仍大于 `tol` 时抛 `MathError`。
+- `boundingBox(accurate?)`：曲线包围盒（解析优先，采样兜底）；`accurate=true` 时解析极值优先，解析不可用时提升采样密度。
 
 ### 方法含义简述
 
