@@ -44,7 +44,7 @@
 **C. 长度与参数换算**
 - `length(range?)`：曲线长度（解析优先，数值兜底）。
 - `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）；当 `u` 超出参数域时返回 `null` 表示失败。
-- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差）；当 `s` 超出 `[0, length]` 时返回 `null` 表示失败。
+- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差，`tol` 为距离容差）；当 `s` 超出 `[0, length]` 时返回 `null` 表示失败。
 
 **D. 切割与方向**
 - `split(u)`：按参数切分；当 `u` 超出参数域时返回 `null` 表示失败。
@@ -60,9 +60,9 @@
 - `transformed(m)`：矩阵变换（返回新对象），仅支持 2D 仿射矩阵 `Mat3`。
 
 **G. 通用查询**
-- `closestPoint(p, tol?)`：返回 `{ point, param, distance }`（解析优先，数值兜底）；失败返回 `null`。
-- `closestParam(p, tol?)`：仅返回最近参数；失败返回 `null`。
-- `distanceToPoint(p, tol?)`：点到曲线距离；失败返回 `null`。
+- `closestPoint(p, tol?)`：返回 `{ point, param, distance }`（解析优先，数值兜底，`tol` 为距离容差）；失败返回 `null`。
+- `closestParam(p, tol?)`：仅返回最近参数（`tol` 为距离容差）；失败返回 `null`。
+- `distanceToPoint(p, tol?)`：点到曲线距离（`tol` 为距离容差）；失败返回 `null`。
 - `boundingBox(accurate?)`：曲线包围盒（解析优先，采样兜底）；`accurate=true` 时精度优先，`accurate=false` 或缺省时性能优先。
 
 ### 方法含义简述
@@ -82,9 +82,9 @@
 
 ### 方法
 - `length()`：区间长度。
-- `contains(u, eps?)`：判断参数是否落在区间内。
+- `contains(u, eps?)`：判断参数是否落在区间内（`eps` 为参数容差）。
 - `clamp(u)`：把参数夹到区间内。
-- `equals(other, eps?)`：区间近似相等判断。
+- `equals(other, eps?)`：区间近似相等判断（`eps` 为参数容差）。
 - `expand(delta)` / `expanded(delta)`：区间扩展（用于容差）。
 - `intersect(other)`：区间相交。
 - `union(other)`：区间合并。
@@ -118,13 +118,13 @@
 - `shift(offset)`：区间整体平移。
 
 **B. 重写以支持周期语义**
-- `contains(u, eps?)`
+- `contains(u, eps?)`（`eps` 为参数容差）
 - `length()`
 - `clamp(u)`
 - `intersect(other)`
-- `union(other)`：按“最短覆盖单区间”策略返回，允许跨周期表达。
+- `union(other)`：按“正向最短覆盖单区间”策略返回，允许跨周期表达。
 - `split(u)`
-- `equals(other, eps?)`
+- `equals(other, eps?)`（`eps` 为参数容差）
 
 ### 适用曲线
 - 圆、椭圆、圆弧、椭圆弧等周期曲线。
