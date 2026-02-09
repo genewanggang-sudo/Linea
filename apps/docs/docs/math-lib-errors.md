@@ -16,9 +16,18 @@
   - `MathError.assert(condition, message, detail?)`
   - `MathError.warn(message, detail?)`
 
+## 使用示例
+```ts
+import { MathError } from '@linea/math'
+
+MathError.assert(radius > 0, 'radius must be positive', { method: 'Circle' })
+MathError.throw('param out of range', { method: 'lengthAtParam', u })
+MathError.warn('numeric not converged', { method: 'closestPoint', tol, maxIter })
+```
+
 ## 参数说明（文字约定）
 - `message`：面向开发者的错误说明。
-- `detail`：可选的上下文信息（如 method/params/tol/maxIter）。
+- `detail`：可选的上下文信息，用于调试定位（如 method/params/tol/maxIter）。
 
 ## 调用方建议
 - 高频调用（采样、动画）建议在上层集中 `try/catch`。
