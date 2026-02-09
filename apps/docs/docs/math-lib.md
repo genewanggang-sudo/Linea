@@ -1,9 +1,11 @@
 ﻿# Math 曲线基础设计方案
 
-## TODO
-- `PeriodInterval.union(other)` 最短覆盖的具体规则（正向最短？保持 start？）
-- `contains(u, eps?)` / `equals(other, eps?)` 的 `eps` 语义（参数容差还是角度/长度容差）
-- `paramAtLength(s, tol?)` / `closestPoint(p, tol?)` 的 `tol` 语义（距离容差还是参数容差）
+## 通用约定
+- `eps` 为参数容差，默认使用 `Precision.EPS`。
+- `tol` 为距离容差，默认使用 `Precision.LEN_EPS`。
+- 数值算法遵循“解析优先、数值兜底”，并有迭代上限（默认建议 50）。
+- 默认接口尽量保证返回；超范围时进行 `clamp` 或使用采样/端点兜底。
+- 结构性操作（如 `split` / `trim`）若无结果，返回空数组。
 
 ## 目的
 
@@ -39,16 +41,16 @@
 **B. 导数与曲率**
 - `derivatives(u, n)`：返回 0..n 阶导（至少支持 0/1/2），采用数组顺序 `[d0, d1, d2, ...]`。
 - `derivativeAt(u, n)`：返回第 n 阶导数（单值接口）。
-- `curvatureAt(u)`：曲率；当一阶导数长度为 0 时返回 `null` 表示不可定义。
+- `curvatureAt(u)`：曲率；曲线应在构造阶段保证有效性。数值退化时返回 `0` 并记录警告。
 
 **C. 长度与参数换算**
 - `length(range?)`：曲线长度（解析优先，数值兜底）。
-- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）；当 `u` 超出参数域时返回 `null` 表示失败。
-- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差，`tol` 为距离容差）；当 `s` 超出 `[0, length]` 时返回 `null` 表示失败。
+- `lengthAtParam(u)`：从参数域起点到 u 的弧长（解析优先，数值兜底）；当 `u` 超出参数域时进行 `clamp`。
+- `paramAtLength(s, tol?)`：根据弧长反求参数（数值迭代，需容差）；当 `s` 超出 `[0, length]` 时进行 `clamp`。
 
 **D. 切割与方向**
-- `split(u)`：按参数切分；当 `u` 超出参数域时返回 `null` 表示失败。
-- `trim(range)`：裁剪到参数区间；与参数域无交集时返回 `null`。
+- `split(u)`：按参数切分；当 `u` 超出参数域时进行 `clamp`；若切到边界导致无有效切分，返回空数组。
+- `trim(range)`：裁剪到参数区间；与参数域无交集时返回空数组。
 - `reverse()`：反转参数方向（参数域保持不变，例如 `[0,1]` 仍为 `[0,1]`，但点序反向）。
 
 **E. 几何有效性与复制**
@@ -60,9 +62,9 @@
 - `transformed(m)`：矩阵变换（返回新对象），仅支持 2D 仿射矩阵 `Mat3`。
 
 **G. 通用查询**
-- `closestPoint(p, tol?)`：返回 `{ point, param, distance }`（解析优先，数值兜底，`tol` 为距离容差）；失败返回 `null`。
-- `closestParam(p, tol?)`：仅返回最近参数（`tol` 为距离容差）；失败返回 `null`。
-- `distanceToPoint(p, tol?)`：点到曲线距离（`tol` 为距离容差）；失败返回 `null`。
+- `closestPoint(p, tol?)`：返回 `{ point: Vec2; param: number; distance: number }`（解析优先，数值兜底）；数值失败时使用采样/端点兜底，保证返回。
+- `closestParam(p, tol?)`：仅返回最近参数；数值失败时使用采样/端点兜底，保证返回。
+- `distanceToPoint(p, tol?)`：点到曲线距离；数值失败时使用采样/端点兜底，保证返回。
 - `boundingBox(accurate?)`：曲线包围盒（解析优先，采样兜底）；`accurate=true` 时精度优先，`accurate=false` 或缺省时性能优先。
 
 ### 方法含义简述
