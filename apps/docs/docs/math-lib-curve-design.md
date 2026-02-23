@@ -28,8 +28,7 @@
 同步修改：
 
 - `packages/math/src/index.ts`（增加导出）
-- `packages/math/src/constants/geom_type.ts`（增加类型枚举）
-- `packages/math/src/serialize/dump_types.ts`（增加序列化结构）
+- `packages/math/src/types/type_define.ts`（增加曲线查询结果类型）
 
 ---
 
@@ -53,9 +52,9 @@
 - `expand(delta: number): Interval`
 - `expanded(delta: number): Interval`
 - `intersect(other: Interval): Interval[]`
-- `union(other: Interval): Interval`
+- `union(other: Interval): Interval[]`
 - `split(u: number, eps = Precision.EPS): Interval[]`
-- `dump()` / `static load()`
+- `merge(intervals: readonly Interval[], eps = Precision.EPS): Interval[]`（静态）
 
 行为约定：
 
@@ -63,6 +62,7 @@
 - 允许点区间：`start === end` 合法，长度为 `0`。
 - 构造时若 `start > end`，自动交换为 `start <= end` 后再保存。
 - `intersect` 统一返回数组：无交集返回 `[]`，有交集返回 `[Interval]`；端点相接返回点区间（如 `[3, 3]`）。
+- `union` 统一返回数组：普通区间通常返回单段 `[Interval]`，为周期区间多段并集语义预留统一接口。
 - `split` 在边界（含容差）返回 `[]`，表示未产生有效新分段，不抛错。
 - `expand(delta)` 为就地修改；`expanded(delta)` 返回新对象，两者都保留。
 
@@ -95,8 +95,10 @@
 - 参数归一化到 `[0, period)`。
 - `period <= 0` 构造直接抛 `MathError`。
 - `length()` 表示沿正方向从 `start` 到 `end` 的弧长。
-- `intersect` 保持与 `Interval` 一致的数组语义：无交集 `[]`，有交集 `[Interval]`（按周期规则计算）。
-- `union` 返回 `Interval[]`，允许返回多段结果（通常为 1 段，跨周期离散场景可为 2 段）。
+- `intersect` 返回 `PeriodInterval[]`，内部可拆为线性区间计算后再包装回周期区间。
+- `union` 返回 `PeriodInterval[]`，允许返回多段结果（通常为 1 段，跨周期离散场景可为 2 段）。
+- `intersect/union` 输入必须是同周期 `PeriodInterval`，否则抛 `MathError`。
+- 线性段归并统一复用 `Interval.merge(...)`，不在 `PeriodInterval` 内重复维护归并算法。
 - 跨周期区间采用“展开区间”表示与计算思路：
 - 示例：`[350, 30]` 视作 `[350, 390]`（`period = 360`）。
 - 运算流程：先归一化参数，再将区间拆到普通区间域做交并，最后映射回周期表示。
@@ -111,12 +113,12 @@
 
 抽象方法（必须由子类实现）：
 
-- `getParamRange(): Interval | PeriodInterval`
-- `pointAtParam(u: number): Vec2`
-- `tangentAtParam(u: number): Vec2`
+- `getRange(): Interval`
+- `pointAt(u: number): Vec2`
+- `tangentAt(u: number): Vec2`
 - `derivatives(u: number, n: number): Vec2[]`
 - `curvatureAt(u: number): number`
-- `length(range?: Interval | PeriodInterval): number`
+- `length(range?: Interval): number`
 - `lengthAtParam(u: number): number`
 - `paramAtLength(s: number, tol?: number): number`
 - `split(u: number): Curve2[]`
@@ -140,26 +142,25 @@
 
 - 反序列化 `static load()` 由具体子类实现，`Curve2` 抽象类不声明静态方法。
 - `transform`（就地）与 `transformed`（返回新对象）同时保留。
+- `Curve2` 默认参数域使用 `Interval.infinite()`。
+- `Curve2` 参数域采用防御性复制：`setRange(range)` 内部存副本，`getRange()` 返回副本。
 - `length(range?)` 语义统一：
 - 不传 `range` 时，计算整条曲线长度。
 - 传入 `range` 时，计算参数子区间长度。
-- 非周期曲线使用 `Interval`，周期曲线可使用 `PeriodInterval`。
+- 子类可通过两种方式设置参数域：直接赋值 `this._range`，或调用 `setRange(range)`。
+- 周期曲线可把 `PeriodInterval` 作为 `Interval` 子类赋给 `_range`。
 
 ---
 
-## 4. 序列化与类型系统
+## 4. 类型系统
 
-本阶段纳入 `GeomMgr`：
-
-- `Interval`
-- `PeriodInterval`
+本阶段 `Interval` / `PeriodInterval` 不纳入 `GeomMgr` 序列化体系。
 
 `Curve2` 作为抽象类不直接实例化，不注册具体类型。
 
 需要扩展：
 
-- `EN_GEO_TYPE` 增加 `Interval`、`PeriodInterval`
-- `dump_types.ts` 增加 `IDBInterval`、`IDBPeriodInterval`
+- `type_define.ts` 增加曲线最近点结果类型（`IClosestPointResult`）
 
 ---
 

@@ -6,3 +6,4 @@ pnpm-debug.log
 **/.vitepress/cache
 **/.vitepress/dist
 **/.vitepress/.temp
+**/dist

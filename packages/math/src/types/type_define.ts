@@ -15,3 +15,13 @@ export interface IVec2 {
 export interface IMat3 {
     elements: Num3x3
 }
+
+/** 曲线最近点查询结果 */
+export interface IClosestPointResult {
+    /** 最近点坐标 */
+    point: IVec2
+    /** 最近点对应参数 */
+    param: number
+    /** 查询点到曲线的距离 */
+    distance: number
+}
