@@ -123,8 +123,8 @@ export class PeriodInterval extends Interval {
         }
 
         const merged = Interval.merge([
-            ...this.toLinearSegments(),
-            ...other.toLinearSegments(),
+            ...this.toLinearSegments(eps),
+            ...other.toLinearSegments(eps),
         ], eps)
 
         if (merged.length >= 2) {

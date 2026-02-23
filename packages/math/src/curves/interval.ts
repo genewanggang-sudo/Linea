@@ -9,15 +9,6 @@ import { MathConst } from '../constants/math_const'
 
 export class Interval {
     /**
-     * 校验容差参数合法性。
-     * @param eps 容差值，要求为有限且非负数。
-     * @param method 调用方方法名，用于构造错误信息。
-     */
-    protected static assertValidEps(eps: number, method: string) {
-        MathError.assert(Number.isFinite(eps) && eps >= 0, `${method}: eps must be a non-negative finite number`)
-    }
-
-    /**
      * 返回数学无界区间。
      * @returns 取值范围为 `[-Infinity, +Infinity]` 的区间实例。
      */
