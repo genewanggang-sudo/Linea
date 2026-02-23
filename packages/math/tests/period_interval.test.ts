@@ -91,6 +91,19 @@ describe('PeriodInterval', () => {
         expect(() => a.union(b)).toThrow('PeriodInterval.union: period mismatch')
     })
 
+    it('union supports custom eps for period compare', () => {
+        const a = new PeriodInterval(350, 20, 360)
+        const b = new PeriodInterval(40, 80, 360 + 5e-10)
+        expect(() => a.union(b, 1e-12)).toThrow('PeriodInterval.union: period mismatch')
+        expect(() => a.union(b, 1e-9)).not.toThrow()
+    })
+
+    it('union throws when eps is invalid', () => {
+        const a = new PeriodInterval(350, 20, 360)
+        const b = new PeriodInterval(40, 80, 360)
+        expect(() => a.union(b, -1)).toThrow('PeriodInterval.union: eps must be a non-negative finite number')
+    })
+
     it('intersect throws when other is not PeriodInterval', () => {
         const a = new PeriodInterval(350, 30, 360)
         const b = new Interval(0, 1)
@@ -101,6 +114,15 @@ describe('PeriodInterval', () => {
         const a = new PeriodInterval(350, 30, 360)
         const b = new PeriodInterval(20, 80, 180)
         expect(() => a.intersect(b)).toThrow('PeriodInterval.intersect: period mismatch')
+    })
+
+    it('contains/equals/intersect/split throw when eps is invalid', () => {
+        const a = new PeriodInterval(350, 30, 360)
+        const b = new PeriodInterval(20, 80, 360)
+        expect(() => a.contains(10, -1)).toThrow('PeriodInterval.contains: eps must be a non-negative finite number')
+        expect(() => a.equals(b, -1)).toThrow('PeriodInterval.equals: eps must be a non-negative finite number')
+        expect(() => a.intersect(b, -1)).toThrow('PeriodInterval.intersect: eps must be a non-negative finite number')
+        expect(() => a.split(10, -1)).toThrow('PeriodInterval.split: eps must be a non-negative finite number')
     })
 
 })

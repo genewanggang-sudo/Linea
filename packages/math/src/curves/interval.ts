@@ -8,6 +8,11 @@ import { Precision } from '../utils/precision'
 import { MathConst } from '../constants/math_const'
 
 export class Interval {
+    /** 校验容差参数 */
+    protected static assertValidEps(eps: number, method: string) {
+        MathError.assert(Number.isFinite(eps) && eps >= 0, `${method}: eps must be a non-negative finite number`)
+    }
+
     /** 返回数学无界区间 */
     public static infinite() {
         return new Interval(MathConst.MIN, MathConst.MAX)
@@ -20,7 +25,7 @@ export class Interval {
      * - 返回按 start 升序的新区间数组
      */
     public static merge(intervals: readonly Interval[], eps = Precision.EPS): Interval[] {
-        MathError.assert(Number.isFinite(eps) && eps >= 0, 'Interval.merge: eps must be a non-negative finite number')
+        Interval.assertValidEps(eps, 'Interval.merge')
         for (const it of intervals) {
             MathError.assert(!Number.isNaN(it.start) && !Number.isNaN(it.end), 'Interval.merge: interval endpoint must not be NaN')
         }
@@ -74,6 +79,7 @@ export class Interval {
 
     /** 点是否落在区间内（闭区间，含容差） */
     public contains(u: number, eps = Precision.EPS) {
+        Interval.assertValidEps(eps, 'Interval.contains')
         return u >= this._start - eps && u <= this._end + eps
     }
 
@@ -86,6 +92,7 @@ export class Interval {
 
     /** 区间近似相等 */
     public equals(other: Interval, eps = Precision.EPS) {
+        Interval.assertValidEps(eps, 'Interval.equals')
         return Precision.equal(this._start, other._start, eps) &&
             Precision.equal(this._end, other._end, eps)
     }
@@ -117,6 +124,7 @@ export class Interval {
      * - 端点相接返回点区间
      */
     public intersect(other: Interval, eps = Precision.EPS): Interval[] {
+        Interval.assertValidEps(eps, 'Interval.intersect')
         const s = Math.max(this._start, other._start)
         const e = Math.min(this._end, other._end)
         if (s > e + eps) return []
@@ -145,6 +153,7 @@ export class Interval {
      * - u 在区间外时返回 []
      */
     public split(u: number, eps = Precision.EPS): Interval[] {
+        Interval.assertValidEps(eps, 'Interval.split')
         if (!this.contains(u, eps)) return []
         if (Precision.equal(u, this._start, eps) || Precision.equal(u, this._end, eps)) {
             return []

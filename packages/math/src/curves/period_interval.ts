@@ -40,6 +40,7 @@ export class PeriodInterval extends Interval {
 
     /** 点是否落在周期区间内（含容差） */
     public override contains(u: number, eps = Precision.EPS) {
+        PeriodInterval.assertValidEps(eps, 'PeriodInterval.contains')
         if (this.isFull(eps)) return true
         const d = this.forwardDelta(this._start, this.normalize(u))
         return d <= this.span() + eps || this.period - d <= eps
@@ -62,6 +63,7 @@ export class PeriodInterval extends Interval {
 
     /** 周期区间近似相等 */
     public override equals(other: Interval, eps = Precision.EPS) {
+        PeriodInterval.assertValidEps(eps, 'PeriodInterval.equals')
         if (!(other instanceof PeriodInterval)) return false
         if (!Precision.equal(this.period, other.period, eps)) return false
         if (this.isFull(eps) && other.isFull(eps)) return true
@@ -74,6 +76,7 @@ export class PeriodInterval extends Interval {
      * - 结果按普通区间段返回（0~2 段）
      */
     public override intersect(other: Interval, eps = Precision.EPS): PeriodInterval[] {
+        PeriodInterval.assertValidEps(eps, 'PeriodInterval.intersect')
         if (!(other instanceof PeriodInterval)) {
             MathError.throw('PeriodInterval.intersect: other must be PeriodInterval')
         }
@@ -94,24 +97,25 @@ export class PeriodInterval extends Interval {
      * 周期并集
      * - 结果按普通区间段返回（1~2 段）
      */
-    public override union(other: Interval): PeriodInterval[] {
+    public override union(other: Interval, eps = Precision.EPS): PeriodInterval[] {
+        PeriodInterval.assertValidEps(eps, 'PeriodInterval.union')
         if (!(other instanceof PeriodInterval)) {
             MathError.throw('PeriodInterval.union: other must be PeriodInterval')
         }
-        if (!Precision.equal(this.period, other.period, Precision.EPS)) {
+        if (!Precision.equal(this.period, other.period, eps)) {
             MathError.throw('PeriodInterval.union: period mismatch')
         }
 
         const merged = Interval.merge([
             ...this.toLinearSegments(),
             ...other.toLinearSegments(),
-        ])
+        ], eps)
 
         // 首尾相连时合并为跨周期表示的一段
         if (merged.length >= 2) {
             const first = merged[0]
             const last = merged[merged.length - 1]
-            if (Precision.equal(first.start, 0, Precision.EPS) && Precision.equal(last.end, this.period, Precision.EPS)) {
+            if (Precision.equal(first.start, 0, eps) && Precision.equal(last.end, this.period, eps)) {
                 const stitched = new Interval(last.start, this.period + first.end)
                 return [stitched, ...merged.slice(1, -1)].map((seg) => new PeriodInterval(seg.start, seg.end, this.period))
             }
@@ -121,6 +125,7 @@ export class PeriodInterval extends Interval {
 
     /** 周期切分 */
     public override split(u: number, eps = Precision.EPS): PeriodInterval[] {
+        PeriodInterval.assertValidEps(eps, 'PeriodInterval.split')
         if (!this.contains(u, eps)) return []
         const d = this.forwardDelta(this._start, this.normalize(u))
         const len = this.span()

@@ -93,6 +93,10 @@ class MockCurve2 extends Curve2 {
     public override dump(): IDB {
         return { type: EN_GEO_TYPE.Vec2 }
     }
+
+    public setRangeForTest(range: Interval) {
+        this.setRange(range)
+    }
 }
 
 describe('Curve2 base methods', () => {
@@ -110,6 +114,14 @@ describe('Curve2 base methods', () => {
 
         const current = c.getRange()
         expect(current.equals(new Interval(0, 1))).toBe(true)
+    })
+
+    it('setRange stores a defensive copy', () => {
+        const c = new MockCurve2()
+        const src = new Interval(2, 3)
+        c.setRangeForTest(src)
+        src.expand(1)
+        expect(c.getRange().equals(new Interval(2, 3))).toBe(true)
     })
 
     it('derivativeAt derives from derivatives', () => {
