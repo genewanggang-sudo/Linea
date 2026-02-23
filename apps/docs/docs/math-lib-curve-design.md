@@ -176,6 +176,7 @@
 
 - 参数侧优先使用 `Precision.EPS`。
 - 距离侧优先使用 `Precision.LEN_EPS`。
+- `eps` 合法性由调用方保证（推荐 `eps >= 0`）；基类方法不做统一入参拦截。
 - 若后续发现参数语义需要独立容差，再补充 `Precision.PARAM_EPS`。
 - 当前默认值：
 - `Precision.EPS = 1e-9`（参数比较默认容差）

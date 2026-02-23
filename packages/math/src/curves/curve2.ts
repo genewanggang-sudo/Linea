@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Linea Math - Curves
  * Curve2: 二维曲线抽象基类
  */

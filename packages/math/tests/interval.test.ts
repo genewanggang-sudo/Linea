@@ -94,19 +94,6 @@ describe('Interval', () => {
         expect(Interval.merge([])).toEqual([])
     })
 
-    it('merge throws when eps is invalid', () => {
-        expect(() => Interval.merge([new Interval(0, 1)], -1)).toThrow('Interval.merge: eps must be a non-negative finite number')
-    })
-
-    it('contains/equals/intersect/split throw when eps is invalid', () => {
-        const a = new Interval(0, 1)
-        const b = new Interval(0.5, 2)
-        expect(() => a.contains(0.5, -1)).toThrow('Interval.contains: eps must be a non-negative finite number')
-        expect(() => a.equals(b, -1)).toThrow('Interval.equals: eps must be a non-negative finite number')
-        expect(() => a.intersect(b, -1)).toThrow('Interval.intersect: eps must be a non-negative finite number')
-        expect(() => a.split(0.5, -1)).toThrow('Interval.split: eps must be a non-negative finite number')
-    })
-
     it('merge throws when endpoint is NaN', () => {
         const bad = { start: Number.NaN, end: 1, clone: () => new Interval(0, 0) } as unknown as Interval
         expect(() => Interval.merge([bad])).toThrow('Interval.merge: interval endpoint must not be NaN')
