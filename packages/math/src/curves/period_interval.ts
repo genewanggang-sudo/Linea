@@ -62,7 +62,7 @@ export class PeriodInterval extends Interval {
     }
 
     /** 周期区间近似相等 */
-    public override equals(other: Interval, eps = Precision.EPS) {
+    public override equals(other: PeriodInterval, eps = Precision.EPS) {
         PeriodInterval.assertValidEps(eps, 'PeriodInterval.equals')
         if (!(other instanceof PeriodInterval)) return false
         if (!Precision.equal(this.period, other.period, eps)) return false
@@ -75,7 +75,7 @@ export class PeriodInterval extends Interval {
      * 周期交集
      * - 结果按普通区间段返回（0~2 段）
      */
-    public override intersect(other: Interval, eps = Precision.EPS): PeriodInterval[] {
+    public override intersect(other: PeriodInterval, eps = Precision.EPS): PeriodInterval[] {
         PeriodInterval.assertValidEps(eps, 'PeriodInterval.intersect')
         if (!(other instanceof PeriodInterval)) {
             MathError.throw('PeriodInterval.intersect: other must be PeriodInterval')
@@ -97,7 +97,7 @@ export class PeriodInterval extends Interval {
      * 周期并集
      * - 结果按普通区间段返回（1~2 段）
      */
-    public override union(other: Interval, eps = Precision.EPS): PeriodInterval[] {
+    public override union(other: PeriodInterval, eps = Precision.EPS): PeriodInterval[] {
         PeriodInterval.assertValidEps(eps, 'PeriodInterval.union')
         if (!(other instanceof PeriodInterval)) {
             MathError.throw('PeriodInterval.union: other must be PeriodInterval')

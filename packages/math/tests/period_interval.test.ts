@@ -82,7 +82,7 @@ describe('PeriodInterval', () => {
     it('union throws when other is not PeriodInterval', () => {
         const a = new PeriodInterval(350, 20, 360)
         const b = new Interval(0, 1)
-        expect(() => a.union(b)).toThrow('PeriodInterval.union: other must be PeriodInterval')
+        expect(() => a.union(b as unknown as PeriodInterval)).toThrow('PeriodInterval.union: other must be PeriodInterval')
     })
 
     it('union throws when period mismatches', () => {
@@ -107,7 +107,7 @@ describe('PeriodInterval', () => {
     it('intersect throws when other is not PeriodInterval', () => {
         const a = new PeriodInterval(350, 30, 360)
         const b = new Interval(0, 1)
-        expect(() => a.intersect(b)).toThrow('PeriodInterval.intersect: other must be PeriodInterval')
+        expect(() => a.intersect(b as unknown as PeriodInterval)).toThrow('PeriodInterval.intersect: other must be PeriodInterval')
     })
 
     it('intersect throws when period mismatches', () => {
