@@ -16,6 +16,10 @@ describe('Interval', () => {
         expect(r.contains(2)).toBe(true)
     })
 
+    it('throws when constructor receives NaN endpoint', () => {
+        expect(() => new Interval(Number.NaN, 1)).toThrow('Interval: start/end must not be NaN')
+    })
+
     it('contains and clamp', () => {
         const r = new Interval(1, 3)
         expect(r.contains(2)).toBe(true)
@@ -88,6 +92,15 @@ describe('Interval', () => {
 
     it('merge returns [] on empty input', () => {
         expect(Interval.merge([])).toEqual([])
+    })
+
+    it('merge throws when eps is invalid', () => {
+        expect(() => Interval.merge([new Interval(0, 1)], -1)).toThrow('Interval.merge: eps must be a non-negative finite number')
+    })
+
+    it('merge throws when endpoint is NaN', () => {
+        const bad = { start: Number.NaN, end: 1, clone: () => new Interval(0, 0) } as unknown as Interval
+        expect(() => Interval.merge([bad])).toThrow('Interval.merge: interval endpoint must not be NaN')
     })
 
     it('merge handles sorted and overlapping ranges', () => {

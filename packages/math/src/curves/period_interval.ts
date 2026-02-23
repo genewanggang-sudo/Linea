@@ -16,6 +16,7 @@ export class PeriodInterval extends Interval {
      * - 输入支持跨周期写法，如 [350, 30] (period = 360)
      */
     constructor(start = 0, end = 0, period = Math.PI * 2) {
+        MathError.assert(Number.isFinite(start) && Number.isFinite(end), 'PeriodInterval: start/end must be finite')
         MathError.assert(period > 0, 'PeriodInterval: period must be > 0')
         const canonical = PeriodInterval.canonicalize(start, end, period)
         super(canonical.start, canonical.end)

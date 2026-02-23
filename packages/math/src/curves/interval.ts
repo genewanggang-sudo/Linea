@@ -20,6 +20,10 @@ export class Interval {
      * - 返回按 start 升序的新区间数组
      */
     public static merge(intervals: readonly Interval[], eps = Precision.EPS): Interval[] {
+        MathError.assert(Number.isFinite(eps) && eps >= 0, 'Interval.merge: eps must be a non-negative finite number')
+        for (const it of intervals) {
+            MathError.assert(!Number.isNaN(it.start) && !Number.isNaN(it.end), 'Interval.merge: interval endpoint must not be NaN')
+        }
         if (intervals.length === 0) return []
 
         const sorted = [...intervals].sort((a, b) => a.start - b.start)
@@ -47,6 +51,7 @@ export class Interval {
      * - 若 start > end，会自动交换为有序区间
      */
     constructor(start = 0, end = 0) {
+        MathError.assert(!Number.isNaN(start) && !Number.isNaN(end), 'Interval: start/end must not be NaN')
         this._start = start
         this._end = end
         this.sortRange()

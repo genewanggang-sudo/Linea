@@ -4,6 +4,11 @@ import { Interval } from '../src/curves/interval'
 import { PeriodInterval } from '../src/curves/period_interval'
 
 describe('PeriodInterval', () => {
+    it('throws when constructor receives non-finite endpoint', () => {
+        expect(() => new PeriodInterval(Number.POSITIVE_INFINITY, 1, 360))
+            .toThrow('PeriodInterval: start/end must be finite')
+    })
+
     it('normalizes cross-period constructor input', () => {
         const r = new PeriodInterval(350, 30, 360)
         expect(r.start).toBe(350)
