@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Linea Math - Curves
  * PeriodInterval: 周期参数区间
  */
@@ -13,7 +13,7 @@ export class PeriodInterval extends Interval {
 
     /**
      * 创建周期区间
-     * - 输入支持跨周期写法，如 [350, 30] (period = 360)
+     * - 输入支持跨周期写法，例如 [350, 30] (period = 360)
      */
     constructor(start = 0, end = 0, period = Math.PI * 2) {
         MathError.assert(Number.isFinite(start) && Number.isFinite(end), 'PeriodInterval: start/end must be finite')
@@ -23,7 +23,7 @@ export class PeriodInterval extends Interval {
         this.period = period
     }
 
-    /** 归一化参数到 [0, period) */
+    /** 参数归一化到 [0, period) */
     public normalize(u: number) {
         return PeriodInterval.mod(u, this.period)
     }
@@ -40,15 +40,14 @@ export class PeriodInterval extends Interval {
 
     /** 点是否落在周期区间内（含容差） */
     public override contains(u: number, eps = Precision.EPS) {
-        PeriodInterval.assertValidEps(eps, 'PeriodInterval.contains')
         if (this.isFull(eps)) return true
         const d = this.forwardDelta(this._start, this.normalize(u))
         return d <= this.span() + eps || this.period - d <= eps
     }
 
     /**
-     * 把参数限制在区间内
-     * - 若已在区间内，返回归一化值
+     * 将参数限制到区间内
+     * - 若已在区间内，返回归一化参数
      * - 否则返回最近边界点
      */
     public override clamp(u: number) {
@@ -63,8 +62,6 @@ export class PeriodInterval extends Interval {
 
     /** 周期区间近似相等 */
     public override equals(other: PeriodInterval, eps = Precision.EPS) {
-        PeriodInterval.assertValidEps(eps, 'PeriodInterval.equals')
-        if (!(other instanceof PeriodInterval)) return false
         if (!Precision.equal(this.period, other.period, eps)) return false
         if (this.isFull(eps) && other.isFull(eps)) return true
         return Precision.equal(this._start, other._start, eps) &&
@@ -76,10 +73,6 @@ export class PeriodInterval extends Interval {
      * - 结果按普通区间段返回（0~2 段）
      */
     public override intersect(other: PeriodInterval, eps = Precision.EPS): PeriodInterval[] {
-        PeriodInterval.assertValidEps(eps, 'PeriodInterval.intersect')
-        if (!(other instanceof PeriodInterval)) {
-            MathError.throw('PeriodInterval.intersect: other must be PeriodInterval')
-        }
         if (!Precision.equal(this.period, other.period, eps)) {
             MathError.throw('PeriodInterval.intersect: period mismatch')
         }
@@ -98,10 +91,6 @@ export class PeriodInterval extends Interval {
      * - 结果按普通区间段返回（1~2 段）
      */
     public override union(other: PeriodInterval, eps = Precision.EPS): PeriodInterval[] {
-        PeriodInterval.assertValidEps(eps, 'PeriodInterval.union')
-        if (!(other instanceof PeriodInterval)) {
-            MathError.throw('PeriodInterval.union: other must be PeriodInterval')
-        }
         if (!Precision.equal(this.period, other.period, eps)) {
             MathError.throw('PeriodInterval.union: period mismatch')
         }
@@ -111,7 +100,6 @@ export class PeriodInterval extends Interval {
             ...other.toLinearSegments(),
         ], eps)
 
-        // 首尾相连时合并为跨周期表示的一段
         if (merged.length >= 2) {
             const first = merged[0]
             const last = merged[merged.length - 1]
@@ -125,7 +113,6 @@ export class PeriodInterval extends Interval {
 
     /** 周期切分 */
     public override split(u: number, eps = Precision.EPS): PeriodInterval[] {
-        PeriodInterval.assertValidEps(eps, 'PeriodInterval.split')
         if (!this.contains(u, eps)) return []
         const d = this.forwardDelta(this._start, this.normalize(u))
         const len = this.span()
@@ -159,7 +146,7 @@ export class PeriodInterval extends Interval {
         return Math.min(d, this.period - d)
     }
 
-    /** a 到 b 的正方向差值 */
+    /** 从 a 到 b 的正方向差值 */
     private forwardDelta(a: number, b: number) {
         return PeriodInterval.mod(b - a, this.period)
     }
@@ -196,5 +183,4 @@ export class PeriodInterval extends Interval {
         const r = x % m
         return r < 0 ? r + m : r
     }
-
 }

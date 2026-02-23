@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 
-import { Interval } from '../src/curves/interval'
 import { PeriodInterval } from '../src/curves/period_interval'
 
 describe('PeriodInterval', () => {
@@ -79,12 +78,6 @@ describe('PeriodInterval', () => {
         expect(r.length()).toBe(40)
     })
 
-    it('union throws when other is not PeriodInterval', () => {
-        const a = new PeriodInterval(350, 20, 360)
-        const b = new Interval(0, 1)
-        expect(() => a.union(b as unknown as PeriodInterval)).toThrow('PeriodInterval.union: other must be PeriodInterval')
-    })
-
     it('union throws when period mismatches', () => {
         const a = new PeriodInterval(350, 20, 360)
         const b = new PeriodInterval(40, 80, 180)
@@ -98,31 +91,10 @@ describe('PeriodInterval', () => {
         expect(() => a.union(b, 1e-9)).not.toThrow()
     })
 
-    it('union throws when eps is invalid', () => {
-        const a = new PeriodInterval(350, 20, 360)
-        const b = new PeriodInterval(40, 80, 360)
-        expect(() => a.union(b, -1)).toThrow('PeriodInterval.union: eps must be a non-negative finite number')
-    })
-
-    it('intersect throws when other is not PeriodInterval', () => {
-        const a = new PeriodInterval(350, 30, 360)
-        const b = new Interval(0, 1)
-        expect(() => a.intersect(b as unknown as PeriodInterval)).toThrow('PeriodInterval.intersect: other must be PeriodInterval')
-    })
-
     it('intersect throws when period mismatches', () => {
         const a = new PeriodInterval(350, 30, 360)
         const b = new PeriodInterval(20, 80, 180)
         expect(() => a.intersect(b)).toThrow('PeriodInterval.intersect: period mismatch')
-    })
-
-    it('contains/equals/intersect/split throw when eps is invalid', () => {
-        const a = new PeriodInterval(350, 30, 360)
-        const b = new PeriodInterval(20, 80, 360)
-        expect(() => a.contains(10, -1)).toThrow('PeriodInterval.contains: eps must be a non-negative finite number')
-        expect(() => a.equals(b, -1)).toThrow('PeriodInterval.equals: eps must be a non-negative finite number')
-        expect(() => a.intersect(b, -1)).toThrow('PeriodInterval.intersect: eps must be a non-negative finite number')
-        expect(() => a.split(10, -1)).toThrow('PeriodInterval.split: eps must be a non-negative finite number')
     })
 
 })

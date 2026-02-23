@@ -97,7 +97,7 @@
 - `length()` 表示沿正方向从 `start` 到 `end` 的弧长。
 - `intersect` 返回 `PeriodInterval[]`，内部可拆为线性区间计算后再包装回周期区间。
 - `union` 返回 `PeriodInterval[]`，允许返回多段结果（通常为 1 段，跨周期离散场景可为 2 段）。
-- `equals/intersect/union` 输入类型均为 `PeriodInterval`；运行时若传入非同类或不同周期仍抛 `MathError`（或返回 `false`）。
+- `equals/intersect/union` 输入类型均为 `PeriodInterval`；`period mismatch` 属于硬约束（返回 `false` 或抛 `MathError`）。
 - 线性段归并统一复用 `Interval.merge(...)`，不在 `PeriodInterval` 内重复维护归并算法。
 - 跨周期区间采用“展开区间”表示与计算思路：
 - 示例：`[350, 30]` 视作 `[350, 390]`（`period = 360`）。
