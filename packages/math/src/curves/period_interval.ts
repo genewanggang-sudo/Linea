@@ -35,6 +35,16 @@ export class PeriodInterval extends Interval {
     }
 
     /**
+     * 将参数归一化到指定周期窗口 `[start, start + period)`。
+     * @param u 待归一化参数。
+     * @param start 周期窗口起点，默认当前区间起点。
+     * @returns 与 `u` 周期等价，且落在窗口内的参数。
+     */
+    public normalizeInPeriod(u: number, start = this.start) {
+        return start + PeriodInterval.mod(u - start, this.period)
+    }
+
+    /**
      * 区间整体平移（按周期等价）。
      * @param offset 平移量。
      * @returns 平移后的新区间实例。

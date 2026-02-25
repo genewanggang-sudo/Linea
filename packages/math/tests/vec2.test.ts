@@ -37,6 +37,8 @@ describe('Vec2', () => {
         expect(v.withX(9).y).toBe(2)
         expect(v.withY(7).x).toBe(1)
         expect(v.withY(7).y).toBe(7)
+
+        expect(v.clone().setX(8).setY(6).equals(new Vec2(8, 6))).toBe(true)
     })
 
     it('add/subtract/scale (ed 返回新对象)', () => {
@@ -75,6 +77,10 @@ describe('Vec2', () => {
         const v = new Vec2(3, 4)
         v.setLength(10)
         expect(v.len()).toBeCloseTo(10, 12)
+        expect(v.setLengthed(5).len()).toBeCloseTo(5, 12)
+
+        const z = Vec2.zero().setLength(3)
+        expect(z.equals(Vec2.zero())).toBe(true)
     })
 
     it('normalize on near-zero vector returns zero', () => {
@@ -119,6 +125,7 @@ describe('Vec2', () => {
         a.negate()
         expect(a.x).toBe(-3)
         expect(a.y).toBe(4)
+        expect(a.negated().equals(new Vec2(3, -4))).toBe(true)
 
         const b = new Vec2(6, 0)
         expect(a.distanceToSq(b)).toBe(97)

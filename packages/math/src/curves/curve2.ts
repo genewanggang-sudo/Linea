@@ -183,4 +183,151 @@ export abstract class Curve2 extends GeomBase {
         this._range = range.clone()
         return this
     }
+
+    /**
+     * Newton + 二分混合求解参数（常用于弧长反参）。
+     * @param target 目标值（如目标弧长）。
+     * @param start 参数下界。
+     * @param end 参数上界。
+     * @param tol 收敛容差。
+     * @param evalValue 参数到目标量的映射函数（要求在 [start, end] 上单调）。
+     * @param evalSlope 参数处导数量（如速度），用于 Newton 步。
+     * @param failMessage 未收敛时抛错信息。
+     * @param initialGuess 可选初值；不传时取区间中点。
+     * @returns 收敛后的参数。
+     */
+    protected solveParamByHybridNewton(
+        target: number,
+        start: number,
+        end: number,
+        tol: number,
+        evalValue: (u: number) => number,
+        evalSlope: (u: number) => number,
+        failMessage: string,
+        initialGuess?: number,
+    ) {
+        MathError.assert(Number.isFinite(start) && Number.isFinite(end) && end > start, 'Curve2.solveParamByHybridNewton: invalid range')
+        MathError.assert(Number.isFinite(tol) && tol > 0, 'Curve2.solveParamByHybridNewton: tol must be > 0')
+        // lo/hi 始终包住当前根，Newton 出界时回退到二分保证收敛性。
+        let lo = start
+        let hi = end
+        let u = initialGuess ?? ((lo + hi) * 0.5)
+        if (!Number.isFinite(u) || u <= lo || u >= hi) {
+            u = (lo + hi) * 0.5
+        }
+
+        for (let i = 0; i < Precision.CURVE_MAX_ITER; i++) {
+            const value = evalValue(u)
+            const f = value - target
+            if (Math.abs(f) <= tol) return u
+
+            const slope = evalSlope(u)
+            let next = Number.NaN
+            if (Math.abs(slope) > Precision.CURVE_NEWTON_EPS) {
+                next = u - f / slope
+            }
+
+            // Newton 步越界或数值异常时，退回二分步，避免振荡/发散。
+            if (!Number.isFinite(next) || next <= lo || next >= hi) {
+                next = (lo + hi) * 0.5
+            }
+
+            if (f > 0) {
+                hi = u
+            } else {
+                lo = u
+            }
+            u = next
+        }
+
+        MathError.throw(failMessage)
+    }
+
+    /**
+     * “采样粗定位 + Newton 细化”最近点求解通用流程。
+     * @param p 查询点。
+     * @param tol 收敛容差。
+     * @param sampleCount 初始采样数（含两端点）。
+     * @param evalPoint 参数求点函数。
+     * @param evalD1 一阶导函数。
+     * @param evalD2 二阶导函数。
+     * @param failMessage 未收敛时抛错信息。
+     * @param compareParam 参数平局比较器（返回 <0 表示 a 更优）。
+     * @returns 最近点结果。
+     */
+    protected solveClosestPointBySampleNewton(
+        p: Vec2,
+        tol: number,
+        sampleCount: number,
+        evalPoint: (u: number) => Vec2,
+        evalD1: (u: number) => Vec2,
+        evalD2: (u: number) => Vec2,
+        failMessage: string,
+        compareParam: (a: number, b: number) => number = (a, b) => a - b,
+    ): IClosestPointResult {
+        MathError.assert(Number.isFinite(tol) && tol > 0, 'Curve2.solveClosestPointBySampleNewton: tol must be > 0')
+        MathError.assert(Number.isInteger(sampleCount) && sampleCount > 0, 'Curve2.solveClosestPointBySampleNewton: sampleCount must be a positive integer')
+        const start = this._range.start
+        const span = this._range.length()
+        // 零跨度参数域直接退化为单点评估。
+        if (span <= Precision.CURVE_PARAM_EPS) {
+            const point = evalPoint(start)
+            return { point, param: start, distance: point.distanceTo(p) }
+        }
+
+        // 第 1 阶段：均匀采样找一个稳定的初始参数。
+        let bestU = start
+        let bestDistSq = Number.POSITIVE_INFINITY
+        for (let i = 0; i <= sampleCount; i++) {
+            const u = start + (span * i) / sampleCount
+            const q = evalPoint(u)
+            const d2 = q.distanceToSq(p)
+            if (d2 < bestDistSq - tol * tol) {
+                bestDistSq = d2
+                bestU = u
+                continue
+            }
+            if (Math.abs(d2 - bestDistSq) <= tol * tol && compareParam(u, bestU) < 0) {
+                bestU = u
+            }
+        }
+
+        // 第 2 阶段：在采样命中的局部窗口做 Newton 迭代。
+        const step = span / sampleCount
+        let lo = Math.max(start, bestU - step)
+        let hi = Math.min(start + span, bestU + step)
+        let u = bestU
+
+        for (let i = 0; i < Precision.CURVE_MAX_ITER; i++) {
+            const c = evalPoint(u)
+            const d1 = evalD1(u)
+            const d2 = evalD2(u)
+            const cp = c.subtracted(p)
+
+            const f = cp.dot(d1)
+            if (Math.abs(f) <= tol) {
+                return { point: c, param: u, distance: c.distanceTo(p) }
+            }
+
+            const fp = d1.dot(d1) + cp.dot(d2)
+            let next = Number.NaN
+            if (Math.abs(fp) > Precision.CURVE_NEWTON_EPS) {
+                next = u - f / fp
+            }
+
+            // Newton 失效时回退二分，保持区间收缩。
+            if (!Number.isFinite(next) || next <= lo || next >= hi) {
+                next = (lo + hi) * 0.5
+            }
+
+            if (f > 0) {
+                hi = u
+            } else {
+                lo = u
+            }
+            u = next
+        }
+
+        MathError.throw(failMessage)
+    }
 }
