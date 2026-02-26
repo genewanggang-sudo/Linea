@@ -10,6 +10,7 @@ import type { IDBCoord2D } from '../serialize/dump_types'
 import { Vec2 } from './vec2'
 import { Mat3 } from './mat3'
 import { Precision } from '../utils/precision'
+import { MathError } from '../utils/math_error'
 
 @RegisterGeom
 export class Coord2D extends GeomBase {
@@ -106,7 +107,7 @@ export class Coord2D extends GeomBase {
         const dy = p.y - this._origin.y
         const det = this._xAxis.cross(this._yAxis)
         if (Math.abs(det) <= eps) {
-            throw new Error('Coord2D.toLocal: basis is degenerate')
+            MathError.throw('Coord2D.toLocal: basis is degenerate')
         }
         const invDet = 1 / det
         const x = (dx * this._yAxis.y - dy * this._yAxis.x) * invDet

@@ -5,6 +5,22 @@ import { Vec2 } from '../src/core/vec2'
 import { Mat3 } from '../src/core/mat3'
 
 describe('Box2', () => {
+    it('constructor overloads', () => {
+        const fromNums = new Box2(0, 1, 2, 3)
+        expect(fromNums.minX).toBe(0)
+        expect(fromNums.maxY).toBe(3)
+
+        const fromVec2 = new Box2(new Vec2(-1, -2), new Vec2(4, 5))
+        expect(fromVec2.minX).toBe(-1)
+        expect(fromVec2.maxY).toBe(5)
+
+        const fromBox = new Box2(fromVec2)
+        expect(fromBox.equals(fromVec2)).toBe(true)
+
+        const fromArray = new Box2([new Vec2(0, 0), new Vec2(2, 3)])
+        expect(fromArray.equals(new Box2(0, 0, 2, 3))).toBe(true)
+    })
+
     it('默认创建为空盒', () => {
         const b = new Box2()
         expect(b.isEmpty()).toBe(true)
@@ -34,18 +50,24 @@ describe('Box2', () => {
         const b = new Box2(2, 2, 4, 4)
         const c = new Box2(9, 9, 12, 12)
         const d = new Box2(20, 20, 30, 30)
+        const empty = Box2.empty()
 
         expect(a.containsBox(b)).toBe(true)
+        expect(a.containsBox(empty)).toBe(false)
+        expect(empty.containsPoint(new Vec2(0, 0))).toBe(false)
         expect(a.containsPoint(new Vec2(5, 5))).toBe(true)
         expect(a.containsPoint(new Vec2(15, 5))).toBe(false)
         expect(a.intersects(c)).toBe(true)
         expect(a.intersects(d)).toBe(false)
+        expect(a.intersects(empty)).toBe(false)
 
         const u = a.union(d)
         expect(u.minX).toBe(0)
         expect(u.minY).toBe(0)
         expect(u.maxX).toBe(30)
         expect(u.maxY).toBe(30)
+        expect(a.union(empty).equals(a)).toBe(true)
+        expect(empty.union(a).equals(a)).toBe(true)
     })
 
     it('expand/translate/size/center', () => {
@@ -74,6 +96,14 @@ describe('Box2', () => {
         const center = t.center()
         expect(center.x).toBe(4)
         expect(center.y).toBe(-1)
+
+        expect(e.expandByScalar(2).isEmpty()).toBe(true)
+        expect(e.translate(1, 1).isEmpty()).toBe(true)
+        expect(e.center().equals(Vec2.zero())).toBe(true)
+
+        const q = new Box2(0, 0, 1, 1).expandByPoint(new Vec2(2, -3))
+        expect(q.minY).toBe(-3)
+        expect(q.maxX).toBe(2)
     })
 
     it('equals/isFinite/clone', () => {
@@ -112,6 +142,10 @@ describe('Box2', () => {
         expect(t2.minY).toBe(-1)
         expect(t2.maxX).toBe(5)
         expect(t2.maxY).toBe(3)
+
+        const empty = Box2.empty()
+        expect(empty.transform(Mat3.translation(1, 2)).isEmpty()).toBe(true)
+        expect(empty.transformed(Mat3.translation(1, 2)).isEmpty()).toBe(true)
     })
 
     it('distanceToPoint/clampPoint', () => {
@@ -119,13 +153,17 @@ describe('Box2', () => {
         const p1 = new Vec2(5, 5)
         const p2 = new Vec2(15, 5)
         const p3 = new Vec2(-3, -4)
+        const p4 = new Vec2(5, 15)
 
         expect(b.distanceToPoint(p1)).toBe(0)
         expect(b.distanceToPoint(p2)).toBe(5)
         expect(b.distanceToPoint(p3)).toBe(5)
+        expect(b.distanceToPoint(p4)).toBe(5)
 
         const c1 = b.clampPoint(p2)
         expect(c1.equals(new Vec2(10, 5))).toBe(true)
+        expect(Box2.empty().distanceToPoint(new Vec2(1, 1))).toBe(Infinity)
+        expect(Box2.empty().clampPoint(new Vec2(1, 1)).equals(new Vec2(1, 1))).toBe(true)
     })
 
     it('intersect', () => {
@@ -141,5 +179,13 @@ describe('Box2', () => {
 
         const ac = a.intersect(c)
         expect(ac.isEmpty()).toBe(true)
+        expect(Box2.empty().intersect(a).isEmpty()).toBe(true)
+    })
+
+    it('equals empty/non-empty branches', () => {
+        const e = Box2.empty()
+        const a = new Box2(0, 0, 1, 1)
+        expect(e.equals(Box2.empty())).toBe(true)
+        expect(e.equals(a)).toBe(false)
     })
 })

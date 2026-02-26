@@ -1,11 +1,11 @@
-﻿/*
+/*
  * Linea Math - Utils
  * MathError: 统一异常处理入口
  *
  * 用法示例：
- * - MathError.throw('param out of range')
- * - MathError.assert(radius > 0, 'radius must be positive')
- * - MathError.warn('numeric not converged')
+ * - MathError.throw('参数超出范围')
+ * - MathError.assert(radius > 0, '半径必须为正')
+ * - MathError.warn('数值迭代未收敛')
  */
 
 export class MathError extends Error {
@@ -24,7 +24,7 @@ export class MathError extends Error {
     /**
      * 条件不满足时抛出 MathError，用于参数校验或逻辑保护
      */
-    public static assert(condition: boolean, message: string): void {
+    public static assert(condition: unknown, message: string): asserts condition {
         if (!condition) {
             MathError.throw(message)
         }

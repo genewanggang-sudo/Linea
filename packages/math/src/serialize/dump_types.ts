@@ -1,6 +1,6 @@
-﻿/*
+/*
  * Linea Math - Serialize
- * 统一序列化数据结构定义
+ * 序列化结构类型定义
  */
 
 import { EN_GEO_TYPE } from '../constants/geom_type'
@@ -34,4 +34,53 @@ export type IDBCoord2D = IDB & {
     origin: { x: number; y: number }
     xAxis: { x: number; y: number }
     yAxis: { x: number; y: number }
+}
+
+export type IDBLine2 = IDB & {
+    type: EN_GEO_TYPE.Line2
+    start: { x: number; y: number }
+    end: { x: number; y: number }
+}
+
+export type IDBCircle2 = IDB & {
+    type: EN_GEO_TYPE.Circle2
+    center: { x: number; y: number }
+    radius: number
+}
+
+export type IDBArc2 = IDB & {
+    type: EN_GEO_TYPE.Arc2
+    center: { x: number; y: number }
+    radius: number
+    startAngle: number
+    endAngle: number
+    clockwise: boolean
+}
+
+export type IDBEllipse2 = IDB & {
+    type: EN_GEO_TYPE.Ellipse2
+    center: { x: number; y: number }
+    rx: number
+    ry: number
+    rotation: number
+}
+
+export type IDBEllipseArc2 = IDB & {
+    type: EN_GEO_TYPE.EllipseArc2
+    center: { x: number; y: number }
+    rx: number
+    ry: number
+    rotation: number
+    startAngle: number
+    endAngle: number
+    clockwise: boolean
+}
+
+export type IDBBSpline2 = IDB & {
+    type: EN_GEO_TYPE.BSpline2
+    controlPoints: Array<{ x: number; y: number }>
+    degree: number
+    expandedKnots: number[]
+    weights?: number[]
+    isPeriodic?: boolean
 }

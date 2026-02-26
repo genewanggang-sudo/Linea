@@ -29,6 +29,15 @@ describe('Interval', () => {
         expect(r.clamp(4)).toBe(3)
     })
 
+    it('assertContains and assertContainsRange', () => {
+        const r = new Interval(1, 3)
+        expect(() => r.assertContains(2)).not.toThrow()
+        expect(() => r.assertContains(10)).toThrow('Interval.assertContains: parameter out of range')
+
+        expect(() => r.assertContainsRange(new Interval(1.2, 2.8))).not.toThrow()
+        expect(() => r.assertContainsRange(new Interval(0, 2))).toThrow('Interval.assertContainsRange: range out of bounds')
+    })
+
     it('expand and expanded', () => {
         const r = new Interval(2, 4)
         const e = r.expanded(1)

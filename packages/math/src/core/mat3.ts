@@ -11,6 +11,7 @@ import { Vec2 } from './vec2'
 import type { Num3x3 } from '../types/type_guard'
 import type { IMat3 } from '../types/type_define'
 import { Precision } from '../utils/precision'
+import { MathError } from '../utils/math_error'
 
 @RegisterGeom
 export class Mat3 extends GeomBase implements IMat3 {
@@ -221,7 +222,7 @@ export class Mat3 extends GeomBase implements IMat3 {
     public invert(eps = Precision.LEN_EPS) {
         const det = this.determinant()
         if (Math.abs(det) <= eps) {
-            throw new Error('Mat3.invert: matrix is not invertible')
+            MathError.throw('Mat3.invert: matrix is not invertible')
         }
         const a = this.at(0, 0), b = this.at(0, 1), c = this.at(0, 2)
         const d = this.at(1, 0), e = this.at(1, 1), f = this.at(1, 2)
@@ -300,6 +301,45 @@ export class Mat3 extends GeomBase implements IMat3 {
             rotation,
             scale: new Vec2(sx, sy),
         }
+    }
+
+    /**
+     * 判断矩阵是否为二维相似变换。
+     * 对线性部分 A 的要求：
+     * - 在容差内满足 A^T A = s^2 I
+     * - s > 0
+     * 允许镜像（det(A) < 0）。
+     */
+    public isSimilarity2D(eps = Precision.CURVE_PARAM_EPS) {
+        const e = this.toArray()
+        if (!Precision.nearlyZero(e[6], eps) || !Precision.nearlyZero(e[7], eps) || !Precision.equal(e[8], 1, eps)) {
+            return false
+        }
+
+        const a = e[0]
+        const b = e[1]
+        const c = e[3]
+        const d = e[4]
+
+        const col0Sq = a * a + c * c
+        const col1Sq = b * b + d * d
+        const colDot = a * b + c * d
+
+        if (col0Sq <= eps * eps || col1Sq <= eps * eps) return false
+        if (!Precision.nearlyZero(colDot, eps)) return false
+        return Precision.equal(col0Sq, col1Sq, eps)
+    }
+
+    /**
+     * 返回二维相似变换的统一缩放系数。
+     * 若矩阵不是二维相似变换则抛错。
+     */
+    public getSimilarityScale2D(eps = Precision.CURVE_PARAM_EPS) {
+        MathError.assert(this.isSimilarity2D(eps), 'Mat3.getSimilarityScale2D: matrix is not a 2D similarity transform')
+        const e = this.toArray()
+        const col0Sq = e[0] * e[0] + e[3] * e[3]
+        const col1Sq = e[1] * e[1] + e[4] * e[4]
+        return Math.sqrt((col0Sq + col1Sq) * 0.5)
     }
 
     /** 序列化为结构对象 */

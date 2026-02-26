@@ -7,3 +7,4 @@ pnpm-debug.log
 **/.vitepress/dist
 **/.vitepress/.temp
 **/dist
+**/coverage

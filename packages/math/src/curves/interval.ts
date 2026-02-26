@@ -89,6 +89,33 @@ export class Interval {
     }
 
     /**
+     * 断言参数在区间内。
+     * @param u 待校验参数。
+     * @param eps 区间边界比较容差。
+     * @returns 当前区间实例。
+     * @throws MathError 参数不在区间内时抛错。
+     */
+    public assertContains(u: number, eps = Precision.EPS) {
+        MathError.assert(this.contains(u, eps), 'Interval.assertContains: parameter out of range')
+        return this
+    }
+
+    /**
+     * 断言子区间完整落在当前区间内。
+     * @param range 待校验子区间。
+     * @param eps 区间边界比较容差。
+     * @returns 当前区间实例。
+     * @throws MathError 子区间超出当前区间时抛错。
+     */
+    public assertContainsRange(range: Interval, eps = Precision.EPS) {
+        MathError.assert(
+            this.contains(range.start, eps) && this.contains(range.end, eps),
+            'Interval.assertContainsRange: range out of bounds',
+        )
+        return this
+    }
+
+    /**
      * 将参数钳制到区间范围内。
      * @param u 输入参数。
      * @returns 小于起点返回 `start`，大于终点返回 `end`，否则返回自身。
