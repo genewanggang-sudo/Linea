@@ -88,6 +88,10 @@ export class Ellipse2 extends EllipseCurve2 {
         return this.isEllipseStructValid(eps)
     }
 
+    public override isClosed(): boolean {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比椭圆。

@@ -121,6 +121,10 @@ export class Circle2 extends CircleCurve2 {
         return this.isCircleStructValid(eps)
     }
 
+    public override isClosed(): boolean {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比圆。

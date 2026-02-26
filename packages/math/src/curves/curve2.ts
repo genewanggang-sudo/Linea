@@ -10,6 +10,8 @@ import { Vec2 } from '../core/vec2'
 import { MathError } from '../utils/math_error'
 import { Precision } from '../utils/precision'
 import type { IClosestPointResult } from '../types/type_define'
+import { DiscretizeEngine } from '../discretize/discretize_engine'
+import { DiscretizeOptions } from '../discretize/discretize_options'
 import { Interval } from './interval'
 
 export abstract class Curve2 extends GeomBase {
@@ -136,6 +138,22 @@ export abstract class Curve2 extends GeomBase {
     public abstract isValid(eps?: number): boolean
 
     /**
+     * 是否为退化曲线。
+     * 默认规则：参数域过小或曲线长度过小。
+     */
+    public isDegenerate(): boolean {
+        return this._range.length() <= Precision.CURVE_PARAM_EPS || this.length() <= Precision.CURVE_LENGTH_EPS
+    }
+
+    /**
+     * 是否为闭合曲线。
+     * 默认返回 `false`，由闭合曲线子类覆盖。
+     */
+    public isClosed(): boolean {
+        return false
+    }
+
+    /**
      * 克隆曲线。
      * @returns 当前曲线的深拷贝对象。
      */
@@ -172,6 +190,15 @@ export abstract class Curve2 extends GeomBase {
      */
     public distanceToPoint(p: Vec2, tol = Precision.LEN_EPS) {
         return this.closestPoint(p, tol).distance
+    }
+
+    /**
+     * 曲线离散化便捷入口（薄封装）。
+     * @param options 离散参数。
+     * @returns 折线采样结果。
+     */
+    public discretize(options?: DiscretizeOptions): Vec2[] {
+        return DiscretizeEngine.discretize(this, options)
     }
 
     /**

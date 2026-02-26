@@ -23,6 +23,9 @@ export { Precision } from './utils/precision'
 export { MathUtils } from './utils/math_utils'
 export { MathError } from './utils/math_error'
 
+export { DiscretizeEngine } from './discretize/discretize_engine'
+export { DiscretizeOptions } from './discretize/discretize_options'
+
 export { GeomMgr, geomMgr, RegisterGeom } from './serialize/geom_mgr'
 export type { IDumpable, ILoadable } from './serialize/geom_mgr'
 export type {

@@ -4,7 +4,7 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Ctor = abstract new (...args: any[]) => unknown
+export type Ctor<T = unknown> = abstract new (...args: any[]) => T
 
 /** 2D 向量元组 */
 export type Num2 = readonly [number, number]

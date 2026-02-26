@@ -34,9 +34,28 @@ export type IBSpline2Options = {
 export class BSpline2 extends Curve2 {
     public static readonly type = EN_GEO_TYPE.BSpline2
 
+    /**
+     * 控制点序列（内部存储）。
+     * 约定：始终为深拷贝后的可变数组，不直接暴露引用给外部。
+     */
     private _controlPoints: Vec2[]
+
+    /**
+     * 样条次数（degree）。
+     * 约束：构造后保持 >= 1，且与控制点数量/节点向量长度匹配。
+     */
     private _degree: number
+
+    /**
+     * 权重序列（与控制点一一对应）。
+     * 约定：长度始终等于控制点数量；未传入时按全 1 处理。
+     */
     private _weights: number[]
+
+    /**
+     * 展开后的节点向量（expanded knot vector）。
+     * 约定：非递减；长度始终满足 n + p + 2（n 为控制点末索引，p 为次数）。
+     */
     private _knots: number[]
 
     /**
@@ -83,6 +102,28 @@ export class BSpline2 extends Curve2 {
     /** 权重数组（返回副本） */
     public get weights() {
         return [...this._weights]
+    }
+
+    /**
+     * 获取参数域内部的连续性断点参数。
+     * 当 knot 重数 >= degree 时，可视为连续性下降断点。
+     */
+    public getContinuityBreakParams(eps = Precision.CURVE_PARAM_EPS): number[] {
+        const breaks: number[] = []
+        const range = this._range
+        for (let i = 0; i < this._knots.length;) {
+            const knot = this._knots[i]
+            let multiplicity = 1
+            i++
+            while (i < this._knots.length && Math.abs(this._knots[i] - knot) <= eps) {
+                multiplicity++
+                i++
+            }
+            if (multiplicity >= this._degree && knot > range.start + eps && knot < range.end - eps) {
+                breaks.push(knot)
+            }
+        }
+        return breaks
     }
 
     public override pointAt(u: number) {

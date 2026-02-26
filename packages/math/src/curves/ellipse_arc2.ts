@@ -116,6 +116,10 @@ export class EllipseArc2 extends EllipseCurve2 {
         return this.isEllipseStructValid(eps) && this._range.length() >= 0 && this._range.length() <= MathConst.PI2 + Precision.CURVE_PARAM_EPS
     }
 
+    public override isClosed(): boolean {
+        return Precision.equal(this._range.length(), MathConst.PI2, Precision.CURVE_PARAM_EPS)
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比椭圆弧。
