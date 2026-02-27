@@ -1,21 +1,13 @@
-import type { Vec2 } from '../core/vec2'
-import { Arc2 } from '../curves/arc2'
-import { BSpline2 } from '../curves/bspline2'
-import { Circle2 } from '../curves/circle2'
+﻿import type { Vec2 } from '../core/vec2'
+import type { Arc2 } from '../curves/arc2'
+import type { BSpline2 } from '../curves/bspline2'
+import type { Circle2 } from '../curves/circle2'
 import type { Curve2 } from '../curves/curve2'
-import { Ellipse2 } from '../curves/ellipse2'
-import { EllipseArc2 } from '../curves/ellipse_arc2'
-import { Line2 } from '../curves/line2'
 import { MathError } from '../utils/math_error'
 import { MathUtils } from '../utils/math_utils'
 import { Precision } from '../utils/precision'
 import { DiscretizeOptions } from './discretize_options'
 
-/**
- * 自适应细分过程中的参数段。
- * - `u0/u1`：段两端参数
- * - `p0/p1`：段两端点坐标缓存
- */
 type AdaptiveSegment = {
     u0: number
     u1: number
@@ -23,25 +15,16 @@ type AdaptiveSegment = {
     p1: Vec2
 }
 
-/**
- * 采样点（内部格式）。
- * - `u`：采样参数
- * - `p`：采样点坐标
- */
 type PolylineSample = {
     u: number
     p: Vec2
 }
 
-/**
- * 细分判定结果。
- * - `split`：是否继续细分当前段
- * - `blocked`：是否因数值退化导致无法继续细分
- */
 type SplitDecision = {
     split: boolean
     blocked: boolean
 }
+
 
 export class DiscretizeEngine {
     private constructor() { }
@@ -57,14 +40,17 @@ export class DiscretizeEngine {
     }
 
     private static dispatch(curve: Curve2, options: DiscretizeOptions): PolylineSample[] {
-        if (curve.isType(Line2)) return this.discretizeLineCurve(curve)
-        if (curve.isType(Circle2) || curve.isType(Arc2)) {
+        if (curve.isLine()) return this.discretizeLineCurve(curve)
+
+        if (curve.isCircle() || curve.isArc()) {
             return this.discretizeCircleLikeCurve(curve, options)
         }
-        if (curve.isType(Ellipse2) || curve.isType(EllipseArc2)) {
+
+        if (curve.isEllipse() || curve.isEllipseArc()) {
             return this.discretizeEllipseLikeCurve(curve, options)
         }
-        if (curve.isType(BSpline2)) {
+
+        if (curve.isBSpline()) {
             return this.discretizeBSplineCurve(curve, options)
         }
 
@@ -111,7 +97,7 @@ export class DiscretizeEngine {
         return samples
     }
 
-    private static discretizeLineCurve(curve: Line2): PolylineSample[] {
+    private static discretizeLineCurve(curve: Curve2): PolylineSample[] {
         const range = curve.getRange()
         if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
         return [
@@ -141,7 +127,7 @@ export class DiscretizeEngine {
         return this.buildCircleLikeSamples(curve, requiredSegments, closed)
     }
 
-    private static discretizeEllipseLikeCurve(curve: Ellipse2 | EllipseArc2, options: DiscretizeOptions): PolylineSample[] {
+    private static discretizeEllipseLikeCurve(curve: Curve2, options: DiscretizeOptions): PolylineSample[] {
         const range = curve.getRange()
         if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
 

@@ -120,6 +120,10 @@ export class EllipseArc2 extends EllipseCurve2 {
         return Precision.equal(this._range.length(), MathConst.PI2, Precision.CURVE_PARAM_EPS)
     }
 
+    public override isEllipseArc(): this is EllipseArc2 {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比椭圆弧。

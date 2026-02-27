@@ -12,7 +12,13 @@ import { Precision } from '../utils/precision'
 import type { IClosestPointResult } from '../types/type_define'
 import { DiscretizeEngine } from '../discretize/discretize_engine'
 import { DiscretizeOptions } from '../discretize/discretize_options'
+import type { Arc2 } from './arc2'
+import type { BSpline2 } from './bspline2'
+import type { Circle2 } from './circle2'
+import type { Ellipse2 } from './ellipse2'
+import type { EllipseArc2 } from './ellipse_arc2'
 import { Interval } from './interval'
+import type { Line2 } from './line2'
 
 export abstract class Curve2 extends GeomBase {
     /**
@@ -150,6 +156,36 @@ export abstract class Curve2 extends GeomBase {
      * 默认返回 `false`，由闭合曲线子类覆盖。
      */
     public isClosed(): boolean {
+        return false
+    }
+
+    /** 是否为线段曲线。 */
+    public isLine(): this is Line2 {
+        return false
+    }
+
+    /** 是否为整圆曲线。 */
+    public isCircle(): this is Circle2 {
+        return false
+    }
+
+    /** 是否为圆弧曲线。 */
+    public isArc(): this is Arc2 {
+        return false
+    }
+
+    /** 是否为整椭圆曲线。 */
+    public isEllipse(): this is Ellipse2 {
+        return false
+    }
+
+    /** 是否为椭圆弧曲线。 */
+    public isEllipseArc(): this is EllipseArc2 {
+        return false
+    }
+
+    /** 是否为 B 样条曲线。 */
+    public isBSpline(): this is BSpline2 {
         return false
     }
 

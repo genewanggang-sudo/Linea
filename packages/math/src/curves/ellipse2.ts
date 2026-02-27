@@ -92,6 +92,10 @@ export class Ellipse2 extends EllipseCurve2 {
         return true
     }
 
+    public override isEllipse(): this is Ellipse2 {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比椭圆。

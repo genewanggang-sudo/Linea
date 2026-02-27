@@ -354,6 +354,10 @@ export class BSpline2 extends Curve2 {
         return Number.isFinite(domainStart) && Number.isFinite(domainEnd) && domainEnd - domainStart > eps
     }
 
+    public override isBSpline(): this is BSpline2 {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比样条。

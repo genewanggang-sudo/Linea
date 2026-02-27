@@ -159,6 +159,10 @@ export class Line2 extends Curve2 {
             this._start.distanceTo(this._end) > eps
     }
 
+    public override isLine(): this is Line2 {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比线段。

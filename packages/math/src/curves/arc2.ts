@@ -224,6 +224,10 @@ export class Arc2 extends CircleCurve2 {
         return Precision.equal(this._range.length(), MathConst.PI2, Precision.CURVE_PARAM_EPS)
     }
 
+    public override isArc(): this is Arc2 {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比圆弧。

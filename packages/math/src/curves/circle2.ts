@@ -125,6 +125,10 @@ export class Circle2 extends CircleCurve2 {
         return true
     }
 
+    public override isCircle(): this is Circle2 {
+        return true
+    }
+
     /**
      * 结构等价判断（字段级）。
      * @param other 对比圆。
