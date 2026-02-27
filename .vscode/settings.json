@@ -1,11 +1,13 @@
 {
-    "editor.formatOnSave": false,
+    "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "always"
     },
     "eslint.useFlatConfig": true,
     "eslint.workingDirectories": [
-        { "mode": "auto" }
+        {
+            "mode": "auto"
+        }
     ],
     "eslint.validate": [
         "javascript",

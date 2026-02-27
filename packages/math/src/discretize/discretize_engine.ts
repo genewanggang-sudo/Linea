@@ -44,21 +44,71 @@ type SplitDecision = {
 }
 
 export class DiscretizeEngine {
-    private constructor() {}
+    private constructor() { }
 
     private static readonly CHORD_CHECK_FRACTIONS = [0.25, 0.5, 0.75] as const
 
+    public static discretize(curve: Curve2, options?: DiscretizeOptions): Vec2[] {
+        const resolved = options ? options.clone() : DiscretizeOptions.medium.clone()
+        MathError.assert(curve.isValid(), '离散参数错误: 曲线无效')
+        const raw = this.dispatch(curve, resolved)
+        const samples = this.postprocessResult(curve, raw, resolved)
+        return samples.map((sample) => sample.p.clone())
+    }
+
     private static dispatch(curve: Curve2, options: DiscretizeOptions): PolylineSample[] {
-        if (curve.isType(Line2)) return DiscretizeEngine.discretizeLineCurve(curve)
+        if (curve.isType(Line2)) return this.discretizeLineCurve(curve)
         if (curve.isType(Circle2) || curve.isType(Arc2)) {
-            return DiscretizeEngine.discretizeCircleLikeCurve(curve, options)
+            return this.discretizeCircleLikeCurve(curve, options)
         }
         if (curve.isType(Ellipse2) || curve.isType(EllipseArc2)) {
-            return DiscretizeEngine.discretizeEllipseLikeCurve(curve, options)
+            return this.discretizeEllipseLikeCurve(curve, options)
         }
-        if (curve.isType(BSpline2)) return DiscretizeEngine.discretizeBSplineCurve(curve, options)
+        if (curve.isType(BSpline2)) {
+            return this.discretizeBSplineCurve(curve, options)
+        }
 
         MathError.assert(false, `离散不支持: ${curve.getType()}`)
+    }
+
+    private static postprocessResult(curve: Curve2, raw: PolylineSample[], options: DiscretizeOptions) {
+        const range = curve.getRange()
+        const startParam = range.start
+        const endParam = range.end
+        const startPoint = curve.pointAt(startParam)
+        const endPoint = curve.pointAt(endParam)
+
+        let samples = raw.map((sample) => ({ u: sample.u, p: sample.p.clone() }))
+        if (samples.length === 0) {
+            samples = [{ u: startParam, p: startPoint.clone() }]
+        }
+
+        samples = this.deduplicateAdjacent(samples, options.chordTol)
+        samples[0] = { u: startParam, p: startPoint.clone() }
+
+        if (curve.isClosed()) {
+            while (samples.length > 1) {
+                const first = samples[0]
+                const last = samples[samples.length - 1]
+                if (first.p.distanceTo(last.p) <= options.chordTol) {
+                    samples.pop()
+                    continue
+                }
+                break
+            }
+        } else {
+            const endSample: PolylineSample = {
+                u: endParam,
+                p: endPoint.clone(),
+            }
+            if (samples.length === 0) {
+                samples.push(endSample)
+            } else {
+                samples[samples.length - 1] = endSample
+            }
+        }
+
+        return samples
     }
 
     private static discretizeLineCurve(curve: Line2): PolylineSample[] {
@@ -68,6 +118,64 @@ export class DiscretizeEngine {
             { u: range.start, p: curve.pointAt(range.start) },
             { u: range.end, p: curve.pointAt(range.end) },
         ]
+    }
+
+    private static discretizeCircleLikeCurve(curve: Circle2 | Arc2, options: DiscretizeOptions): PolylineSample[] {
+        const range = curve.getRange()
+        const sweep = range.length()
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+
+        const totalLen = curve.length()
+        const radius = this.requireValidRadius(curve)
+        const maxByInternal = Math.max(1, Math.floor(totalLen / Precision.CURVE_LENGTH_EPS))
+        const dThetaChord = this.dThetaByChord(radius, options.chordTol)
+        const dTheta = Math.max(Precision.CURVE_PARAM_EPS, Math.min(dThetaChord, options.angleTolRad))
+        const requiredSegments = Math.max(1, Math.ceil(sweep / dTheta))
+
+        MathError.assert(
+            requiredSegments <= options.maxSegments && requiredSegments <= maxByInternal,
+            '离散溢出: 圆分段超限',
+        )
+
+        const closed = curve.isClosed()
+        return this.buildCircleLikeSamples(curve, requiredSegments, closed)
+    }
+
+    private static discretizeEllipseLikeCurve(curve: Ellipse2 | EllipseArc2, options: DiscretizeOptions): PolylineSample[] {
+        const range = curve.getRange()
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+
+        const initialSegmentCount = 1
+        MathError.assert(initialSegmentCount <= options.maxSegments, '离散溢出: 椭圆分段超限')
+        const segments = this.refineAdaptiveSegments(
+            curve,
+            this.buildInitialEllipseSegments(curve, initialSegmentCount),
+            options,
+        )
+        return this.segmentsToSamples(segments)
+    }
+
+    private static discretizeBSplineCurve(curve: BSpline2, options: DiscretizeOptions): PolylineSample[] {
+        const range = curve.getRange()
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+
+        const initialSegments = this.buildInitialBSplineSegments(curve)
+        if (initialSegments.length === 0) {
+            return [{ u: range.start, p: curve.pointAt(range.start) }]
+        }
+
+        MathError.assert(initialSegments.length <= options.maxSegments, '离散溢出: B样条分段超限')
+        const refined = this.refineAdaptiveSegments(curve, initialSegments, options)
+        return this.segmentsToSamples(refined)
+    }
+
+    private static requireValidRadius(curve: Circle2 | Arc2) {
+        const radius = curve.radius
+        MathError.assert(
+            Number.isFinite(radius) && radius > 0,
+            `离散不支持: ${curve.getType()} 半径无效`,
+        )
+        return radius
     }
 
     private static dThetaByChord(radius: number, chordTol: number) {
@@ -92,91 +200,6 @@ export class DiscretizeEngine {
         return samples
     }
 
-    private static discretizeCircleLikeCurve(curve: Circle2 | Arc2, options: DiscretizeOptions): PolylineSample[] {
-        const range = curve.getRange()
-        const sweep = range.length()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
-
-        const totalLen = curve.length()
-        const radius = DiscretizeEngine.requireValidRadius(curve)
-        const maxByInternal = Math.max(1, Math.floor(totalLen / Precision.CURVE_LENGTH_EPS))
-        const dThetaChord = DiscretizeEngine.dThetaByChord(radius, options.chordTol)
-        const dTheta = Math.max(Precision.CURVE_PARAM_EPS, Math.min(dThetaChord, options.angleTolRad))
-        const requiredSegments = Math.max(1, Math.ceil(sweep / dTheta))
-
-        MathError.assert(
-            requiredSegments <= options.maxSegments && requiredSegments <= maxByInternal,
-            '离散溢出: 圆分段超限',
-        )
-
-        const closed = curve.isClosed()
-        return DiscretizeEngine.buildCircleLikeSamples(curve, requiredSegments, closed)
-    }
-
-    private static distancePointToSegment(point: Vec2, segStart: Vec2, segEnd: Vec2) {
-        const edge = segEnd.subtracted(segStart)
-        const lenSq = edge.lenSq()
-        if (lenSq <= Precision.CURVE_LENGTH_EPS_SQ) {
-            return point.distanceTo(segStart)
-        }
-
-        const rel = point.subtracted(segStart)
-        const t = Math.max(0, Math.min(1, rel.dot(edge) / lenSq))
-        const proj = segStart.added(edge.scaled(t))
-        return point.distanceTo(proj)
-    }
-
-    private static tangentTurnAbs(curve: Curve2, u0: number, u1: number) {
-        const t0 = curve.tangentAt(u0)
-        const t1 = curve.tangentAt(u1)
-        if (t0.lenSq() <= Precision.CURVE_NEWTON_EPS || t1.lenSq() <= Precision.CURVE_NEWTON_EPS) {
-            return 0
-        }
-        return Math.abs(t0.angleTo(t1))
-    }
-
-    private static maxChordDeviationAtFractions(
-        curve: Curve2,
-        u0: number,
-        u1: number,
-        p0: Vec2,
-        p1: Vec2,
-        fractions = DiscretizeEngine.CHORD_CHECK_FRACTIONS,
-    ) {
-        let maxDeviation = 0
-        for (const fraction of fractions) {
-            const um = MathUtils.lerp(u0, u1, fraction)
-            const pm = curve.pointAt(um)
-            const deviation = DiscretizeEngine.distancePointToSegment(pm, p0, p1)
-            if (deviation > maxDeviation) {
-                maxDeviation = deviation
-            }
-        }
-        return maxDeviation
-    }
-
-    private static shouldSplitAdaptiveSegment(
-        curve: Curve2,
-        segment: AdaptiveSegment,
-        options: DiscretizeOptions,
-    ): SplitDecision {
-        const deviation = DiscretizeEngine.maxChordDeviationAtFractions(
-            curve,
-            segment.u0,
-            segment.u1,
-            segment.p0,
-            segment.p1,
-        )
-        const turn = DiscretizeEngine.tangentTurnAbs(curve, segment.u0, segment.u1)
-
-        if (deviation <= options.chordTol && turn <= options.angleTolRad) {
-            return { split: false, blocked: false }
-        }
-
-        const blocked = segment.p0.distanceTo(segment.p1) <= Precision.CURVE_LENGTH_EPS
-        return { split: true, blocked }
-    }
-
     private static buildInitialEllipseSegments(curve: Curve2, segmentCount: number) {
         const range = curve.getRange()
         const start = range.start
@@ -194,55 +217,6 @@ export class DiscretizeEngine {
             })
         }
         return segments
-    }
-
-    private static refineAdaptiveSegments(curve: Curve2, initialSegments: AdaptiveSegment[], options: DiscretizeOptions) {
-        const segments = [...initialSegments]
-        for (let i = 0; i < segments.length; i++) {
-            const segment = segments[i]
-            const decision = DiscretizeEngine.shouldSplitAdaptiveSegment(curve, segment, options)
-            if (!decision.split) continue
-
-            MathError.assert(!decision.blocked, '离散溢出: 无法继续细分')
-            MathError.assert(segments.length < options.maxSegments, '离散溢出: 分段超限')
-
-            const mid = (segment.u0 + segment.u1) * 0.5
-            MathError.assert(
-                Math.abs(mid - segment.u0) > Precision.CURVE_PARAM_EPS
-                    && Math.abs(segment.u1 - mid) > Precision.CURVE_PARAM_EPS,
-                '离散不收敛',
-            )
-
-            const pm = curve.pointAt(mid)
-            segments.splice(i, 1,
-                { u0: segment.u0, u1: mid, p0: segment.p0, p1: pm },
-                { u0: mid, u1: segment.u1, p0: pm, p1: segment.p1 },
-            )
-            i--
-        }
-        return segments
-    }
-
-    private static segmentsToSamples(segments: AdaptiveSegment[]) {
-        const samples: PolylineSample[] = [{ u: segments[0].u0, p: segments[0].p0.clone() }]
-        for (const segment of segments) {
-            samples.push({ u: segment.u1, p: segment.p1.clone() })
-        }
-        return samples
-    }
-
-    private static discretizeEllipseLikeCurve(curve: Ellipse2 | EllipseArc2, options: DiscretizeOptions): PolylineSample[] {
-        const range = curve.getRange()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
-
-        const initialSegmentCount = 1
-        MathError.assert(initialSegmentCount <= options.maxSegments, '离散溢出: 椭圆分段超限')
-        const segments = DiscretizeEngine.refineAdaptiveSegments(
-            curve,
-            DiscretizeEngine.buildInitialEllipseSegments(curve, initialSegmentCount),
-            options,
-        )
-        return DiscretizeEngine.segmentsToSamples(segments)
     }
 
     private static buildInitialBSplineSegments(curve: BSpline2) {
@@ -269,27 +243,113 @@ export class DiscretizeEngine {
         return segments
     }
 
-    private static discretizeBSplineCurve(curve: BSpline2, options: DiscretizeOptions): PolylineSample[] {
-        const range = curve.getRange()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+    private static refineAdaptiveSegments(curve: Curve2, initialSegments: AdaptiveSegment[], options: DiscretizeOptions) {
+        const segments = [...initialSegments]
+        for (let i = 0; i < segments.length; i++) {
+            const segment = segments[i]
+            const decision = this.shouldSplitAdaptiveSegment(curve, segment, options)
+            if (!decision.split) continue
 
-        const initialSegments = DiscretizeEngine.buildInitialBSplineSegments(curve)
-        if (initialSegments.length === 0) {
-            return [{ u: range.start, p: curve.pointAt(range.start) }]
+            MathError.assert(!decision.blocked, '离散溢出: 无法继续细分')
+            MathError.assert(segments.length < options.maxSegments, '离散溢出: 分段超限')
+
+            const mid = (segment.u0 + segment.u1) * 0.5
+            MathError.assert(
+                Math.abs(mid - segment.u0) > Precision.CURVE_PARAM_EPS
+                && Math.abs(segment.u1 - mid) > Precision.CURVE_PARAM_EPS,
+                '离散不收敛',
+            )
+
+            const pm = curve.pointAt(mid)
+            segments.splice(i, 1,
+                {
+                    u0: segment.u0,
+                    u1: mid,
+                    p0: segment.p0,
+                    p1: pm,
+                },
+                {
+                    u0: mid,
+                    u1: segment.u1,
+                    p0: pm,
+                    p1: segment.p1,
+                },
+            )
+            i--
         }
-
-        MathError.assert(initialSegments.length <= options.maxSegments, '离散溢出: B样条分段超限')
-        const refined = DiscretizeEngine.refineAdaptiveSegments(curve, initialSegments, options)
-        return DiscretizeEngine.segmentsToSamples(refined)
+        return segments
     }
 
-    private static requireValidRadius(curve: Circle2 | Arc2) {
-        const radius = curve.radius
-        MathError.assert(
-            Number.isFinite(radius) && radius > 0,
-            `离散不支持: ${curve.getType()} 半径无效`,
+    private static shouldSplitAdaptiveSegment(
+        curve: Curve2,
+        segment: AdaptiveSegment,
+        options: DiscretizeOptions,
+    ): SplitDecision {
+        const deviation = this.maxChordDeviationAtFractions(
+            curve,
+            segment.u0,
+            segment.u1,
+            segment.p0,
+            segment.p1,
         )
-        return radius
+        const turn = this.tangentTurnAbs(curve, segment.u0, segment.u1)
+
+        if (deviation <= options.chordTol && turn <= options.angleTolRad) {
+            return { split: false, blocked: false }
+        }
+
+        const blocked = segment.p0.distanceTo(segment.p1) <= Precision.CURVE_LENGTH_EPS
+        return { split: true, blocked }
+    }
+
+    private static segmentsToSamples(segments: AdaptiveSegment[]) {
+        const samples: PolylineSample[] = [{ u: segments[0].u0, p: segments[0].p0.clone() }]
+        for (const segment of segments) {
+            samples.push({ u: segment.u1, p: segment.p1.clone() })
+        }
+        return samples
+    }
+
+    private static maxChordDeviationAtFractions(
+        curve: Curve2,
+        u0: number,
+        u1: number,
+        p0: Vec2,
+        p1: Vec2,
+        fractions = this.CHORD_CHECK_FRACTIONS,
+    ) {
+        let maxDeviation = 0
+        for (const fraction of fractions) {
+            const um = MathUtils.lerp(u0, u1, fraction)
+            const pm = curve.pointAt(um)
+            const deviation = this.distancePointToSegment(pm, p0, p1)
+            if (deviation > maxDeviation) {
+                maxDeviation = deviation
+            }
+        }
+        return maxDeviation
+    }
+
+    private static distancePointToSegment(point: Vec2, segStart: Vec2, segEnd: Vec2) {
+        const edge = segEnd.subtracted(segStart)
+        const lenSq = edge.lenSq()
+        if (lenSq <= Precision.CURVE_LENGTH_EPS_SQ) {
+            return point.distanceTo(segStart)
+        }
+
+        const rel = point.subtracted(segStart)
+        const t = Math.max(0, Math.min(1, rel.dot(edge) / lenSq))
+        const proj = segStart.added(edge.scaled(t))
+        return point.distanceTo(proj)
+    }
+
+    private static tangentTurnAbs(curve: Curve2, u0: number, u1: number) {
+        const t0 = curve.tangentAt(u0)
+        const t1 = curve.tangentAt(u1)
+        if (Math.min(t0.lenSq(), t1.lenSq()) <= Precision.CURVE_NEWTON_EPS) {
+            return 0
+        }
+        return Math.abs(t0.angleTo(t1))
     }
 
     private static deduplicateAdjacent(samples: PolylineSample[], tol: number) {
@@ -304,72 +364,4 @@ export class DiscretizeEngine {
         return deduped
     }
 
-    private static ensureOpenEndIncluded(
-        samples: PolylineSample[],
-        endParam: number,
-        endPoint: Vec2,
-        tol: number,
-    ) {
-        const endSample: PolylineSample = { u: endParam, p: endPoint.clone() }
-        if (samples.length === 0) {
-            samples.push(endSample)
-            return
-        }
-
-        const last = samples[samples.length - 1]
-        if (Math.abs(last.u - endParam) <= Precision.CURVE_PARAM_EPS || last.p.distanceTo(endPoint) <= tol) {
-            samples[samples.length - 1] = endSample
-            return
-        }
-
-        if (endParam > last.u + Precision.CURVE_PARAM_EPS) {
-            samples.push(endSample)
-        } else {
-            samples[samples.length - 1] = endSample
-        }
-    }
-
-    private static removeClosedDuplicateTail(samples: PolylineSample[], tol: number) {
-        while (samples.length > 1) {
-            const first = samples[0]
-            const last = samples[samples.length - 1]
-            if (first.p.distanceTo(last.p) <= tol) {
-                samples.pop()
-                continue
-            }
-            break
-        }
-    }
-
-    private static postprocessResult(curve: Curve2, raw: PolylineSample[], options: DiscretizeOptions) {
-        const range = curve.getRange()
-        const startParam = range.start
-        const endParam = range.end
-        const startPoint = curve.pointAt(startParam)
-        const endPoint = curve.pointAt(endParam)
-
-        let samples = raw.map((sample) => ({ u: sample.u, p: sample.p.clone() }))
-        if (samples.length === 0) {
-            samples = [{ u: startParam, p: startPoint.clone() }]
-        }
-
-        samples = DiscretizeEngine.deduplicateAdjacent(samples, options.chordTol)
-        samples[0] = { u: startParam, p: startPoint.clone() }
-
-        if (curve.isClosed()) {
-            DiscretizeEngine.removeClosedDuplicateTail(samples, options.chordTol)
-        } else {
-            DiscretizeEngine.ensureOpenEndIncluded(samples, endParam, endPoint, options.chordTol)
-        }
-
-        return samples
-    }
-
-    public static discretize(curve: Curve2, options?: DiscretizeOptions): Vec2[] {
-        const resolved = options ? options.clone() : DiscretizeOptions.medium.clone()
-        MathError.assert(curve.isValid(), '离散参数错误: 曲线无效')
-        const raw = DiscretizeEngine.dispatch(curve, resolved)
-        const samples = DiscretizeEngine.postprocessResult(curve, raw, resolved)
-        return samples.map((sample) => sample.p.clone())
-    }
 }
