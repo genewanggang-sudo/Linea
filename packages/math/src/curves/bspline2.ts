@@ -4,13 +4,11 @@ import { Mat3 } from '../core/mat3'
 import { Vec2 } from '../core/vec2'
 import type { IDBBSpline2 } from '../serialize/dump_types'
 import { RegisterGeom } from '../serialize/geom_mgr'
-import type { IClosestPointResult } from '../types/type_define'
+import { Axis2D, type IClosestPointResult, type IWeightedPoint2 } from '../types/type_define'
 import { MathError } from '../utils/math_error'
 import { Precision } from '../utils/precision'
 import { Curve2 } from './curve2'
 import { Interval } from './interval'
-
-type BSplineHomPoint = { x: number; y: number; w: number }
 
 /**
  * B 样条构造选项。
@@ -145,7 +143,7 @@ export class BSpline2 extends Curve2 {
         const ders = BSpline2.basisFunctionDerivatives(span, uu, p, du, this._knots)
         const pw = this.homogeneousControlPoints()
 
-        const ckw: BSplineHomPoint[] = []
+        const ckw: IWeightedPoint2[] = []
         for (let k = 0; k <= du; k++) {
             let x = 0
             let y = 0
@@ -334,8 +332,29 @@ export class BSpline2 extends Curve2 {
         )
     }
 
-    public override boundingBox() {
-        return Box2.fromPoints(this._controlPoints)
+    public override boundingBox(accurate = false) {
+        const controlBox = Box2.fromPoints(this._controlPoints)
+        if (!accurate) return controlBox
+
+        const range = this.getRange()
+        const spanBounds = this.buildBBoxSpanBounds()
+        const candidates: Vec2[] = [
+            this.pointAt(range.start),
+            this.pointAt(range.end),
+        ]
+
+        for (const [u0, u1] of spanBounds) {
+            const xRoots = this.solveComponentExtremaInSpan(Axis2D.X, u0, u1)
+            const yRoots = this.solveComponentExtremaInSpan(Axis2D.Y, u0, u1)
+            for (const u of [...xRoots, ...yRoots]) {
+                if (!range.contains(u, Precision.CURVE_PARAM_EPS)) continue
+                candidates.push(this.pointAt(u))
+            }
+        }
+
+        if (candidates.length < 2) return controlBox
+        const tightBox = Box2.fromPoints(candidates)
+        return this.expandBoxBySpanSamples(tightBox, spanBounds)
     }
 
     public override isValid(eps = Precision.CURVE_LENGTH_EPS) {
@@ -493,7 +512,7 @@ export class BSpline2 extends Curve2 {
      * @returns 齐次点数组 `{x,y,w}`。
      */
     private homogeneousControlPoints() {
-        const ret: BSplineHomPoint[] = []
+        const ret: IWeightedPoint2[] = []
         for (let i = 0; i < this._controlPoints.length; i++) {
             const w = this._weights[i]
             const p = this._controlPoints[i]
@@ -552,6 +571,180 @@ export class BSpline2 extends Curve2 {
         return c1 * sum
     }
 
+    private buildBBoxSpanBounds() {
+        const range = this.getRange()
+        const boundaries = [range.start, range.end, ...this.getUniqueKnotsInRange(range.start, range.end)]
+        const sorted = [...new Set(boundaries)]
+            .filter((u) => Number.isFinite(u) && range.contains(u, Precision.CURVE_PARAM_EPS))
+            .sort((a, b) => a - b)
+
+        const spans: Array<[number, number]> = []
+        for (let i = 0; i < sorted.length - 1; i++) {
+            const u0 = sorted[i]
+            const u1 = sorted[i + 1]
+            if (u1 - u0 <= Precision.CURVE_PARAM_EPS) continue
+            spans.push([u0, u1])
+        }
+        return spans
+    }
+
+    private getUniqueKnotsInRange(start: number, end: number) {
+        const unique: number[] = []
+        for (const knot of this._knots) {
+            if (knot <= start + Precision.CURVE_PARAM_EPS || knot >= end - Precision.CURVE_PARAM_EPS) continue
+            if (unique.length > 0 && Math.abs(unique[unique.length - 1] - knot) <= Precision.CURVE_PARAM_EPS) continue
+            unique.push(knot)
+        }
+        return unique
+    }
+
+    private solveComponentExtremaInSpan(axis: Axis2D, u0: number, u1: number) {
+        const roots: number[] = []
+        const brackets = this.findRootBrackets(axis, u0, u1)
+        for (const [b0, b1] of brackets) {
+            const root = this.refineRootBracketedNewton(axis, b0, b1)
+            if (root === undefined) continue
+            const clamped = this.clampParamForBBox(root)
+            if (clamped < u0 - Precision.CURVE_PARAM_EPS || clamped > u1 + Precision.CURVE_PARAM_EPS) continue
+            if (roots.some((u) => Math.abs(u - clamped) <= Precision.CURVE_PARAM_EPS * 4)) continue
+            roots.push(clamped)
+        }
+        return roots
+    }
+
+    private findRootBrackets(axis: Axis2D, u0: number, u1: number) {
+        const brackets: Array<[number, number]> = []
+        const steps = this.bboxRootSampleCount()
+        const du = (u1 - u0) / steps
+
+        let prevU = u0
+        let prevF = this.componentDerivative(axis, prevU, 1)
+        for (let i = 1; i <= steps; i++) {
+            const curU = i === steps ? u1 : (u0 + du * i)
+            const curF = this.componentDerivative(axis, curU, 1)
+            if (Math.abs(prevF) <= Precision.CURVE_NEWTON_EPS) {
+                brackets.push([
+                    Math.max(u0, prevU - du),
+                    Math.min(u1, prevU + du),
+                ])
+            }
+            if (Math.abs(curF) <= Precision.CURVE_NEWTON_EPS || prevF * curF <= 0) {
+                brackets.push([prevU, curU])
+            }
+            prevU = curU
+            prevF = curF
+        }
+
+        return this.mergeBrackets(brackets, u0, u1)
+    }
+
+    private refineRootBracketedNewton(axis: Axis2D, uL: number, uR: number) {
+        let lo = this.clampParamForBBox(Math.min(uL, uR))
+        let hi = this.clampParamForBBox(Math.max(uL, uR))
+        if (hi - lo <= Precision.CURVE_PARAM_EPS) return undefined
+
+        let fLo = this.componentDerivative(axis, lo, 1)
+        let fHi = this.componentDerivative(axis, hi, 1)
+        let u = (lo + hi) * 0.5
+
+        for (let iter = 0; iter < Precision.CURVE_MAX_ITER; iter++) {
+            const f = this.componentDerivative(axis, u, 1)
+            if (Math.abs(f) <= Precision.CURVE_NEWTON_EPS) return u
+
+            const d2 = this.componentDerivative(axis, u, 2)
+            let next = Number.NaN
+            if (Number.isFinite(d2) && Math.abs(d2) > Precision.CURVE_NEWTON_EPS) {
+                next = u - f / d2
+            }
+            if (!Number.isFinite(next) || next <= lo || next >= hi) {
+                next = (lo + hi) * 0.5
+            }
+
+            if (fLo * f <= 0) {
+                hi = u
+                fHi = f
+            } else if (f * fHi <= 0) {
+                lo = u
+                fLo = f
+            } else {
+                if (next < u) hi = u
+                else lo = u
+                fLo = this.componentDerivative(axis, lo, 1)
+                fHi = this.componentDerivative(axis, hi, 1)
+            }
+
+            if (hi - lo <= Precision.CURVE_PARAM_EPS) {
+                const mid = (lo + hi) * 0.5
+                if (Math.abs(this.componentDerivative(axis, mid, 1)) <= Precision.CURVE_NEWTON_EPS * 10) {
+                    return mid
+                }
+                return undefined
+            }
+            u = next
+        }
+        return undefined
+    }
+
+    private mergeBrackets(brackets: Array<[number, number]>, u0: number, u1: number) {
+        if (brackets.length === 0) return []
+        const sorted = brackets
+            .map(([a, b]) => [this.clampParamForBBox(Math.min(a, b)), this.clampParamForBBox(Math.max(a, b))] as [number, number])
+            .filter(([a, b]) => b - a > Precision.CURVE_PARAM_EPS)
+            .sort((lhs, rhs) => lhs[0] - rhs[0] || lhs[1] - rhs[1])
+        if (sorted.length === 0) return []
+
+        const merged: Array<[number, number]> = [sorted[0]]
+        for (let i = 1; i < sorted.length; i++) {
+            const cur = sorted[i]
+            const prev = merged[merged.length - 1]
+            if (cur[0] <= prev[1] + Precision.CURVE_PARAM_EPS) {
+                prev[1] = Math.max(prev[1], cur[1])
+                continue
+            }
+            merged.push(cur)
+        }
+
+        for (const item of merged) {
+            item[0] = Math.max(item[0], u0)
+            item[1] = Math.min(item[1], u1)
+        }
+        return merged.filter(([a, b]) => b - a > Precision.CURVE_PARAM_EPS)
+    }
+
+    private bboxRootSampleCount() {
+        // Degree-scaled sampling keeps low-order curves fast while giving higher-order curves
+        // enough brackets for extrema detection without a single hard-coded global level.
+        return Math.max(8, Math.min(32, this._degree * 4))
+    }
+
+    private expandBoxBySpanSamples(box: Box2, spans: Array<[number, number]>) {
+        let expanded = box
+        const samplesPerSpan = Math.max(4, Math.floor(this.bboxRootSampleCount() / 2))
+        for (const [u0, u1] of spans) {
+            for (let i = 1; i < samplesPerSpan; i++) {
+                const t = i / samplesPerSpan
+                const u = u0 + (u1 - u0) * t
+                const p = this.pointAt(u)
+                if (!expanded.containsPoint(p)) {
+                    expanded = expanded.expandByPoint(p)
+                }
+            }
+        }
+        return expanded
+    }
+
+    private componentDerivative(axis: Axis2D, u: number, order: 1 | 2) {
+        const d = this.derivativeAt(this.clampParamForBBox(u), order)
+        return axis === Axis2D.X ? d.x : d.y
+    }
+
+    private clampParamForBBox(u: number) {
+        const range = this._range
+        if (u <= range.start) return range.start
+        if (u >= range.end) return range.end
+        return u
+    }
+
     /**
      * 参数吸附到端点，避免边界浮点抖动。
      * @param u 输入参数。
@@ -566,7 +759,7 @@ export class BSpline2 extends Curve2 {
         return u
     }
 
-    private static fromHomogeneous(points: BSplineHomPoint[], degree: number, knots: number[]) {
+    private static fromHomogeneous(points: IWeightedPoint2[], degree: number, knots: number[]) {
         const cps: Vec2[] = []
         const ws: number[] = []
         for (const p of points) {
@@ -612,12 +805,12 @@ export class BSpline2 extends Curve2 {
         return s
     }
 
-    private static insertKnotOnce(points: BSplineHomPoint[], knots: number[], degree: number, u: number) {
+    private static insertKnotOnce(points: IWeightedPoint2[], knots: number[], degree: number, u: number) {
         const n = points.length - 1
         const k = BSpline2.findSpan(n, degree, u, knots)
         const s = BSpline2.knotMultiplicity(u, knots)
 
-        const outPoints = new Array<BSplineHomPoint>(points.length + 1)
+        const outPoints = new Array<IWeightedPoint2>(points.length + 1)
         const outKnots = new Array<number>(knots.length + 1)
 
         for (let i = 0; i <= k; i++) outKnots[i] = knots[i]

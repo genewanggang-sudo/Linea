@@ -7,9 +7,11 @@
     "dev": "pnpm -r dev",
     "dev:web": "pnpm --filter web dev",
     "dev:docs": "pnpm --filter docs dev",
+    "dev:math-viz": "pnpm --filter math-visual-test dev",
     "build": "pnpm -r build",
     "build:web": "pnpm --filter web build",
     "build:docs": "pnpm --filter docs build",
+    "build:math-viz": "pnpm --filter math-visual-test build",
     "lint": "pnpm -r lint",
     "lint:web": "pnpm --filter web lint",
     "lint:utils": "pnpm --filter @linea/utils lint",
@@ -19,7 +21,8 @@
     "test:math:run": "pnpm --filter @linea/math test:run",
     "test:math:coverage": "pnpm --filter @linea/math test:coverage",
     "preview:web": "pnpm --filter web preview",
-    "preview:docs": "pnpm --filter docs preview"
+    "preview:docs": "pnpm --filter docs preview",
+    "preview:math-viz": "pnpm --filter math-visual-test preview"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

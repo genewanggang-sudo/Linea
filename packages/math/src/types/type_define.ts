@@ -11,6 +11,17 @@ export interface IVec2 {
     y: number
 }
 
+/** 二维带权点（可用于齐次坐标或加权几何计算） */
+export interface IWeightedPoint2 extends IVec2 {
+    w: number
+}
+
+/** 二维坐标轴枚举 */
+export enum Axis2D {
+    X = 'x',
+    Y = 'y',
+}
+
 /** 3x3 矩阵类型（对外行主序） */
 export interface IMat3 {
     elements: Num3x3

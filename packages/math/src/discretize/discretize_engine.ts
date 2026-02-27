@@ -20,18 +20,26 @@ type PolylineSample = {
     p: Vec2
 }
 
-type SplitDecision = {
+type SegmentEval = {
     split: boolean
     blocked: boolean
+    score: number
+}
+
+type HeapItem = {
+    id: number
+    score: number
 }
 
 export class DiscretizeEngine {
     private constructor() { }
 
     private static readonly CHORD_CHECK_FRACTIONS = [0.25, 0.5, 0.75] as const
+    private static readonly HARD_MAX_SEGMENTS = 1_000_000
+    private static readonly HARD_MAX_REFINEMENT_STEPS = 2_000_000
 
     public static discretize(curve: Curve2, options?: DiscretizeOptions): Vec2[] {
-        const resolved = options ? options.clone() : DiscretizeOptions.medium.clone()
+        const resolved = options ?? DiscretizeOptions.medium
         MathError.assert(curve.isValid(), '离散参数错误: 曲线无效')
         const raw = this.dispatch(curve, resolved)
         const samples = this.postprocessResult(curve, raw, resolved)
@@ -63,13 +71,13 @@ export class DiscretizeEngine {
         const startPoint = curve.pointAt(startParam)
         const endPoint = curve.pointAt(endParam)
 
-        let samples = raw.map((sample) => ({ u: sample.u, p: sample.p.clone() }))
+        let samples = raw.map((sample) => ({ u: sample.u, p: sample.p }))
         if (samples.length === 0) {
-            samples = [{ u: startParam, p: startPoint.clone() }]
+            samples = [{ u: startParam, p: startPoint }]
         }
 
         samples = this.deduplicateAdjacent(samples, options.chordTol)
-        samples[0] = { u: startParam, p: startPoint.clone() }
+        samples[0] = { u: startParam, p: startPoint }
 
         if (curve.isClosed()) {
             while (samples.length > 1) {
@@ -84,7 +92,7 @@ export class DiscretizeEngine {
         } else {
             const endSample: PolylineSample = {
                 u: endParam,
-                p: endPoint.clone(),
+                p: endPoint,
             }
             samples[samples.length - 1] = endSample
         }
@@ -107,15 +115,21 @@ export class DiscretizeEngine {
         if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
 
         const totalLen = curve.length()
-        const radius = this.requireValidRadius(curve)
+        const radius = curve.radius
+        MathError.assert(
+            Number.isFinite(radius) && radius > 0,
+            `离散不支持: ${curve.getType()} 半径无效`,
+        )
         const maxByInternal = Math.max(1, Math.floor(totalLen / Precision.CURVE_LENGTH_EPS))
+        const maxByMinLength = Math.max(1, Math.ceil(totalLen / options.minSegmentLength))
         const dThetaChord = this.dThetaByChord(radius, options.chordTol)
         const dTheta = Math.max(Precision.CURVE_PARAM_EPS, Math.min(dThetaChord, options.angleTolRad))
-        const requiredSegments = Math.max(1, Math.ceil(sweep / dTheta))
-
-        MathError.assert(
-            requiredSegments <= options.maxSegments && requiredSegments <= maxByInternal,
-            '离散溢出: 圆分段超限',
+        const byTolerance = Math.max(1, Math.ceil(sweep / dTheta))
+        const requiredSegments = Math.min(
+            byTolerance,
+            maxByInternal,
+            maxByMinLength,
+            this.HARD_MAX_SEGMENTS,
         )
 
         const closed = curve.isClosed()
@@ -127,7 +141,6 @@ export class DiscretizeEngine {
         if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
 
         const initialSegmentCount = 1
-        MathError.assert(initialSegmentCount <= options.maxSegments, '离散溢出: 椭圆分段超限')
         const segments = this.refineAdaptiveSegments(
             curve,
             this.buildInitialEllipseSegments(curve, initialSegmentCount),
@@ -145,18 +158,8 @@ export class DiscretizeEngine {
             return [{ u: range.start, p: curve.pointAt(range.start) }]
         }
 
-        MathError.assert(initialSegments.length <= options.maxSegments, '离散溢出: B样条分段超限')
         const refined = this.refineAdaptiveSegments(curve, initialSegments, options)
         return this.segmentsToSamples(refined)
-    }
-
-    private static requireValidRadius(curve: Circle2 | Arc2) {
-        const radius = curve.radius
-        MathError.assert(
-            Number.isFinite(radius) && radius > 0,
-            `离散不支持: ${curve.getType()} 半径无效`,
-        )
-        return radius
     }
 
     private static dThetaByChord(radius: number, chordTol: number) {
@@ -225,14 +228,27 @@ export class DiscretizeEngine {
     }
 
     private static refineAdaptiveSegments(curve: Curve2, initialSegments: AdaptiveSegment[], options: DiscretizeOptions) {
-        const segments = [...initialSegments]
-        for (let i = 0; i < segments.length; i++) {
-            const segment = segments[i]
-            const decision = this.shouldSplitAdaptiveSegment(curve, segment, options)
+        const states = new Map<number, AdaptiveSegment>()
+        const heap: HeapItem[] = []
+        let nextId = 1
+
+        for (const segment of initialSegments) {
+            nextId = this.registerSegment(states, heap, nextId, curve, segment, options)
+        }
+
+        for (;;) {
+            if (states.size >= this.HARD_MAX_SEGMENTS || nextId >= this.HARD_MAX_REFINEMENT_STEPS) {
+                break
+            }
+            const picked = this.popValidHeapItem(heap, states)
+            if (!picked) break
+
+            const segment = states.get(picked.id)
+            if (!segment) continue
+            const decision = this.evaluateAdaptiveSegment(curve, segment, options)
             if (!decision.split) continue
 
             MathError.assert(!decision.blocked, '离散溢出: 无法继续细分')
-            MathError.assert(segments.length < options.maxSegments, '离散溢出: 分段超限')
 
             const mid = (segment.u0 + segment.u1) * 0.5
             MathError.assert(
@@ -242,30 +258,98 @@ export class DiscretizeEngine {
             )
 
             const pm = curve.pointAt(mid)
-            segments.splice(i, 1,
-                {
-                    u0: segment.u0,
-                    u1: mid,
-                    p0: segment.p0,
-                    p1: pm,
-                },
-                {
-                    u0: mid,
-                    u1: segment.u1,
-                    p0: pm,
-                    p1: segment.p1,
-                },
-            )
-            i--
+            const left: AdaptiveSegment = {
+                u0: segment.u0,
+                u1: mid,
+                p0: segment.p0,
+                p1: pm,
+            }
+            const right: AdaptiveSegment = {
+                u0: mid,
+                u1: segment.u1,
+                p0: pm,
+                p1: segment.p1,
+            }
+            states.delete(picked.id)
+            nextId = this.registerSegment(states, heap, nextId, curve, left, options)
+            nextId = this.registerSegment(states, heap, nextId, curve, right, options)
         }
-        return segments
+
+        return [...states.values()]
+            .sort((a, b) => a.u0 - b.u0 || a.u1 - b.u1)
     }
 
-    private static shouldSplitAdaptiveSegment(
+    private static registerSegment(
+        states: Map<number, AdaptiveSegment>,
+        heap: HeapItem[],
+        nextId: number,
         curve: Curve2,
         segment: AdaptiveSegment,
         options: DiscretizeOptions,
-    ): SplitDecision {
+    ): number {
+        const id = nextId
+        states.set(id, segment)
+        const decision = this.evaluateAdaptiveSegment(curve, segment, options)
+        if (decision.split) {
+            this.pushMaxHeap(heap, { id, score: decision.score })
+        }
+        return nextId + 1
+    }
+
+    private static popValidHeapItem(heap: HeapItem[], states: Map<number, AdaptiveSegment>): HeapItem | undefined {
+        for (;;) {
+            const candidate = this.popMaxHeap(heap)
+            if (!candidate) return undefined
+            if (!states.has(candidate.id)) continue
+            return candidate
+        }
+    }
+
+    private static pushMaxHeap(heap: HeapItem[], item: HeapItem): void {
+        heap.push(item)
+        let i = heap.length - 1
+        while (i > 0) {
+            const p = (i - 1) >> 1
+            if (heap[p].score >= heap[i].score) break
+            const tmp = heap[p]
+            heap[p] = heap[i]
+            heap[i] = tmp
+            i = p
+        }
+    }
+
+    private static popMaxHeap(heap: HeapItem[]): HeapItem | undefined {
+        if (heap.length === 0) return undefined
+        const top = heap[0]
+        const tail = heap.pop()
+        if (tail && heap.length > 0) {
+            heap[0] = tail
+            let i = 0
+            for (;;) {
+                const l = i * 2 + 1
+                const r = l + 1
+                let m = i
+                if (l < heap.length && heap[l].score > heap[m].score) m = l
+                if (r < heap.length && heap[r].score > heap[m].score) m = r
+                if (m === i) break
+                const tmp = heap[m]
+                heap[m] = heap[i]
+                heap[i] = tmp
+                i = m
+            }
+        }
+        return top
+    }
+
+    private static evaluateAdaptiveSegment(curve: Curve2, segment: AdaptiveSegment, options: DiscretizeOptions): SegmentEval {
+        const chordLenSq = segment.p0.distanceToSq(segment.p1)
+        const midParam = MathUtils.lerp(segment.u0, segment.u1, 0.5)
+        const midPoint = curve.pointAt(midParam)
+        const approxLength = segment.p0.distanceTo(midPoint) + midPoint.distanceTo(segment.p1)
+        if (approxLength <= options.minSegmentLength) {
+            return { split: false, blocked: false, score: 0 }
+        }
+        const useTurn = this.isTurnCriterionRelevant(chordLenSq, options)
         const deviation = this.maxChordDeviationAtFractions(
             curve,
             segment.u0,
@@ -273,20 +357,31 @@ export class DiscretizeEngine {
             segment.p0,
             segment.p1,
         )
-        const turn = this.tangentTurnAbs(curve, segment.u0, segment.u1)
+        const turn = useTurn ? this.tangentTurnAbs(curve, segment.u0, segment.u1) : 0
 
-        if (deviation <= options.chordTol && turn <= options.angleTolRad) {
-            return { split: false, blocked: false }
-        }
+        const splitByDeviation = deviation > options.chordTol
+        const splitByTurn = useTurn && turn > options.angleTolRad
+        const split = splitByDeviation || splitByTurn
+        const blocked = split && Math.abs(segment.u1 - segment.u0) <= Precision.CURVE_PARAM_EPS
 
-        const blocked = segment.p0.distanceTo(segment.p1) <= Precision.CURVE_LENGTH_EPS
-        return { split: true, blocked }
+        const chordTolSafe = Math.max(options.chordTol, Precision.CURVE_LENGTH_EPS)
+        const angleTolSafe = Math.max(options.angleTolRad, Precision.ANG_EPS)
+        const scoreDeviation = deviation / chordTolSafe
+        const scoreTurn = useTurn ? (turn / angleTolSafe) : 0
+        const score = Math.max(scoreDeviation, scoreTurn)
+
+        return { split, blocked, score }
+    }
+
+    private static isTurnCriterionRelevant(chordLenSq: number, options: DiscretizeOptions): boolean {
+        const minChordForTurn = Math.max(options.chordTol * 2, Precision.CURVE_LENGTH_EPS * 10)
+        return chordLenSq > minChordForTurn * minChordForTurn
     }
 
     private static segmentsToSamples(segments: AdaptiveSegment[]) {
-        const samples: PolylineSample[] = [{ u: segments[0].u0, p: segments[0].p0.clone() }]
+        const samples: PolylineSample[] = [{ u: segments[0].u0, p: segments[0].p0 }]
         for (const segment of segments) {
-            samples.push({ u: segment.u1, p: segment.p1.clone() })
+            samples.push({ u: segment.u1, p: segment.p1 })
         }
         return samples
     }

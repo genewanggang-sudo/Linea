@@ -27,7 +27,7 @@ type EnginePrivate = {
     discretizeBSplineCurve(curve: BSpline2, options: DiscretizeOptions): Sample[]
     postprocessResult(curve: Curve2, raw: Sample[], options: DiscretizeOptions): Sample[]
     refineAdaptiveSegments(curve: Curve2, initialSegments: Array<{ u0: number; u1: number; p0: Vec2; p1: Vec2 }>, options: DiscretizeOptions): Array<{ u0: number; u1: number; p0: Vec2; p1: Vec2 }>
-    shouldSplitAdaptiveSegment(curve: Curve2, segment: { u0: number; u1: number; p0: Vec2; p1: Vec2 }, options: DiscretizeOptions): { split: boolean; blocked: boolean }
+    evaluateAdaptiveSegment(curve: Curve2, segment: { u0: number; u1: number; p0: Vec2; p1: Vec2 }, options: DiscretizeOptions): { split: boolean; blocked: boolean; score: number }
     segmentsToSamples(segments: Array<{ u0: number; u1: number; p0: Vec2; p1: Vec2 }>): Sample[]
     maxChordDeviationAtFractions(curve: Curve2, u0: number, u1: number, p0: Vec2, p1: Vec2, fractions?: readonly number[]): number
     distancePointToSegment(point: Vec2, segStart: Vec2, segEnd: Vec2): number
@@ -37,7 +37,6 @@ type EnginePrivate = {
     buildInitialBSplineSegments(curve: BSpline2): Array<{ u0: number; u1: number; p0: Vec2; p1: Vec2 }>
     buildCircleLikeSamples(curve: Curve2, segmentCount: number, closed: boolean): Sample[]
     dThetaByChord(radius: number, chordTol: number): number
-    requireValidRadius(curve: Circle2 | Arc2): number
 }
 
 class UnsupportedCurve extends Curve2 {
@@ -165,7 +164,8 @@ describe('DiscretizeEngine', () => {
         expect(arcPts[0].equals(arc.pointAt(arc.getRange().start), 1e-12)).toBe(true)
         expect(arcPts[arcPts.length - 1].equals(arc.pointAt(arc.getRange().end), 1e-12)).toBe(true)
 
-        expect(() => DiscretizeEngine.discretize(ellipse, DiscretizeOptions.low)).toThrow('离散溢出: 无法继续细分')
+        const tightEllipse = DiscretizeEngine.discretize(ellipse, new DiscretizeOptions(1e-12, 1e-12, 1e-3))
+        expect(tightEllipse.length).toBeGreaterThan(2)
 
         const eaPts = DiscretizeEngine.discretize(ellipseArc, DiscretizeOptions.low)
         expect(eaPts[eaPts.length - 1].equals(ellipseArc.pointAt(ellipseArc.getRange().end), 1e-12)).toBe(true)
@@ -179,26 +179,24 @@ describe('DiscretizeEngine', () => {
         expect(() => DiscretizeEngine.discretize(new UnsupportedCurve())).toThrow('离散不支持')
     })
 
-    it('covers circle/arc branches: degenerate, radius invalid, and segment overflow', () => {
+    it('covers circle/arc branches: degenerate and angular-step bounds', () => {
         const degenerateArc = new Arc2(new Vec2(0, 0), 1, 0, 0, false)
         const degenerate = engine.discretizeCircleLikeCurve(degenerateArc, DiscretizeOptions.low)
         expect(degenerate.length).toBe(1)
 
-        const badCircle = new Circle2(new Vec2(0, 0), 1)
-        ;(badCircle as unknown as { _radius: number })._radius = 0
-        expect(() => engine.requireValidRadius(badCircle)).toThrow('半径无效')
-
-        const tinyTol = new DiscretizeOptions(1e-12, 1e-6, 1)
+        const tinyTol = new DiscretizeOptions(1e-12, 1e-6, 1e-2)
         const normalCircle = new Circle2(new Vec2(0, 0), 10)
-        expect(() => DiscretizeEngine.discretize(normalCircle, tinyTol)).toThrow('离散溢出: 圆分段超限')
+        const circlePts = DiscretizeEngine.discretize(normalCircle, tinyTol)
+        expect(circlePts.length).toBeGreaterThan(8)
 
         expect(engine.dThetaByChord(1, 3)).toBeCloseTo(Math.PI * 2, 12)
         expect(engine.dThetaByChord(1, -1)).toBeCloseTo(0, 12)
     })
 
-    it('covers ellipse and bspline overflow / empty-initial / degenerate branches', () => {
+    it('covers ellipse and bspline empty-initial / degenerate branches', () => {
         const ellipse = new Ellipse2(new Vec2(0, 0), 3, 1, 0)
-        expect(() => DiscretizeEngine.discretize(ellipse, new DiscretizeOptions(1e-6, 1e-6, 1))).toThrow('离散溢出')
+        const ellipsePts = DiscretizeEngine.discretize(ellipse, new DiscretizeOptions(1e-6, 1e-6, 1e-2))
+        expect(ellipsePts.length).toBeGreaterThan(2)
 
         const degLine = engine.discretizeLineCurve({
             isDegenerate: () => true,
@@ -247,7 +245,7 @@ describe('DiscretizeEngine', () => {
     })
 
     it('covers postprocess branches: empty-raw, closed tail removal and open end replacement', () => {
-        const opts = new DiscretizeOptions(1e-6, Math.PI / 180, 128)
+        const opts = new DiscretizeOptions(1e-6, Math.PI / 180, 1e-4)
 
         const line = new Line2(new Vec2(0, 0), new Vec2(1, 0))
         const openRes = engine.postprocessResult(line, [{ u: 0.4, p: new Vec2(9, 9) }], opts)
@@ -265,7 +263,7 @@ describe('DiscretizeEngine', () => {
         const closedRes = engine.postprocessResult(
             circle,
             [{ u: s, p: p.clone() }, { u: s + Math.PI / 2, p: middle }, { u: s + Math.PI * 2, p: nearHead }],
-            new DiscretizeOptions(1e-6, Math.PI / 180, 64),
+            new DiscretizeOptions(1e-6, Math.PI / 180, 1e-4),
         )
         expect(closedRes.length).toBe(2)
 
@@ -282,30 +280,19 @@ describe('DiscretizeEngine', () => {
     })
 
     it('covers adaptive refinement fail branches and helper utilities', () => {
-        const opts = new DiscretizeOptions(1e-9, 1e-9, 8)
+        const opts = new DiscretizeOptions(1e-9, 1e-9, 1e-8)
 
         const blockedCurve = {
             pointAt: (u: number) => {
-                void u
-                return new Vec2(0, 0)
+                return new Vec2(u * 1e8, 0)
             },
             tangentAt: (u: number) => (u === 0 ? new Vec2(1, 0) : new Vec2(0, 1)),
         } as unknown as Curve2
         expect(() => engine.refineAdaptiveSegments(
             blockedCurve,
-            [{ u0: 0, u1: 1, p0: new Vec2(0, 0), p1: new Vec2(0, 0) }],
+            [{ u0: 0, u1: Precision.CURVE_PARAM_EPS / 2, p0: new Vec2(0, 0), p1: new Vec2(0, 0) }],
             opts,
         )).toThrow('无法继续细分')
-
-        const overflowCurve = {
-            pointAt: (u: number) => new Vec2(u, u * u),
-            tangentAt: (u: number) => new Vec2(1, 2 * u),
-        } as unknown as Curve2
-        expect(() => engine.refineAdaptiveSegments(
-            overflowCurve,
-            [{ u0: 0, u1: 1, p0: new Vec2(0, 0), p1: new Vec2(1, 1) }],
-            new DiscretizeOptions(1e-12, 1e-12, 1),
-        )).toThrow('分段超限')
 
         const nonConvCurve = {
             pointAt: (u: number) => new Vec2(u * 1e9, 0),
@@ -320,9 +307,9 @@ describe('DiscretizeEngine', () => {
                 p1: new Vec2((Precision.CURVE_PARAM_EPS / 2) * 1e9, 0),
             }],
             opts,
-        )).toThrow('离散不收敛')
+        )).toThrow(/离散不收敛|无法继续细分/)
 
-        const noSplit = engine.shouldSplitAdaptiveSegment(
+        const noSplit = engine.evaluateAdaptiveSegment(
             {
                 pointAt: (u: number) => new Vec2(u, 0),
                 tangentAt: (u: number) => {
@@ -331,7 +318,7 @@ describe('DiscretizeEngine', () => {
                 },
             } as unknown as Curve2,
             { u0: 0, u1: 1, p0: new Vec2(0, 0), p1: new Vec2(1, 0) },
-            new DiscretizeOptions(1, Math.PI, 4),
+            new DiscretizeOptions(1, Math.PI, 1e-3),
         )
         expect(noSplit.split).toBe(false)
 

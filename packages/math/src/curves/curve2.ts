@@ -132,6 +132,8 @@ export abstract class Curve2 extends GeomBase {
     /**
      * 计算包围盒。
      * @param accurate 是否使用高精度计算。
+     * - `accurate !== true`：优先快速保守盒（用于高频场景）
+     * - `accurate === true`：尽量返回更紧的包围盒（允许更慢）
      * @returns 曲线包围盒。
      */
     public abstract boundingBox(accurate?: boolean): Box2

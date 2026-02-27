@@ -1,6 +1,7 @@
 ﻿import { describe, expect, it } from 'vitest'
 
 import { BSpline2 } from '../src/curves/bspline2'
+import { DiscretizeOptions } from '../src/discretize/discretize_options'
 import { Interval } from '../src/curves/interval'
 import { Mat3 } from '../src/core/mat3'
 import { Vec2 } from '../src/core/vec2'
@@ -230,5 +231,44 @@ describe('BSpline2', () => {
 
         expect((BSpline2 as unknown as { binomial: (n: number, k: number) => number }).binomial(2, 3)).toBe(0)
         expect((BSpline2 as unknown as { binomial: (n: number, k: number) => number }).binomial(6, 4)).toBe(15)
+    })
+
+    it('boundingBox supports fast and accurate modes with tighter result', () => {
+        const c = new BSpline2(
+            [
+                new Vec2(0, 0),
+                new Vec2(1, 6),
+                new Vec2(2, -5),
+                new Vec2(3, 8),
+                new Vec2(4, -4),
+                new Vec2(5, 1),
+            ],
+            3,
+            { expandedKnots: [0, 0, 0, 0, 1, 2, 3, 3, 3, 3] },
+        )
+
+        const fastBox = c.boundingBox()
+        const tightBox = c.boundingBox(true)
+
+        // Fast mode should remain control-point-safe.
+        for (const cp of c.controlPoints) {
+            expect(fastBox.containsPoint(cp)).toBe(true)
+        }
+
+        // Accurate mode should contain dense discretized samples.
+        const samples = c.discretize(DiscretizeOptions.ultra)
+        for (const p of samples) {
+            expect(tightBox.containsPoint(p)).toBe(true)
+        }
+        expect(tightBox.containsPoint(c.pointAt(c.getRange().start))).toBe(true)
+        expect(tightBox.containsPoint(c.pointAt(c.getRange().end))).toBe(true)
+
+        const fastArea = fastBox.width() * fastBox.height()
+        const tightArea = tightBox.width() * tightBox.height()
+        expect(tightArea).toBeLessThanOrEqual(fastArea + 1e-9)
+
+        // Reverse should preserve accurate bbox.
+        const reversed = c.clone().reverse()
+        expect(reversed.boundingBox(true).equals(tightBox, 1e-6)).toBe(true)
     })
 })
