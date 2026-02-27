@@ -25,7 +25,6 @@ type SplitDecision = {
     blocked: boolean
 }
 
-
 export class DiscretizeEngine {
     private constructor() { }
 
@@ -87,11 +86,7 @@ export class DiscretizeEngine {
                 u: endParam,
                 p: endPoint.clone(),
             }
-            if (samples.length === 0) {
-                samples.push(endSample)
-            } else {
-                samples[samples.length - 1] = endSample
-            }
+            samples[samples.length - 1] = endSample
         }
 
         return samples
