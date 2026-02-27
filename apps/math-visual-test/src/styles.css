@@ -142,10 +142,13 @@ body,
 
 .panel-card :deep(.el-card__body) {
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .panel-header {
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .panel-header h2 {
@@ -161,37 +164,93 @@ body,
   color: #64748b;
 }
 
-.panel-group h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.btn-grid {
-  display: grid;
+.panel-group {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+  padding: 10px;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid #e6edf7;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
 }
 
-.btn-grid-2 {
+.panel-title {
+  margin: 0;
+  padding-left: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.2px;
+}
+
+.panel-buttons {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.btn-grid-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  align-items: stretch;
+  grid-auto-rows: 36px;
 }
 
 .panel-btn {
   width: 100%;
-  height: 34px;
-  border-radius: 8px;
+  height: 100%;
+  border-radius: 9px;
   margin: 0;
-  font-size: 13px;
-  font-weight: 500;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  justify-content: center;
+}
+
+.panel-btn:deep(.el-button__text) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  line-height: 1.1;
+}
+
+.panel-btn:deep(span) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-btn.el-button--default {
+  border-color: #d8e3f1;
+  color: #334155;
+  background: #f8fbff;
+}
+
+.panel-btn.el-button--default:hover {
+  border-color: #bfd4ee;
+  background: #f1f7ff;
+}
+
+.panel-btn.el-button--primary.is-plain {
+  background: #eaf3ff;
+  border-color: #a8c7ee;
+  color: #1d4ed8;
+}
+
+.panel-btn.el-button--primary.is-plain:hover {
+  background: #dbeafe;
+  border-color: #8fb7ea;
+}
+
+/* Override Element Plus adjacent button spacing inside custom panel grids. */
+.panel-buttons .el-button + .el-button {
+  margin-left: 0 !important;
 }
 
 .span-2 {
   grid-column: span 2;
+  height: 100%;
 }
 
 .slider-panel {
@@ -255,8 +314,7 @@ body,
     top: 8px;
   }
 
-  .btn-grid-2,
-  .btn-grid-3 {
+  .panel-buttons {
     grid-template-columns: 1fr;
   }
 

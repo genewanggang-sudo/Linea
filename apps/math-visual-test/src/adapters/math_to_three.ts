@@ -20,19 +20,37 @@ function appendClosed(points: Vec2[], closed: boolean): Vec2[] {
     return [...points, first.clone()]
 }
 
+export function discretizePolylinePoints(curve: Curve2, options: DiscretizeOptions): Vec2[] {
+    return appendClosed(curve.discretize(options), curve.isClosed())
+}
+
 export function buildCurveLine(curve: Curve2, options?: DiscretizeOptions): THREE.Line {
     const opt = options ? options.clone() : DiscretizeOptions.high.clone()
-    const points = appendClosed(curve.discretize(opt), curve.isClosed())
+    const points = discretizePolylinePoints(curve, opt)
     return lineFromPoints(points, 0x2563eb)
 }
 
 export function buildDiscreteLine(curve: Curve2, options: DiscretizeOptions): THREE.Line {
-    const points = appendClosed(curve.discretize(options), curve.isClosed())
+    const points = discretizePolylinePoints(curve, options)
+    return lineFromPoints(points, 0xea580c)
+}
+
+export function buildDiscreteLineFromPoints(points: Vec2[]): THREE.Line {
     return lineFromPoints(points, 0xea580c)
 }
 
 export function buildDiscretePoints(curve: Curve2, options: DiscretizeOptions): THREE.Points {
-    const points = appendClosed(curve.discretize(options), curve.isClosed())
+    const points = discretizePolylinePoints(curve, options)
+    const geometry = new THREE.BufferGeometry().setFromPoints(points.map(toVec3))
+    const material = new THREE.PointsMaterial({
+        color: 0x0f766e,
+        size: 5,
+        sizeAttenuation: false,
+    })
+    return new THREE.Points(geometry, material)
+}
+
+export function buildDiscretePointsFromPoints(points: Vec2[]): THREE.Points {
     const geometry = new THREE.BufferGeometry().setFromPoints(points.map(toVec3))
     const material = new THREE.PointsMaterial({
         color: 0x0f766e,

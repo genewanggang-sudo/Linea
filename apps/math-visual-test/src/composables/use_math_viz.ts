@@ -13,7 +13,12 @@ import { useEventListener } from '@vueuse/core'
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
 import * as THREE from 'three'
 import { createPerformanceMonitor, type PerfSnapshot } from '../adapters/performance_monitor'
-import { buildBoundingBox, buildDirectionArrows, buildDiscreteLine, buildDiscretePoints } from '../adapters/math_to_three'
+import {
+    buildBoundingBox,
+    buildDirectionArrows,
+    buildDiscreteLine,
+    discretizePolylinePoints,
+} from '../adapters/math_to_three'
 import { createViewport, type ViewportContext } from '../app/bootstrap'
 
 export type DrawTool = 'select' | 'line' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
@@ -23,7 +28,9 @@ type DrawEntity = {
     id: number
     type: DrawTool
     curve: Curve2
-    group: THREE.Group
+    group: THREE.Group | null
+    discretePolyline: Vec2[]
+    discretePointCount: number
 }
 
 type EllipseParams = {
@@ -33,7 +40,7 @@ type EllipseParams = {
     rotation: number
 }
 
-type PerfViewState = PerfSnapshot & { fpsClass: 'good' | 'warn' | 'bad' }
+type PerfViewState = PerfSnapshot & { fpsClass: 'good' | 'warn' | 'bad'; sampledPoints: number }
 
 const DRAW_TOOLS: DrawTool[] = ['select', 'line', 'circle', 'arc', 'ellipse', 'ellipseArc', 'bspline']
 
@@ -48,6 +55,8 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     const showBoundingBox = ref(false)
     const showDirection = ref(false)
     const preset = ref<Preset>('medium')
+    const isGenerating = ref(false)
+    const isRefining = ref(false)
 
     const perfState = ref<PerfViewState>({
         fps: 0,
@@ -59,6 +68,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         geometries: 0,
         textures: 0,
         fpsClass: 'good',
+        sampledPoints: 0,
     })
 
     let viewport: ViewportContext | null = null
@@ -74,7 +84,13 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     const pointer = new THREE.Vector2()
     const worldPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)
     const entityRoot = new THREE.Group()
+    const batchedRoot = new THREE.Group()
     const draftRoot = new THREE.Group()
+    let batchedLineObject: THREE.LineSegments | null = null
+    let batchedPointObject: THREE.Points | null = null
+    let discreteCacheDirty = true
+    let linePositionCache: number[] = []
+    let pointPositionCache: number[] = []
 
     let eventDisposers: Array<() => void> = []
 
@@ -90,7 +106,6 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         }
         return map[tool]
     }
-
     function getRequiredPoints(tool: DrawTool): number {
         if (tool === 'line') return 2
         if (tool === 'circle') return 2
@@ -185,13 +200,6 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function createEntityGroup(curve: Curve2): THREE.Group {
         const group = new THREE.Group()
-        const options = resolveDiscretizeOptions()
-        if (showDiscrete.value) {
-            group.add(buildDiscreteLine(curve, options))
-        }
-        if (showDiscretePoints.value) {
-            group.add(buildDiscretePoints(curve, options))
-        }
         if (showBoundingBox.value) {
             group.add(buildBoundingBox(curve))
         }
@@ -201,39 +209,246 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         return group
     }
 
-    function rebuildEntities(): void {
+    function markDiscreteCacheDirty(): void {
+        discreteCacheDirty = true
+    }
+
+    function rebuildDiscretePositionCacheIfNeeded(): void {
+        if (!discreteCacheDirty) return
+        linePositionCache = []
+        pointPositionCache = []
+        for (const entity of entities) {
+            const polyline = entity.discretePolyline
+            if (polyline.length === 0) continue
+            for (let i = 0; i < polyline.length; i++) {
+                const p = polyline[i]
+                pointPositionCache.push(p.x, p.y, 0)
+                if (i === 0) continue
+                const prev = polyline[i - 1]
+                linePositionCache.push(prev.x, prev.y, 0, p.x, p.y, 0)
+            }
+        }
+        discreteCacheDirty = false
+    }
+
+    function clearBatchedRenderObjects(): void {
+        if (batchedLineObject) {
+            batchedRoot.remove(batchedLineObject)
+            disposeObjectTree(batchedLineObject)
+            batchedLineObject = null
+        }
+        if (batchedPointObject) {
+            batchedRoot.remove(batchedPointObject)
+            disposeObjectTree(batchedPointObject)
+            batchedPointObject = null
+        }
+    }
+
+    function rebuildBatchedLayers(): void {
+        if (!viewport) return
+        clearBatchedRenderObjects()
+        if (!showDiscrete.value && !showDiscretePoints.value) return
+
+        rebuildDiscretePositionCacheIfNeeded()
+
+        if (showDiscrete.value && linePositionCache.length >= 6) {
+            const geometry = new THREE.BufferGeometry()
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositionCache, 3))
+            const material = new THREE.LineBasicMaterial({ color: 0xea580c })
+            batchedLineObject = new THREE.LineSegments(geometry, material)
+            batchedRoot.add(batchedLineObject)
+        }
+
+        if (showDiscretePoints.value && pointPositionCache.length >= 3) {
+            const geometry = new THREE.BufferGeometry()
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(pointPositionCache, 3))
+            const material = new THREE.PointsMaterial({
+                color: 0x0f766e,
+                size: 5,
+                sizeAttenuation: false,
+            })
+            batchedPointObject = new THREE.Points(geometry, material)
+            batchedRoot.add(batchedPointObject)
+        }
+    }
+
+    function rebuildOverlayLayers(): void {
         if (!viewport) return
         for (const entity of entities) {
-            entityRoot.remove(entity.group)
-            disposeObjectTree(entity.group)
+            if (entity.group) {
+                entityRoot.remove(entity.group)
+                disposeObjectTree(entity.group)
+                entity.group = null
+            }
+            if (!showBoundingBox.value && !showDirection.value) continue
             try {
-                entity.group = createEntityGroup(entity.curve)
-                entityRoot.add(entity.group)
+                const group = createEntityGroup(entity.curve)
+                entity.group = group
+                entityRoot.add(group)
             } catch (error) {
                 reportDiscretizeError(error, entity.type, entity.curve)
             }
         }
     }
 
-    function addCurveEntity(type: DrawTool, curve: Curve2): void {
-        if (!viewport) return
+    function rebuildEntities(): void {
+        rebuildBatchedLayers()
+        rebuildOverlayLayers()
+    }
+
+    function createEntity(type: DrawTool, curve: Curve2): DrawEntity {
+        let discretePolyline: Vec2[] = []
         try {
-            const group = createEntityGroup(curve)
-            const entity: DrawEntity = {
-                id: nextEntityId++,
-                type,
-                curve,
-                group,
-            }
-            entities.push(entity)
-            entityCount.value = entities.length
-            entityRoot.add(group)
-            lastCompleted = { tool: type, id: entity.id, at: performance.now() }
+            discretePolyline = discretizePolylinePoints(curve, resolveDiscretizeOptions())
+        } catch (error) {
+            reportDiscretizeError(error, type, curve)
+        }
+        const entity: DrawEntity = {
+            id: nextEntityId++,
+            type,
+            curve,
+            group: null,
+            discretePolyline,
+            discretePointCount: discretePolyline.length,
+        }
+        entities.push(entity)
+        markDiscreteCacheDirty()
+        entityCount.value = entities.length
+        lastCompleted = { tool: type, id: entity.id, at: performance.now() }
+        return entity
+    }
+
+    function attachEntityGroup(entity: DrawEntity): void {
+        if (!viewport) return
+        if (entity.group) {
+            entityRoot.remove(entity.group)
+            disposeObjectTree(entity.group)
+            entity.group = null
+        }
+        if (!showBoundingBox.value && !showDirection.value) return
+        const group = createEntityGroup(entity.curve)
+        entity.group = group
+        entityRoot.add(group)
+    }
+
+    function addCurveEntity(type: DrawTool, curve: Curve2, deferVisual = false): void {
+        const entity = createEntity(type, curve)
+        if (deferVisual) return
+        try {
+            attachEntityGroup(entity)
+            rebuildBatchedLayers()
         } catch (error) {
             reportDiscretizeError(error, type, curve)
         }
     }
 
+    function randomIn(min: number, max: number): number {
+        return min + Math.random() * (max - min)
+    }
+
+    function randomBool(): boolean {
+        return Math.random() >= 0.5
+    }
+
+    function randomPoint(span = 80): Vec2 {
+        const half = span * 0.5
+        return new Vec2(randomIn(-half, half), randomIn(-half, half))
+    }
+
+    function randomCurveSpec(): { type: Exclude<DrawTool, 'select'>; curve: Curve2 } {
+        const types: Array<Exclude<DrawTool, 'select'>> = ['line', 'circle', 'arc', 'ellipse', 'ellipseArc', 'bspline']
+        const type = types[Math.floor(Math.random() * types.length)]
+
+        if (type === 'line') {
+            const p0 = randomPoint()
+            const p1 = randomPoint()
+            return { type, curve: new Line2(p0, p1) }
+        }
+
+        if (type === 'circle') {
+            const center = randomPoint()
+            const radius = randomIn(0.2, 18)
+            return { type, curve: new Circle2(center, radius) }
+        }
+
+        if (type === 'arc') {
+            const center = randomPoint()
+            const radius = randomIn(0.2, 18)
+            const startAngle = randomIn(-Math.PI, Math.PI)
+            const sweep = randomIn(0.15, Math.PI * 1.95)
+            const clockwise = randomBool()
+            const endAngle = startAngle + (clockwise ? -sweep : sweep)
+            return { type, curve: new Arc2(center, radius, startAngle, endAngle, clockwise) }
+        }
+
+        if (type === 'ellipse') {
+            const center = randomPoint()
+            const rx = randomIn(0.3, 18)
+            const ry = randomIn(0.2, 12)
+            const rotation = randomIn(-Math.PI, Math.PI)
+            return { type, curve: new Ellipse2(center, rx, ry, rotation) }
+        }
+
+        if (type === 'ellipseArc') {
+            const center = randomPoint()
+            const rx = randomIn(0.3, 18)
+            const ry = randomIn(0.2, 12)
+            const rotation = randomIn(-Math.PI, Math.PI)
+            const startAngle = randomIn(-Math.PI, Math.PI)
+            const sweep = randomIn(0.2, Math.PI * 1.9)
+            const clockwise = randomBool()
+            const endAngle = startAngle + (clockwise ? -sweep : sweep)
+            return {
+                type,
+                curve: new EllipseArc2(center, rx, ry, rotation, startAngle, endAngle, clockwise),
+            }
+        }
+
+        const count = Math.floor(randomIn(4, 28))
+        const points: Vec2[] = []
+        let cursor = randomPoint()
+        points.push(cursor.clone())
+        for (let i = 1; i < count; i++) {
+            const step = new Vec2(randomIn(-6, 6), randomIn(-6, 6))
+            cursor = cursor.added(step)
+            points.push(cursor)
+        }
+        const degree = Math.min(3, points.length - 1)
+        return {
+            type,
+            curve: new BSpline2(points, degree, { expandedKnots: buildClampedKnots(points.length, degree) }),
+        }
+    }
+
+    async function generateRandomCurves(count = 50): Promise<void> {
+        if (isGenerating.value) return
+        isGenerating.value = true
+        try {
+            activeTool.value = 'select'
+            clearDraft()
+            updateStatus()
+
+            const chunkSize = 50
+            let created = 0
+            while (created < count) {
+                const chunkEnd = Math.min(created + chunkSize, count)
+                for (; created < chunkEnd; created++) {
+                    const { type, curve } = randomCurveSpec()
+                    addCurveEntity(type, curve, true)
+                }
+                statusHint.value = '正在随机追加曲线：' + created + '/' + count
+                await new Promise<void>((resolve) => {
+                    requestAnimationFrame(() => resolve())
+                })
+            }
+
+            statusHint.value = '正在合批渲染：新增 ' + count + ' 条'
+            rebuildEntities()
+        } finally {
+            isGenerating.value = false
+            updateStatus()
+        }
+    }
     function pointToWorld(event: PointerEvent): Vec2 | null {
         if (!viewport) return null
         const rect = viewport.renderer.domElement.getBoundingClientRect()
@@ -474,32 +689,38 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         const ellipseSteps = ['点中心', '点长轴端点', '点短轴参考点']
         const ellipseArcSteps = ['点中心', '点长轴端点', '点短轴参考点', '点弧起点', '点弧终点']
 
-        let hint = `当前绘制：${toolLabel(activeTool.value)}，左键取点，右键结束。当前取点 ${draftPoints.length}/${required}`
+        let hint = '当前绘制：' + toolLabel(activeTool.value) + '，左键取点，右键结束。' + draftPoints.length + '/' + required
         if (activeTool.value === 'select') {
-            hint = '选择模式：可平移缩放查看，点击顶部按钮进入绘制'
+            hint = '选择模式：可平移缩放查看，点击顶部按钮进入绘制模式'
         } else if (activeTool.value === 'bspline') {
             hint = '左键连续添加控制点，右键结束并生成 B 样条'
         } else if (activeTool.value === 'ellipse') {
             const step = ellipseSteps[Math.min(draftPoints.length, ellipseSteps.length - 1)]
-            hint = `当前绘制：椭圆，下一步：${step}（${draftPoints.length}/${required}）`
+            hint = '当前绘制：椭圆，下一步：' + step + '（' + draftPoints.length + '/' + required + '）'
         } else if (activeTool.value === 'ellipseArc') {
             const step = ellipseArcSteps[Math.min(draftPoints.length, ellipseArcSteps.length - 1)]
-            hint = `当前绘制：椭圆弧，下一步：${step}（${draftPoints.length}/${required}）`
+            hint = '当前绘制：椭圆弧，下一步：' + step + '（' + draftPoints.length + '/' + required + '）'
+        }
+
+        if (isRefining.value) {
+            statusHint.value = statusHint.value.startsWith('后台精化离散') ? statusHint.value : '后台精化离散中...'
+            completionMessage.value = ''
+            return
         }
 
         const done = lastCompleted && performance.now() - lastCompleted.at < 2200
-            ? `已完成第 ${lastCompleted.id} 个${toolLabel(lastCompleted.tool)}，可继续绘制；右键可结束当前模式。`
+            ? '已完成第 ' + lastCompleted.id + ' 个' + toolLabel(lastCompleted.tool) + '，可继续绘制；右键可结束当前模式。'
             : ''
 
         statusHint.value = hint
         completionMessage.value = done
     }
-
     function updatePerformancePanel(): void {
         if (!perfMonitor) return
         const snap = perfMonitor.snapshot()
         const fpsClass: 'good' | 'warn' | 'bad' = snap.fps < 20 ? 'bad' : snap.fps < 30 ? 'warn' : 'good'
-        perfState.value = { ...snap, fpsClass }
+        const sampledPoints = entities.reduce((acc, entity) => acc + entity.discretePointCount, 0)
+        perfState.value = { ...snap, fpsClass, sampledPoints }
     }
 
     function endDrawingMode(): void {
@@ -555,6 +776,18 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function applyPreset(nextPreset: Preset): void {
         preset.value = nextPreset
+        for (const entity of entities) {
+            try {
+                const polyline = discretizePolylinePoints(entity.curve, resolveDiscretizeOptions())
+                entity.discretePolyline = polyline
+                entity.discretePointCount = polyline.length
+            } catch (error) {
+                entity.discretePolyline = []
+                entity.discretePointCount = 0
+                reportDiscretizeError(error, entity.type, entity.curve)
+            }
+        }
+        markDiscreteCacheDirty()
         rebuildEntities()
         renderDraft()
     }
@@ -568,22 +801,22 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function setShowDiscrete(checked: boolean): void {
         showDiscrete.value = checked
-        rebuildEntities()
+        rebuildBatchedLayers()
     }
 
     function setShowDiscretePoints(checked: boolean): void {
         showDiscretePoints.value = checked
-        rebuildEntities()
+        rebuildBatchedLayers()
     }
 
     function setShowBoundingBox(checked: boolean): void {
         showBoundingBox.value = checked
-        rebuildEntities()
+        rebuildOverlayLayers()
     }
 
     function setShowDirection(checked: boolean): void {
         showDirection.value = checked
-        rebuildEntities()
+        rebuildOverlayLayers()
     }
 
     function showOnlyPoints(): void {
@@ -601,9 +834,15 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function clearScene(): void {
         for (const entity of entities) {
-            entityRoot.remove(entity.group)
-            disposeObjectTree(entity.group)
+            if (entity.group) {
+                entityRoot.remove(entity.group)
+                disposeObjectTree(entity.group)
+            }
         }
+        clearBatchedRenderObjects()
+        linePositionCache = []
+        pointPositionCache = []
+        discreteCacheDirty = false
         entities = []
         entityCount.value = 0
         clearDraft()
@@ -616,6 +855,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         viewport = createViewport(canvasHost.value)
         perfMonitor = createPerformanceMonitor(viewport.renderer)
         viewport.scene.add(entityRoot)
+        viewport.scene.add(batchedRoot)
         viewport.scene.add(draftRoot)
 
         const canvasDom = viewport.renderer.domElement
@@ -682,6 +922,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         entityCount,
         statusHint,
         completionMessage,
+        isGenerating,
         perfState,
         showDiscrete,
         showDiscretePoints,
@@ -699,5 +940,6 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         clearBbox,
         clearScene,
         endDrawingMode,
+        generateRandomCurves,
     }
 }

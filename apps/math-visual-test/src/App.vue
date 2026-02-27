@@ -76,11 +76,11 @@ function toggleDirection(): void {
               性能
             </el-tag>
             <span>FPS: {{ viz.perfState.value.fps.toFixed(1) }}</span>
-            <span>Frame: {{ viz.perfState.value.frameMs.toFixed(2) }} ms</span>
-            <span>Calls: {{ viz.perfState.value.drawCalls }}</span>
-            <span>Triangles: {{ viz.perfState.value.triangles }}</span>
-            <span>Lines: {{ viz.perfState.value.lines }}</span>
-            <span>Points: {{ viz.perfState.value.points }}</span>
+            <span>帧耗时: {{ viz.perfState.value.frameMs.toFixed(2) }} ms</span>
+            <span>绘制调用: {{ viz.perfState.value.drawCalls }}</span>
+            <span>三角形: {{ viz.perfState.value.triangles }}</span>
+            <span>线段: {{ viz.perfState.value.lines }}</span>
+            <span>离散点总数: {{ viz.perfState.value.sampledPoints }}</span>
           </div>
         </section>
 
@@ -88,12 +88,11 @@ function toggleDirection(): void {
           <el-card class="panel-card" shadow="never">
             <header class="panel-header">
               <h2>测试工具</h2>
-              <p>按钮化控制</p>
             </header>
 
             <section class="panel-group">
-              <h3>显示层</h3>
-              <div class="btn-grid btn-grid-2">
+              <h3 class="panel-title">显示层</h3>
+              <div class="panel-buttons">
                 <el-button :type="viz.showDiscrete.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleDiscrete()">离散折线</el-button>
                 <el-button :type="viz.showDiscretePoints.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleDiscretePoints()">离散点</el-button>
                 <el-button :type="viz.showBoundingBox.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleBoundingBox()">包围盒</el-button>
@@ -102,8 +101,8 @@ function toggleDirection(): void {
             </section>
 
             <section class="panel-group">
-              <h3>离散精度</h3>
-              <div class="btn-grid btn-grid-2">
+              <h3 class="panel-title">离散精度</h3>
+              <div class="panel-buttons">
                 <el-button :type="viz.preset.value === 'low' ? 'primary' : 'default'" class="panel-btn" plain @click="viz.applyPreset('low')">低</el-button>
                 <el-button :type="viz.preset.value === 'medium' ? 'primary' : 'default'" class="panel-btn" plain @click="viz.applyPreset('medium')">中</el-button>
                 <el-button :type="viz.preset.value === 'high' ? 'primary' : 'default'" class="panel-btn" plain @click="viz.applyPreset('high')">高</el-button>
@@ -112,8 +111,17 @@ function toggleDirection(): void {
             </section>
 
             <section class="panel-group">
-              <h3>常用动作</h3>
-              <div class="btn-grid btn-grid-2">
+              <h3 class="panel-title">常用动作</h3>
+              <div class="panel-buttons">
+                <el-button
+                  class="panel-btn span-2"
+                  :type="viz.isGenerating.value ? 'warning' : 'primary'"
+                  plain
+                  :loading="viz.isGenerating.value"
+                  @click="viz.generateRandomCurves()"
+                >
+                  追加50条随机线
+                </el-button>
                 <el-button class="panel-btn" plain @click="viz.showOnlyPoints()">仅显示离散点</el-button>
                 <el-button class="panel-btn" plain @click="viz.clearBbox()">清空包围盒</el-button>
                 <el-button class="panel-btn" plain @click="viz.endDrawingMode()">结束绘制</el-button>
