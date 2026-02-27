@@ -19,6 +19,9 @@ export class Precision {
     /** 曲线长度/距离相关容差 */
     public static CURVE_LENGTH_EPS = 1e-8
 
+    /** 曲线长度容差的平方 */
+    public static CURVE_LENGTH_EPS_SQ = Precision.CURVE_LENGTH_EPS * Precision.CURVE_LENGTH_EPS
+
     /** 曲线牛顿迭代收敛容差 */
     public static CURVE_NEWTON_EPS = 1e-10
 

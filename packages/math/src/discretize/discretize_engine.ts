@@ -98,7 +98,6 @@ export class DiscretizeEngine {
         if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
 
         const totalLen = curve.length()
-
         const radius = DiscretizeEngine.requireValidRadius(curve)
         const maxByInternal = Math.max(1, Math.floor(totalLen / Precision.CURVE_LENGTH_EPS))
         const dThetaChord = DiscretizeEngine.dThetaByChord(radius, options.chordTol)
@@ -117,7 +116,7 @@ export class DiscretizeEngine {
     private static distancePointToSegment(point: Vec2, segStart: Vec2, segEnd: Vec2) {
         const edge = segEnd.subtracted(segStart)
         const lenSq = edge.lenSq()
-        if (lenSq <= Precision.CURVE_LENGTH_EPS * Precision.CURVE_LENGTH_EPS) {
+        if (lenSq <= Precision.CURVE_LENGTH_EPS_SQ) {
             return point.distanceTo(segStart)
         }
 
@@ -293,10 +292,6 @@ export class DiscretizeEngine {
         return radius
     }
 
-    private static cloneSample(sample: PolylineSample): PolylineSample {
-        return { u: sample.u, p: sample.p.clone() }
-    }
-
     private static deduplicateAdjacent(samples: PolylineSample[], tol: number) {
         if (samples.length <= 1) return samples
         const deduped: PolylineSample[] = [samples[0]]
@@ -353,7 +348,7 @@ export class DiscretizeEngine {
         const startPoint = curve.pointAt(startParam)
         const endPoint = curve.pointAt(endParam)
 
-        let samples = raw.map((sample) => DiscretizeEngine.cloneSample(sample))
+        let samples = raw.map((sample) => ({ u: sample.u, p: sample.p.clone() }))
         if (samples.length === 0) {
             samples = [{ u: startParam, p: startPoint.clone() }]
         }
@@ -365,10 +360,6 @@ export class DiscretizeEngine {
             DiscretizeEngine.removeClosedDuplicateTail(samples, options.chordTol)
         } else {
             DiscretizeEngine.ensureOpenEndIncluded(samples, endParam, endPoint, options.chordTol)
-        }
-
-        if (samples.length === 0) {
-            samples.push({ u: startParam, p: startPoint.clone() })
         }
 
         return samples
