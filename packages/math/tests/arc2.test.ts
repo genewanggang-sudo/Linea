@@ -78,6 +78,13 @@ describe('Arc2', () => {
         }
     })
 
+    it('containsParam supports periodic equivalent parameters', () => {
+        const arc = new Arc2(new Vec2(0, 0), 2, 0, Math.PI / 2, false)
+        expect(arc.containsParam(Math.PI / 4)).toBe(true)
+        expect(arc.containsParam(Math.PI * 2 + Math.PI / 4)).toBe(true)
+        expect(arc.containsParam(Math.PI * 2 + Math.PI)).toBe(false)
+    })
+
     it('transform requires similarity and mirror flips clockwise', () => {
         const arc = new Arc2(new Vec2(0, 0), 2, 0, Math.PI / 2, false)
         const mirrored = arc.transformed(Mat3.scaling(-1, 1))

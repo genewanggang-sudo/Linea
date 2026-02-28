@@ -37,6 +37,16 @@ export abstract class Curve2 extends GeomBase {
     }
 
     /**
+     * 判断参数是否落在当前曲线参数域内。
+     * @param u 待判断参数。
+     * @param eps 区间边界比较容差。
+     * @returns 落在参数域内返回 `true`。
+     */
+    public containsParam(u: number, eps = Precision.CURVE_PARAM_EPS): boolean {
+        return this._range.contains(u, eps)
+    }
+
+    /**
      * 原生参数取点。
      * @param u 曲线参数。
      * @returns 参数对应的二维点。

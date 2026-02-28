@@ -154,6 +154,14 @@ describe('Curve2 base methods', () => {
         expect(c.getRange().equals(new Interval(2, 3))).toBe(true)
     })
 
+    it('containsParam checks param-domain membership with eps', () => {
+        const c = new MockCurve2()
+        expect(c.containsParam(0)).toBe(true)
+        expect(c.containsParam(1)).toBe(true)
+        expect(c.containsParam(-1)).toBe(false)
+        expect(c.containsParam(1 + Precision.CURVE_PARAM_EPS * 0.5)).toBe(true)
+    })
+
     it('derivativeAt derives from derivatives', () => {
         const c = new MockCurve2()
         const d2 = c.derivativeAt(0.3, 2)

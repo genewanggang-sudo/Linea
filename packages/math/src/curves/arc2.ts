@@ -162,7 +162,7 @@ export class Arc2 extends CircleCurve2 {
         }
 
         const candidates: number[] = []
-        if (this._range.contains(candidateU, Precision.CURVE_PARAM_EPS)) {
+        if (this.containsParam(candidateU)) {
             candidates.push(candidateU)
         }
         candidates.push(this._range.start, this._range.end)
@@ -208,7 +208,7 @@ export class Arc2 extends CircleCurve2 {
         const axes = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5]
         for (const theta of axes) {
             const u = this.paramFromAngle(theta)
-            if (this._range.contains(u, Precision.CURVE_PARAM_EPS)) {
+            if (this.containsParam(u)) {
                 points.push(this.pointAt(u))
             }
         }

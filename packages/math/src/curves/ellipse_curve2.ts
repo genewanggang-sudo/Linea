@@ -151,7 +151,7 @@ export abstract class EllipseCurve2 extends Curve2 {
         const candidates = [tx, tx + Math.PI, ty, ty + Math.PI]
         for (const theta of candidates) {
             const u = this.angleToParam(theta)
-            if (this._range.contains(u, Precision.CURVE_PARAM_EPS)) {
+            if (this.containsParam(u)) {
                 points.push(this.pointAt(u))
             }
         }
