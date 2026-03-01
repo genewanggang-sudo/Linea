@@ -26,6 +26,9 @@ export { MathError } from './utils/math_error'
 export { DiscretizeEngine } from './discretize/discretize_engine'
 export { DiscretizeOptions } from './discretize/discretize_options'
 
+export { intersectCurveCurve } from './intersections'
+export type { CurveXInfo } from './intersections'
+
 export { GeomMgr, geomMgr, RegisterGeom } from './serialize/geom_mgr'
 export type { IDumpable, ILoadable } from './serialize/geom_mgr'
 export type {
