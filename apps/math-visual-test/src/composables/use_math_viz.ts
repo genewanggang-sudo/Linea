@@ -583,6 +583,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         return new Vec2(randomIn(-half, half), randomIn(-half, half))
     }
 
+
     function randomCurveSpec(): { type: Exclude<DrawTool, 'select'>; curve: Curve2 } {
         const types: Array<Exclude<DrawTool, 'select'>> = ['line', 'circle', 'arc', 'ellipse', 'ellipseArc', 'bspline']
         const type = types[Math.floor(Math.random() * types.length)]
@@ -677,6 +678,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
             updateStatus()
         }
     }
+
 
     function randomUnitVector(): Vec2 {
         const theta = randomIn(-Math.PI, Math.PI)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BSpline2, Ellipse2, Vec2, intersectCurveCurve, intersectCurveSelf } from '../src'
+import { BSpline2, Circle2, Ellipse2, Line2, Vec2, intersectCurveCurve, intersectCurveSelf } from '../src'
 
 describe('intersections regression', () => {
     it('bspline self-intersection should be found for known snapshot case', () => {
@@ -120,5 +120,74 @@ describe('intersections regression', () => {
         const result = intersectCurveCurve(bspline, ellipse)
         // Latest snapshot still misses 2 roots: expected 10, current 8.
         expect(result.length).toBe(10)
+    })
+
+    it('circle-ellipse should find two intersections for exported snapshot case', () => {
+        const circle = new Circle2(
+            new Vec2(-8.791666030883789, 3.394110054754455),
+            3.3279437008854345,
+        )
+        const ellipse = new Ellipse2(
+            new Vec2(-4.651245170578802, 6.580378217944629),
+            8.122908529658304,
+            5.117292184913836,
+            -2.327501216931193,
+        )
+        const result = intersectCurveCurve(circle, ellipse)
+        expect(result.length).toBe(2)
+    })
+
+    it('ellipse-ellipse should find four intersections for exported snapshot case', () => {
+        const e1 = new Ellipse2(
+            new Vec2(-9.041666030883789, 3.800465515569074),
+            4.656821202277234,
+            0.6428221009912803,
+            -0.0156628078621564,
+        )
+        const e2 = new Ellipse2(
+            new Vec2(-6.1145830154418945, 5.36337113408684),
+            3.7929370417490884,
+            0.5942653373514734,
+            -1.5570643160152138,
+        )
+        const result = intersectCurveCurve(e1, e2)
+        expect(result.length).toBe(4)
+    })
+
+    it('line-bspline should find eight intersections for exported snapshot case', () => {
+        const line = new Line2(
+            new Vec2(-6.4270830154418945, 5.540500119544892),
+            new Vec2(-12.322916507720947, -0.22141224536456905),
+        )
+        const bspline = new BSpline2(
+            [
+                new Vec2(-5.46875, 3.0606895535227405),
+                new Vec2(-8.020833015441895, 5.165402771100628),
+                new Vec2(-7.4895830154418945, 3.2586579165089526),
+                new Vec2(-9.354166030883789, 3.8942398526801405),
+                new Vec2(-8.916666030883789, 2.4876247960141504),
+                new Vec2(-9.739583015441895, 2.154204294782436),
+                new Vec2(-10.447916030883789, 1.5498814249034905),
+                new Vec2(-10.989583015441895, 1.1747840764592272),
+                new Vec2(-12.03125, 1.3727514855235528),
+                new Vec2(-10.520044341336357, 2.599731929044057),
+                new Vec2(-11.885416003163334, 2.3209148235630863),
+                new Vec2(-12.354166505251229, 1.4144293114407194),
+                new Vec2(-13.08333301515932, 0.9142994915678228),
+                new Vec2(-9.657616409464037, 0.3516534665187683),
+                new Vec2(-11.779803730982827, 0.3516534661382338),
+                new Vec2(-13.312268691800577, 0.6433961661747379),
+                new Vec2(-11.302071542980656, -0.15889602062328306),
+                new Vec2(-11.802082075087801, -0.3151865824755882),
+            ],
+            3,
+            {
+                expandedKnots: [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 15, 15],
+                weights: new Array(18).fill(1),
+                isPeriodic: false,
+            },
+        )
+        const result = intersectCurveCurve(line, bspline)
+        expect(result.length).toBe(8)
     })
 })

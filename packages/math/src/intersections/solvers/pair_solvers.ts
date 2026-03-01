@@ -275,59 +275,13 @@ function solveLineBSplineRoots(line: Line2, bspline: BSpline2) {
     }
 
     for (const seg of intervals) {
-        const localSamples = 16
-        let prevU = seg.u0
-        let prevF = f(prevU)
-        if (Math.abs(prevF) <= pointTol) tryPushRoot(prevU)
-
-        for (let i = 1; i <= localSamples; i++) {
-            const t = i / localSamples
-            const curU = seg.u0 + (seg.u1 - seg.u0) * t
-            const curF = f(curU)
-            if (Math.abs(curF) <= pointTol) {
-                tryPushRoot(curU)
-                prevU = curU
-                prevF = curF
-                continue
-            }
-            if (prevF === 0 || curF === 0 || prevF * curF < 0) {
-                let lo = prevU
-                let hi = curU
-                let u = 0.5 * (lo + hi)
-                let fu = f(u)
-
-                for (let it = 0; it < 24; it++) {
-                    const slope = df(u)
-                    let next = Number.NaN
-                    if (Math.abs(slope) > Precision.CURVE_NEWTON_EPS) {
-                        next = u - fu / slope
-                    }
-                    if (!Number.isFinite(next) || next <= lo || next >= hi) {
-                        next = 0.5 * (lo + hi)
-                    }
-                    const fnext = f(next)
-                    if (Math.abs(fnext) <= pointTol) {
-                        u = next
-                        fu = fnext
-                        break
-                    }
-                    if (f(lo) * fnext <= 0) {
-                        hi = next
-                    } else {
-                        lo = next
-                    }
-                    if (hi - lo <= paramTol) {
-                        u = 0.5 * (lo + hi)
-                        fu = f(u)
-                        break
-                    }
-                    u = next
-                    fu = fnext
-                }
-                if (Math.abs(fu) <= pointTol * 2) tryPushRoot(u)
-            }
-            prevU = curU
-            prevF = curF
+        const rootsOnSeg = solveScalarRootsOnInterval(f, df, seg.u0, seg.u1, {
+            valueTol: pointTol,
+            paramTol,
+            sampleCount: 64,
+        })
+        for (const u of rootsOnSeg) {
+            if (Math.abs(f(u)) <= pointTol * 2) tryPushRoot(u)
         }
     }
 
@@ -681,6 +635,80 @@ function isolateRootsByDenseSampling(
     return roots
 }
 
+function normalizeClosedParam(curve: Curve2, u: number) {
+    const range = curve.getRange()
+    const clamped = range.clamp(u)
+    if (!curve.isClosed()) return clamped
+    const len = range.length()
+    if (len <= Precision.CURVE_PARAM_EPS) return clamped
+    if (Math.abs(clamped - range.end) <= Precision.CURVE_PARAM_EPS * 16) return range.start
+    return clamped
+}
+
+function solveParametricImplicitRoots(
+    paramCurve: Curve2,
+    target: Curve2,
+    implicit: (p: Vec2) => ImplicitEval,
+    valueTolScale = 1,
+) {
+    const pointTol = Math.max(curvePointTolerance(paramCurve), curvePointTolerance(target))
+    const paramTol = Precision.CURVE_PARAM_EPS * 32
+    const valueTol = Math.max(pointTol * pointTol * 4, pointTol * valueTolScale * 4)
+    const targetProjectTol = Math.max(pointTol * 128, valueTolScale * 1e-5, Precision.CURVE_LENGTH_EPS * 32)
+    const range = paramCurve.getRange()
+    const f = (u: number) => {
+        const p = paramCurve.pointAt(u)
+        return implicit(p).value
+    }
+    const df = (u: number) => {
+        const p = paramCurve.pointAt(u)
+        const d1 = paramCurve.derivativeAt(u, 1)
+        const evalv = implicit(p)
+        return evalv.grad.dot(d1)
+    }
+    const roots = isolateRootsByDenseSampling(f, df, range.start, range.end, valueTol, paramTol)
+    const out: CurveXInfo[] = []
+    for (const uCircle of roots) {
+        const uu = normalizeClosedParam(paramCurve, uCircle)
+        const p = paramCurve.pointAt(uu)
+        const ev = implicit(p)
+        if (Math.abs(ev.value) > valueTol * 8) continue
+        const cpTarget = safeClosestPoint(target, p, targetProjectTol)
+        if (!cpTarget || cpTarget.distance > targetProjectTol * 4) continue
+        pushUniqueResult(out, {
+            point: p,
+            u1: uu,
+            u2: normalizeClosedParam(target, cpTarget.param),
+            isOverlap: false,
+        })
+    }
+    return out
+}
+
+function swapPairResults(items: CurveXInfo[]) {
+    return items.map((item) => ({
+        point: item.point,
+        u1: item.u2,
+        u2: item.u1,
+        isOverlap: item.isOverlap,
+        range1: item.range2,
+        range2: item.range1,
+    }))
+}
+
+function solveMutualParametricImplicitRoots(
+    c1: Curve2,
+    c2: Curve2,
+    implicitOfC1: (p: Vec2) => ImplicitEval,
+    implicitOfC2: (p: Vec2) => ImplicitEval,
+    scale1: number,
+    scale2: number,
+) {
+    const forward = solveParametricImplicitRoots(c1, c2, implicitOfC2, scale2)
+    const reverse = swapPairResults(solveParametricImplicitRoots(c2, c1, implicitOfC1, scale1))
+    return collectUniqueResults([...forward, ...reverse])
+}
+
 function intersectImplicitBSplinePair(
     target: Curve2,
     bspline: BSpline2,
@@ -948,23 +976,50 @@ function estimateOverlapRange(base: Curve2, other: Curve2, sampleCount: number) 
     return new Interval(start, end)
 }
 
+function buildLineCandidatesResults(
+    line: Line2,
+    target: Curve2,
+    candidates: LineParamPoint[],
+): CurveXInfo[] {
+    const out: CurveXInfo[] = []
+    for (const c of candidates) {
+        const uTarget = tryParamOnCurve(target, c.point)
+        if (uTarget === undefined) continue
+        pushUniqueResult(out, {
+            point: c.point,
+            u1: c.uLine,
+            u2: uTarget,
+            isOverlap: false,
+        })
+    }
+    return out
+}
+
+abstract class ParametricImplicitPairSolver<TParam extends Curve2, TTarget extends Curve2> implements ICurvePairIntersector {
+    protected abstract asParam(curve: Curve2): TParam
+    protected abstract asTarget(curve: Curve2): TTarget
+    protected abstract makeImplicit(target: TTarget): (p: Vec2) => ImplicitEval
+    protected abstract valueTolScale(target: TTarget): number
+
+    public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
+        const param = this.asParam(c1)
+        const target = this.asTarget(c2)
+        return collectUniqueResults(
+            solveParametricImplicitRoots(
+                param,
+                target,
+                this.makeImplicit(target),
+                this.valueTolScale(target),
+            ),
+        )
+    }
+}
+
 export class LineCirclePairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
         const line = assertLine(c1)
         const circle = assertCircle(c2)
-        const candidates = lineCircleParamIntersections(line, circle.center, circle.radius)
-        const out: CurveXInfo[] = []
-        for (const c of candidates) {
-            const uCircle = tryParamOnCurve(circle, c.point)
-            if (uCircle === undefined) continue
-            pushUniqueResult(out, {
-                point: c.point,
-                u1: c.uLine,
-                u2: uCircle,
-                isOverlap: false,
-            })
-        }
-        return out
+        return buildLineCandidatesResults(line, circle, lineCircleParamIntersections(line, circle.center, circle.radius))
     }
 }
 
@@ -972,19 +1027,7 @@ export class LineArcPairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
         const line = assertLine(c1)
         const arc = assertArc(c2)
-        const candidates = lineCircleParamIntersections(line, arc.center, arc.radius)
-        const out: CurveXInfo[] = []
-        for (const c of candidates) {
-            const uArc = tryParamOnCurve(arc, c.point)
-            if (uArc === undefined) continue
-            pushUniqueResult(out, {
-                point: c.point,
-                u1: c.uLine,
-                u2: uArc,
-                isOverlap: false,
-            })
-        }
-        return out
+        return buildLineCandidatesResults(line, arc, lineCircleParamIntersections(line, arc.center, arc.radius))
     }
 }
 
@@ -992,19 +1035,7 @@ export class LineEllipsePairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
         const line = assertLine(c1)
         const ellipse = assertEllipse(c2)
-        const candidates = lineEllipseParamIntersections(line, ellipse)
-        const out: CurveXInfo[] = []
-        for (const c of candidates) {
-            const uEllipse = tryParamOnCurve(ellipse, c.point)
-            if (uEllipse === undefined) continue
-            pushUniqueResult(out, {
-                point: c.point,
-                u1: c.uLine,
-                u2: uEllipse,
-                isOverlap: false,
-            })
-        }
-        return out
+        return buildLineCandidatesResults(line, ellipse, lineEllipseParamIntersections(line, ellipse))
     }
 }
 
@@ -1012,19 +1043,7 @@ export class LineEllipseArcPairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
         const line = assertLine(c1)
         const ellipseArc = assertEllipseArc(c2)
-        const candidates = lineEllipseParamIntersections(line, ellipseArc)
-        const out: CurveXInfo[] = []
-        for (const c of candidates) {
-            const uArc = tryParamOnCurve(ellipseArc, c.point)
-            if (uArc === undefined) continue
-            pushUniqueResult(out, {
-                point: c.point,
-                u1: c.uLine,
-                u2: uArc,
-                isOverlap: false,
-            })
-        }
-        return out
+        return buildLineCandidatesResults(line, ellipseArc, lineEllipseParamIntersections(line, ellipseArc))
     }
 }
 
@@ -1086,11 +1105,17 @@ export class CircleArcPairSolver implements ICurvePairIntersector {
     }
 }
 
-export class CircleEllipsePairSolver extends PolylinePairIntersector {
-    constructor() { super(224, 64) }
+export class CircleEllipsePairSolver extends ParametricImplicitPairSolver<Circle2, Ellipse2> {
+    protected asParam(curve: Curve2) { return assertCircle(curve) }
+    protected asTarget(curve: Curve2) { return assertEllipse(curve) }
+    protected makeImplicit(target: Ellipse2) { return ellipseImplicit(target) }
+    protected valueTolScale(target: Ellipse2) { return Math.max(target.rx, target.ry) }
 }
-export class CircleEllipseArcPairSolver extends PolylinePairIntersector {
-    constructor() { super(224, 64) }
+export class CircleEllipseArcPairSolver extends ParametricImplicitPairSolver<Circle2, EllipseArc2> {
+    protected asParam(curve: Curve2) { return assertCircle(curve) }
+    protected asTarget(curve: Curve2) { return assertEllipseArc(curve) }
+    protected makeImplicit(target: EllipseArc2) { return ellipseImplicit(target) }
+    protected valueTolScale(target: EllipseArc2) { return Math.max(target.rx, target.ry) }
 }
 export class CircleBSplinePairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
@@ -1143,11 +1168,17 @@ export class ArcArcPairSolver implements ICurvePairIntersector {
     }
 }
 
-export class ArcEllipsePairSolver extends PolylinePairIntersector {
-    constructor() { super(224, 64) }
+export class ArcEllipsePairSolver extends ParametricImplicitPairSolver<Arc2, Ellipse2> {
+    protected asParam(curve: Curve2) { return assertArc(curve) }
+    protected asTarget(curve: Curve2) { return assertEllipse(curve) }
+    protected makeImplicit(target: Ellipse2) { return ellipseImplicit(target) }
+    protected valueTolScale(target: Ellipse2) { return Math.max(target.rx, target.ry) }
 }
-export class ArcEllipseArcPairSolver extends PolylinePairIntersector {
-    constructor() { super(224, 64) }
+export class ArcEllipseArcPairSolver extends ParametricImplicitPairSolver<Arc2, EllipseArc2> {
+    protected asParam(curve: Curve2) { return assertArc(curve) }
+    protected asTarget(curve: Curve2) { return assertEllipseArc(curve) }
+    protected makeImplicit(target: EllipseArc2) { return ellipseImplicit(target) }
+    protected valueTolScale(target: EllipseArc2) { return Math.max(target.rx, target.ry) }
 }
 export class ArcBSplinePairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
@@ -1156,11 +1187,33 @@ export class ArcBSplinePairSolver implements ICurvePairIntersector {
         return intersectImplicitBSplinePair(arc, bspline, circleImplicit(arc), arc.radius)
     }
 }
-export class EllipseEllipsePairSolver extends PolylinePairIntersector {
-    constructor() { super(240, 64) }
+export class EllipseEllipsePairSolver implements ICurvePairIntersector {
+    public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
+        const e1 = assertEllipse(c1)
+        const e2 = assertEllipse(c2)
+        return solveMutualParametricImplicitRoots(
+            e1,
+            e2,
+            ellipseImplicit(e1),
+            ellipseImplicit(e2),
+            Math.max(e1.rx, e1.ry),
+            Math.max(e2.rx, e2.ry),
+        )
+    }
 }
-export class EllipseEllipseArcPairSolver extends PolylinePairIntersector {
-    constructor() { super(240, 64) }
+export class EllipseEllipseArcPairSolver implements ICurvePairIntersector {
+    public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
+        const ellipse = assertEllipse(c1)
+        const ellipseArc = assertEllipseArc(c2)
+        return collectUniqueResults(
+            solveParametricImplicitRoots(
+                ellipse,
+                ellipseArc,
+                ellipseImplicit(ellipseArc),
+                Math.max(ellipseArc.rx, ellipseArc.ry),
+            ),
+        )
+    }
 }
 export class EllipseBSplinePairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
@@ -1174,8 +1227,19 @@ export class EllipseBSplinePairSolver implements ICurvePairIntersector {
         )
     }
 }
-export class EllipseArcEllipseArcPairSolver extends PolylinePairIntersector {
-    constructor() { super(240, 64) }
+export class EllipseArcEllipseArcPairSolver implements ICurvePairIntersector {
+    public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
+        const arc1 = assertEllipseArc(c1)
+        const arc2 = assertEllipseArc(c2)
+        return solveMutualParametricImplicitRoots(
+            arc1,
+            arc2,
+            ellipseImplicit(arc1),
+            ellipseImplicit(arc2),
+            Math.max(arc1.rx, arc1.ry),
+            Math.max(arc2.rx, arc2.ry),
+        )
+    }
 }
 export class EllipseArcBSplinePairSolver implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {

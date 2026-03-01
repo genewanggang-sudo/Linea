@@ -25,24 +25,32 @@ type RefinedPair = {
     pointDist: number
 }
 
-export function intersectBSplineSelf(curve: BSpline2): CurveXInfo[] {
-    const pointTol = curvePointTolerance(curve)
-    const acceptTol = selfAcceptTol(curve, pointTol)
-    const seedNearTol = Math.max(acceptTol * 0.5, pointTol * 16)
-    const sepTol = Math.max(Precision.CURVE_PARAM_EPS * 64, curve.getRange().length() * 1e-6)
-    const adaptiveSegments = buildSegmentSamples(curve, 512)
-    if (adaptiveSegments.length < 4) return []
+export class BSplineSelfSolver {
+    public intersect(curve: BSpline2): CurveXInfo[] {
+        const pointTol = curvePointTolerance(curve)
+        const acceptTol = selfAcceptTol(curve, pointTol)
+        const seedNearTol = Math.max(acceptTol * 0.5, pointTol * 16)
+        const sepTol = Math.max(Precision.CURVE_PARAM_EPS * 64, curve.getRange().length() * 1e-6)
+        const adaptiveSegments = buildSegmentSamples(curve, 512)
+        if (adaptiveSegments.length < 4) return []
 
-    // Primary pipeline uses dual seeding:
-    // 1) adaptive geometric segments (shape-aware)
-    // 2) uniform parameter segments (coverage-aware)
-    // This is not a fallback; it addresses seed completeness for oscillatory spans.
-    const uniformSegments = buildUniformSegmentSamples(curve, 1200)
-    const seedsA = collectSelfSeeds(adaptiveSegments, seedNearTol, sepTol)
-    const seedsU = collectSelfSeeds(uniformSegments, seedNearTol, sepTol)
-    const seedsB = collectSelfSeedsByIntervalClip(curve, acceptTol, sepTol)
-    const seeds = mergeSeeds(mergeSeeds(seedsA, seedsU, sepTol), seedsB, sepTol)
-    return refineSeedsToResults(curve, seeds, acceptTol, pointTol, sepTol)
+        // Primary pipeline uses dual seeding:
+        // 1) adaptive geometric segments (shape-aware)
+        // 2) uniform parameter segments (coverage-aware)
+        // This is not a fallback; it addresses seed completeness for oscillatory spans.
+        const uniformSegments = buildUniformSegmentSamples(curve, 1200)
+        const seedsA = collectSelfSeeds(adaptiveSegments, seedNearTol, sepTol)
+        const seedsU = collectSelfSeeds(uniformSegments, seedNearTol, sepTol)
+        const seedsB = collectSelfSeedsByIntervalClip(curve, acceptTol, sepTol)
+        const seeds = mergeSeeds(mergeSeeds(seedsA, seedsU, sepTol), seedsB, sepTol)
+        return refineSeedsToResults(curve, seeds, acceptTol, pointTol, sepTol)
+    }
+}
+
+const defaultBSplineSelfSolver = new BSplineSelfSolver()
+
+export function intersectBSplineSelf(curve: BSpline2): CurveXInfo[] {
+    return defaultBSplineSelfSolver.intersect(curve)
 }
 
 function refineSeedsToResults(curve: BSpline2, seeds: Seed[], acceptTol: number, pointTol: number, sepTol: number) {
