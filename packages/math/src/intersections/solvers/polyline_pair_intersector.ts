@@ -26,11 +26,123 @@ type SegmentSample = {
     seg: ReturnType<typeof makeSegment>
 }
 
+type SegmentPairCandidate = {
+    i: number
+    j: number
+}
+
 type RefineResult = {
     point: Vec2
     u1: number
     u2: number
     residual: number
+}
+
+class SegmentHashIndex {
+    private readonly map = new Map<string, number[]>()
+    private readonly overflow: number[] = []
+    private readonly minX: number
+    private readonly minY: number
+    private readonly cellSizeX: number
+    private readonly cellSizeY: number
+    private readonly gridX: number
+    private readonly gridY: number
+
+    constructor(
+        private readonly segments: SegmentSample[],
+        pad: number,
+    ) {
+        let minX = Number.POSITIVE_INFINITY
+        let minY = Number.POSITIVE_INFINITY
+        let maxX = Number.NEGATIVE_INFINITY
+        let maxY = Number.NEGATIVE_INFINITY
+        for (const s of segments) {
+            minX = Math.min(minX, s.seg.minX)
+            minY = Math.min(minY, s.seg.minY)
+            maxX = Math.max(maxX, s.seg.maxX)
+            maxY = Math.max(maxY, s.seg.maxY)
+        }
+        if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+            minX = minY = 0
+            maxX = maxY = 1
+        }
+
+        const count = Math.max(1, segments.length)
+        const grid = clampInt(Math.round(Math.sqrt(count)), 8, 64)
+        const spanX = Math.max(maxX - minX, pad * 2, Precision.CURVE_LENGTH_EPS)
+        const spanY = Math.max(maxY - minY, pad * 2, Precision.CURVE_LENGTH_EPS)
+        this.minX = minX - pad
+        this.minY = minY - pad
+        this.gridX = grid
+        this.gridY = grid
+        this.cellSizeX = spanX / this.gridX
+        this.cellSizeY = spanY / this.gridY
+
+        const maxCellsPerSegment = 64
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i].seg
+            const ix0 = this.toX(seg.minX - pad)
+            const ix1 = this.toX(seg.maxX + pad)
+            const iy0 = this.toY(seg.minY - pad)
+            const iy1 = this.toY(seg.maxY + pad)
+            const cells = (ix1 - ix0 + 1) * (iy1 - iy0 + 1)
+            if (cells > maxCellsPerSegment) {
+                this.overflow.push(i)
+                continue
+            }
+            for (let ix = ix0; ix <= ix1; ix++) {
+                for (let iy = iy0; iy <= iy1; iy++) {
+                    const key = this.key(ix, iy)
+                    const list = this.map.get(key)
+                    if (list) {
+                        list.push(i)
+                    } else {
+                        this.map.set(key, [i])
+                    }
+                }
+            }
+        }
+    }
+
+    public query(seg: SegmentSample, pad: number, marks: Int32Array, stamp: number) {
+        const ret: number[] = []
+        const ix0 = this.toX(seg.seg.minX - pad)
+        const ix1 = this.toX(seg.seg.maxX + pad)
+        const iy0 = this.toY(seg.seg.minY - pad)
+        const iy1 = this.toY(seg.seg.maxY + pad)
+
+        for (let ix = ix0; ix <= ix1; ix++) {
+            for (let iy = iy0; iy <= iy1; iy++) {
+                const list = this.map.get(this.key(ix, iy))
+                if (!list) continue
+                for (const j of list) {
+                    if (marks[j] === stamp) continue
+                    marks[j] = stamp
+                    ret.push(j)
+                }
+            }
+        }
+        for (const j of this.overflow) {
+            if (marks[j] === stamp) continue
+            marks[j] = stamp
+            ret.push(j)
+        }
+        return ret
+    }
+
+    private toX(x: number) {
+        const raw = Math.floor((x - this.minX) / this.cellSizeX)
+        return clampInt(raw, 0, this.gridX - 1)
+    }
+
+    private toY(y: number) {
+        const raw = Math.floor((y - this.minY) / this.cellSizeY)
+        return clampInt(raw, 0, this.gridY - 1)
+    }
+
+    private key(ix: number, iy: number) {
+        return `${ix},${iy}`
+    }
 }
 
 export type PolylineIntersectorDiagnostics = {
@@ -113,8 +225,11 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
     public intersect(c1: Curve2, c2: Curve2): CurveXInfo[] {
         const tol = makeIntersectionTolerance(c1, c2)
         const pairTol = tol.pointTol
-        const strictCertify = c1.isBSpline() || c2.isBSpline()
-        const enableNearMissSeeding = strictCertify || c1.isEllipseArc() || c2.isEllipseArc()
+        const hasBSpline = c1.isBSpline() || c2.isBSpline()
+        // Keep strict certification only for BSpline-BSpline.
+        // Mixed pairs (Line/Circle/Arc/Ellipse with BSpline) prioritize recall first.
+        const strictCertify = c1.isBSpline() && c2.isBSpline()
+        const enableNearMissSeeding = hasBSpline || c1.isEllipseArc() || c2.isEllipseArc()
         const nearSeedBudget = Math.max(48, Math.floor(this.segmentsPerCurve * 0.75))
         this.runPointSeedLimit = Math.max(320, this.segmentsPerCurve * 2)
         this.runOverlapSeedLimit = Math.max(24, Math.ceil(this.segmentsPerCurve / 8))
@@ -129,6 +244,7 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         if (s1.length < 2 || s2.length < 2) return []
         const segs1 = this.buildSegments(s1)
         const segs2 = this.buildSegments(s2)
+        const candidates = this.buildPairCandidates(segs1, segs2, pairTol)
 
         const pointSeeds: PointSeed[] = []
         const overlapSeeds: OverlapSeed[] = []
@@ -137,49 +253,46 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         const refineFailureBefore = polylineDiagnostics.refineFailureCount
 
         const ret: CurveXInfo[] = []
-        for (let i = 0; i < segs1.length; i++) {
-            const sA = segs1[i]
-            for (let j = 0; j < segs2.length; j++) {
-                const sB = segs2[j]
-                if (!segmentBoxesMayIntersect(sA.seg, sB.seg, pairTol)) continue
-                const hit = intersectSegments(sA.seg, sB.seg)
-                if (hit.kind === 'none') {
-                    const near = segmentDistance(sA.seg, sB.seg)
-                    minNearDistance = Math.min(minNearDistance, near)
-                    if (
-                        enableNearMissSeeding &&
-                        near <= pairTol * 0.8 &&
-                        nearSeedCount < nearSeedBudget &&
-                        pointSeeds.length <= nearSeedBudget * 2
-                    ) {
-                        this.addNearMissSeeds(pointSeeds, sA, sB, tol.seedParamTol)
-                        nearSeedCount++
-                    }
-                    continue
+        for (const candidate of candidates) {
+            const sA = segs1[candidate.i]
+            const sB = segs2[candidate.j]
+            const hit = intersectSegments(sA.seg, sB.seg)
+            if (hit.kind === 'none') {
+                const near = segmentDistance(sA.seg, sB.seg)
+                minNearDistance = Math.min(minNearDistance, near)
+                if (
+                    enableNearMissSeeding &&
+                    near <= pairTol * 0.8 &&
+                    nearSeedCount < nearSeedBudget &&
+                    pointSeeds.length <= nearSeedBudget * 2
+                ) {
+                    this.addNearMissSeeds(pointSeeds, sA, sB, tol.seedParamTol)
+                    nearSeedCount++
                 }
-
-                minNearDistance = 0
-
-                if (hit.kind === 'point') {
-                    const u1 = lerp(sA.u0, sA.u1, hit.t1)
-                    const u2 = lerp(sB.u0, sB.u1, hit.t2)
-                    this.addPointSeed(pointSeeds, u1, u2, tol.seedParamTol)
-                    continue
-                }
-
-                const u1s = lerp(sA.u0, sA.u1, hit.t1s)
-                const u1e = lerp(sA.u0, sA.u1, hit.t1e)
-                const u2s = lerp(sB.u0, sB.u1, hit.t2s)
-                const u2e = lerp(sB.u0, sB.u1, hit.t2e)
-                this.addOverlapSeed(overlapSeeds, {
-                    range1: new Interval(Math.min(u1s, u1e), Math.max(u1s, u1e)),
-                    range2: new Interval(Math.min(u2s, u2e), Math.max(u2s, u2e)),
-                })
-
-                this.addPointSeed(pointSeeds, (u1s + u1e) * 0.5, (u2s + u2e) * 0.5, tol.seedParamTol)
-                this.addPointSeed(pointSeeds, u1s, u2s, tol.seedParamTol)
-                this.addPointSeed(pointSeeds, u1e, u2e, tol.seedParamTol)
+                continue
             }
+
+            minNearDistance = 0
+
+            if (hit.kind === 'point') {
+                const u1 = lerp(sA.u0, sA.u1, hit.t1)
+                const u2 = lerp(sB.u0, sB.u1, hit.t2)
+                this.addPointSeed(pointSeeds, u1, u2, tol.seedParamTol)
+                continue
+            }
+
+            const u1s = lerp(sA.u0, sA.u1, hit.t1s)
+            const u1e = lerp(sA.u0, sA.u1, hit.t1e)
+            const u2s = lerp(sB.u0, sB.u1, hit.t2s)
+            const u2e = lerp(sB.u0, sB.u1, hit.t2e)
+            this.addOverlapSeed(overlapSeeds, {
+                range1: new Interval(Math.min(u1s, u1e), Math.max(u1s, u1e)),
+                range2: new Interval(Math.min(u2s, u2e), Math.max(u2s, u2e)),
+            })
+
+            this.addPointSeed(pointSeeds, (u1s + u1e) * 0.5, (u2s + u2e) * 0.5, tol.seedParamTol)
+            this.addPointSeed(pointSeeds, u1s, u2s, tol.seedParamTol)
+            this.addPointSeed(pointSeeds, u1e, u2e, tol.seedParamTol)
         }
 
         if (pointSeeds.length <= 8 && overlapSeeds.length <= 4) {
@@ -230,20 +343,37 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
 
         const refineFailureDelta = polylineDiagnostics.refineFailureCount - refineFailureBefore
         if (
-            strictCertify &&
+            hasBSpline &&
             ret.length === 0 &&
             (pointSeeds.length > 0 || overlapSeeds.length > 0 || minNearDistance <= pairTol * 2)
         ) {
-            const rescued = this.runRescuePass(c1, c2, pairTol, tol.seedParamTol)
+            const rescued = this.runRescuePass(c1, c2, pairTol, tol.seedParamTol, strictCertify)
             if (rescued.length > 0) {
                 for (const hit of rescued) {
                     this.pushUnique(ret, hit)
                 }
                 polylineDiagnostics.rescueHitCount += rescued.length
             }
+            // For BSpline-BSpline, strict certification can reject true roots on noisy seeds.
+            // Add a non-strict rescue pass as a recall-oriented fallback.
+            if (ret.length === 0 && strictCertify) {
+                const relaxedRescued = this.runRescuePass(c1, c2, pairTol, tol.seedParamTol, false)
+                if (relaxedRescued.length > 0) {
+                    for (const hit of relaxedRescued) {
+                        this.pushUnique(ret, hit)
+                    }
+                    polylineDiagnostics.rescueHitCount += relaxedRescued.length
+                }
+            }
+        }
+        if (hasBSpline && ret.length === 0) {
+            const relaxed = this.runPolylineRelaxedFallback(c1, c2, pairTol, tol.seedParamTol)
+            for (const hit of relaxed) {
+                this.pushUnique(ret, hit)
+            }
         }
         if (
-            strictCertify &&
+            hasBSpline &&
             ret.length === 0 &&
             (pointSeeds.length > 0 || overlapSeeds.length > 0) &&
             minNearDistance <= pairTol * 0.2 &&
@@ -252,6 +382,47 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
             polylineDiagnostics.certificationMissCount++
         }
 
+        return ret
+    }
+
+    private runPolylineRelaxedFallback(c1: Curve2, c2: Curve2, pointTol: number, seedParamTol: number): CurveXInfo[] {
+        const ret: CurveXInfo[] = []
+        const dense = Math.min(2048, Math.max(512, this.segmentsPerCurve * 2))
+        const s1 = sampleCurveAdaptive(c1, dense, {
+            chordErrorTol: pointTol * 1.5,
+            maxSamples: dense * 8,
+        })
+        const s2 = sampleCurveAdaptive(c2, dense, {
+            chordErrorTol: pointTol * 1.5,
+            maxSamples: dense * 8,
+        })
+        if (s1.length < 2 || s2.length < 2) return ret
+
+        const seeds: PointSeed[] = []
+        const segs1 = this.buildSegments(s1)
+        const segs2 = this.buildSegments(s2)
+        const candidates = this.buildPairCandidates(segs1, segs2, pointTol * 4)
+        for (const candidate of candidates) {
+            const a = segs1[candidate.i]
+            const b = segs2[candidate.j]
+            const hit = intersectSegments(a.seg, b.seg)
+            if (hit.kind === 'none') continue
+            if (hit.kind === 'point') {
+                this.addPointSeed(seeds, lerp(a.u0, a.u1, hit.t1), lerp(b.u0, b.u1, hit.t2), seedParamTol * 4)
+                continue
+            }
+            this.addPointSeed(seeds, lerp(a.u0, a.u1, 0.5 * (hit.t1s + hit.t1e)), lerp(b.u0, b.u1, 0.5 * (hit.t2s + hit.t2e)), seedParamTol * 4)
+        }
+        for (const seed of seeds) {
+            const refined = this.refinePair(c1, c2, seed.u1, seed.u2, pointTol, false)
+            if (!refined) continue
+            this.pushUnique(ret, {
+                point: refined.point,
+                u1: refined.u1,
+                u2: refined.u2,
+                isOverlap: false,
+            })
+        }
         return ret
     }
 
@@ -276,6 +447,28 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         paramTol: number,
     ) {
         this.addPointSeed(seeds, 0.5 * (a.u0 + a.u1), 0.5 * (b.u0 + b.u1), paramTol)
+    }
+
+    private buildPairCandidates(segs1: SegmentSample[], segs2: SegmentSample[], pad: number) {
+        if (segs1.length === 0 || segs2.length === 0) return []
+        const index = new SegmentHashIndex(segs2, pad)
+        const marks = new Int32Array(segs2.length)
+        const ret: SegmentPairCandidate[] = []
+        let stamp = 1
+        for (let i = 0; i < segs1.length; i++) {
+            const s1 = segs1[i]
+            const js = index.query(s1, pad, marks, stamp++)
+            if (stamp >= 0x7fffffff) {
+                marks.fill(0)
+                stamp = 1
+            }
+            for (const j of js) {
+                const s2 = segs2[j]
+                if (!segmentBoxesMayIntersect(s1.seg, s2.seg, pad)) continue
+                ret.push({ i, j })
+            }
+        }
+        return ret
     }
 
     private addPointSeed(seeds: PointSeed[], u1: number, u2: number, paramTol: number) {
@@ -477,7 +670,13 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         return best
     }
 
-    private runRescuePass(c1: Curve2, c2: Curve2, pointTol: number, seedParamTol: number): CurveXInfo[] {
+    private runRescuePass(
+        c1: Curve2,
+        c2: Curve2,
+        pointTol: number,
+        seedParamTol: number,
+        strictCertify: boolean,
+    ): CurveXInfo[] {
         polylineDiagnostics.rescuePassCount++
 
         const ret: CurveXInfo[] = []
@@ -505,7 +704,7 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
 
         polylineDiagnostics.rescueSeedCount += seeds.length
         for (const seed of seeds) {
-            const refined = this.refinePair(c1, c2, seed.u1, seed.u2, pointTol, true)
+            const refined = this.refinePair(c1, c2, seed.u1, seed.u2, pointTol, strictCertify)
             if (!refined) continue
             this.pushUnique(ret, {
                 point: refined.point,
@@ -656,4 +855,8 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
 
 function clamp(x: number, min: number, max: number) {
     return Math.min(max, Math.max(min, x))
+}
+
+function clampInt(x: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, x | 0))
 }

@@ -2,6 +2,14 @@ import { Interval } from '../../curves/interval'
 import { Precision } from '../../utils/precision'
 import type { CurveXInfo } from '../types'
 
+export type CurveXQuality = {
+    rawCount: number
+    uniqueCount: number
+    overlapCount: number
+    uniquePointCount: number
+    duplicatePointCount: number
+}
+
 export function swapCurveXInfos(items: CurveXInfo[]) {
     return items.map((item) => ({
         point: item.point.clone(),
@@ -13,19 +21,40 @@ export function swapCurveXInfos(items: CurveXInfo[]) {
     }))
 }
 
-export function postprocessCurveXInfos(items: CurveXInfo[]) {
-    const deduped = deduplicateCurveXInfos(items)
+export function postprocessCurveXInfos(items: CurveXInfo[], pointTol = Precision.CURVE_LENGTH_EPS * 8) {
+    const deduped = deduplicateCurveXInfos(items, pointTol)
     const merged = mergeOverlaps(deduped)
     return merged.sort((a, b) => a.u1 - b.u1 || a.u2 - b.u2)
 }
 
-function deduplicateCurveXInfos(items: CurveXInfo[]) {
+export function analyzeCurveXInfosQuality(items: CurveXInfo[], pointTol = Precision.CURVE_LENGTH_EPS * 8): CurveXQuality {
+    const rawCount = items.length
+    const overlapCount = items.filter((x) => x.isOverlap).length
+    const uniquePoints: CurveXInfo[] = []
+    for (const item of items) {
+        if (item.isOverlap) continue
+        const dup = uniquePoints.some((u) => u.point.distanceTo(item.point) <= pointTol)
+        if (!dup) uniquePoints.push(item)
+    }
+    const uniquePointCount = uniquePoints.length
+    const uniqueCount = uniquePointCount + overlapCount
+    const duplicatePointCount = Math.max(0, rawCount - overlapCount - uniquePointCount)
+    return {
+        rawCount,
+        uniqueCount,
+        overlapCount,
+        uniquePointCount,
+        duplicatePointCount,
+    }
+}
+
+function deduplicateCurveXInfos(items: CurveXInfo[], pointTol: number) {
     const sorted = [...items].sort((a, b) => a.u1 - b.u1 || a.u2 - b.u2)
     const ret: CurveXInfo[] = []
     for (const cur of sorted) {
         let merged = false
         for (const prev of ret) {
-            if (!isSameCurveXInfo(prev, cur)) continue
+            if (!isSameCurveXInfo(prev, cur, pointTol)) continue
             if (prev.isOverlap) {
                 prev.range1 = mergeRange(prev.range1, cur.range1)
                 prev.range2 = mergeRange(prev.range2, cur.range2)
@@ -70,15 +99,18 @@ function mergeRange(a?: Interval, b?: Interval) {
     return new Interval(Math.min(a.start, b.start), Math.max(a.end, b.end))
 }
 
-function isSameCurveXInfo(a: CurveXInfo, b: CurveXInfo) {
+function isSameCurveXInfo(a: CurveXInfo, b: CurveXInfo, pointTol: number) {
     if (a.isOverlap !== b.isOverlap) return false
 
     const paramTol = Precision.CURVE_PARAM_EPS * 8
-    const pointTol = Precision.CURVE_LENGTH_EPS * 8
+    if (!a.isOverlap && a.point.distanceTo(b.point) <= pointTol) {
+        return true
+    }
+
     if (
-        Math.abs(a.u1 - b.u1) <= paramTol &&
-        Math.abs(a.u2 - b.u2) <= paramTol &&
-        a.point.distanceTo(b.point) <= pointTol
+        Math.abs(a.u1 - b.u1) <= paramTol * 8 &&
+        Math.abs(a.u2 - b.u2) <= paramTol * 8 &&
+        a.point.distanceTo(b.point) <= pointTol * 2
     ) {
         return true
     }

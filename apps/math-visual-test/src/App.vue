@@ -29,6 +29,10 @@ function toggleBoundingBox(): void {
 function toggleDirection(): void {
   viz.setShowDirection(!viz.showDirection.value)
 }
+
+function toggleIntersections(): void {
+  viz.setShowIntersections(!viz.showIntersections.value)
+}
 </script>
 
 <template>
@@ -97,6 +101,7 @@ function toggleDirection(): void {
                 <el-button :type="viz.showDiscretePoints.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleDiscretePoints()">离散点</el-button>
                 <el-button :type="viz.showBoundingBox.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleBoundingBox()">包围盒</el-button>
                 <el-button :type="viz.showDirection.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleDirection()">线方向</el-button>
+                <el-button :type="viz.showIntersections.value ? 'primary' : 'default'" class="panel-btn" plain @click="toggleIntersections()">曲线交点</el-button>
               </div>
             </section>
 
@@ -124,6 +129,8 @@ function toggleDirection(): void {
                 </el-button>
                 <el-button class="panel-btn" plain @click="viz.showOnlyPoints()">仅显示离散点</el-button>
                 <el-button class="panel-btn" plain @click="viz.clearBbox()">清空包围盒</el-button>
+                <el-button class="panel-btn" plain @click="viz.clearIntersections()">清空交点</el-button>
+                <el-button class="panel-btn" plain @click="viz.exportPairSnapshot()">导出Pair快照</el-button>
                 <el-button class="panel-btn" plain @click="viz.endDrawingMode()">结束绘制</el-button>
                 <el-button class="panel-btn" type="danger" plain @click="viz.clearScene()">清空场景</el-button>
               </div>

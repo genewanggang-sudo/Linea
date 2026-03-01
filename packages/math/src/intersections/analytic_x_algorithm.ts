@@ -3,7 +3,7 @@ import { MathError } from '../utils/math_error'
 import type { ICurvePairIntersector } from './intersector'
 import { getCurveKind } from './internal/kind'
 import { normalizePair, type PairKey } from './internal/pair'
-import { postprocessCurveXInfos, swapCurveXInfos } from './internal/result'
+import { analyzeCurveXInfosQuality, postprocessCurveXInfos, swapCurveXInfos, type CurveXQuality } from './internal/result'
 import { makeIntersectionTolerance } from './internal/tolerance'
 import {
     ArcArcPairSolver,
@@ -67,11 +67,13 @@ export class AnalyticXAlgorithm {
             MathError.throw(`AnalyticXAlgorithm: unsupported pair ${c1.getType()}|${c2.getType()}`)
         }
 
+        const tol = makeIntersectionTolerance(c1, c2)
         const diagBefore = PolylinePairIntersector.getDiagnostics()
         const raw = pair.swapped ? solver.intersect(c2, c1) : solver.intersect(c1, c2)
         const ordered = pair.swapped ? swapCurveXInfos(raw) : raw
-        const primary = postprocessCurveXInfos(ordered)
-        if (!this.shouldRetry(pair.key, c1, c2, primary, diagBefore, PolylinePairIntersector.getDiagnostics())) {
+        const primary = postprocessCurveXInfos(ordered, tol.pointTol)
+        const quality = analyzeCurveXInfosQuality(ordered, tol.pointTol)
+        if (!this.shouldRetry(pair.key, c1, c2, quality, diagBefore, PolylinePairIntersector.getDiagnostics())) {
             return primary
         }
 
@@ -80,20 +82,22 @@ export class AnalyticXAlgorithm {
         const retryRaw = pair.swapped ? retrySolver.intersect(c2, c1) : retrySolver.intersect(c1, c2)
         if (retryRaw.length === 0) return primary
         const retryOrdered = pair.swapped ? swapCurveXInfos(retryRaw) : retryRaw
-        return postprocessCurveXInfos([...primary, ...retryOrdered])
+        return postprocessCurveXInfos([...ordered, ...retryOrdered], tol.pointTol)
     }
 
     private shouldRetry(
         key: PairKey,
         c1: Curve2,
         c2: Curve2,
-        primary: CurveXInfo[],
+        quality: CurveXQuality,
         before: ReturnType<typeof PolylinePairIntersector.getDiagnostics>,
         after: ReturnType<typeof PolylinePairIntersector.getDiagnostics>,
     ) {
-        if (primary.length > 0) return false
         if (!this.retryMap[key]) return false
         if (!this.boxesLikelyIntersect(c1, c2)) return false
+        if (quality.rawCount === 0) return true
+        if (quality.duplicatePointCount > 0) return true
+
         const certificationMissDelta = after.certificationMissCount - before.certificationMissCount
         const refineFailDelta = after.refineFailureCount - before.refineFailureCount
         const rejectDelta = after.certificationRejectCount - before.certificationRejectCount
