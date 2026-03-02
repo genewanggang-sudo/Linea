@@ -6,8 +6,12 @@
     Ellipse2,
     EllipseArc2,
     Line2,
+    Precision,
     Vec2,
+    intersectCurveCurve,
+    intersectCurveSelf,
     type Curve2,
+    type CurveXInfo,
 } from '@linea/math'
 import { useEventListener } from '@vueuse/core'
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
@@ -41,6 +45,8 @@ type EllipseParams = {
 }
 
 type PerfViewState = PerfSnapshot & { fpsClass: 'good' | 'warn' | 'bad'; sampledPoints: number }
+type LineLinePairCase = { name: string; l1: Line2; l2: Line2 }
+type LineLineScenarioBuilder = () => LineLinePairCase
 
 const DRAW_TOOLS: DrawTool[] = ['select', 'line', 'circle', 'arc', 'ellipse', 'ellipseArc', 'bspline']
 
@@ -54,6 +60,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     const showDiscretePoints = ref(false)
     const showBoundingBox = ref(false)
     const showDirection = ref(false)
+    const showIntersections = ref(false)
     const preset = ref<Preset>('medium')
     const isGenerating = ref(false)
     const isRefining = ref(false)
@@ -86,6 +93,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     const entityRoot = new THREE.Group()
     const batchedRoot = new THREE.Group()
     const draftRoot = new THREE.Group()
+    const intersectionRoot = new THREE.Group()
     let batchedLineObject: THREE.LineSegments | null = null
     let batchedPointObject: THREE.Points | null = null
     let discreteCacheDirty = true
@@ -93,6 +101,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     let pointPositionCache: number[] = []
 
     let eventDisposers: Array<() => void> = []
+    let lastLineLineScenarioSignature = ''
 
     function toolLabel(tool: DrawTool): string {
         const map: Record<DrawTool, string> = {
@@ -151,7 +160,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
             payload.curveDump = curve.dump()
             payload.replayHint = 'const curve = geomMgr.load(payload.curveDump) as Curve2'
             if (curve.isBSpline()) {
-                const bs = curve as BSpline2
+                const bs = curve
                 payload.bspline = {
                     degree: bs.degree,
                     controlPoints: bs.controlPoints.map(toPlainVec2),
@@ -163,7 +172,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
         payload.replayTemplate = [
             "import { geomMgr, DiscretizeOptions, type Curve2 } from '@linea/math'",
-            'const payload = /* 粘贴导出的错误 JSON */',
+            'const payload = /* 绮樿创瀵煎嚭鐨勯敊璇?JSON */',
             'const curve = geomMgr.load(payload.curveDump) as Curve2',
             'const opt = new DiscretizeOptions(',
             '  payload.discretizeOptions.chordTol,',
@@ -244,6 +253,223 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         }
     }
 
+    function clearIntersectionRenderObjects(): void {
+        const children = [...intersectionRoot.children]
+        for (const child of children) {
+            intersectionRoot.remove(child)
+            disposeObjectTree(child)
+        }
+    }
+
+    function collectCurveEntities(): Curve2[] {
+        return entities.map((entity) => entity.curve)
+    }
+
+    function addOverlapPolyline(points: Vec2[]): void {
+        if (points.length < 2) return
+        const geometry = new THREE.BufferGeometry().setFromPoints(
+            points.map((p) => new THREE.Vector3(p.x, p.y, 0)),
+        )
+        const material = new THREE.LineBasicMaterial({ color: 0x16a34a })
+        intersectionRoot.add(new THREE.Line(geometry, material))
+    }
+
+    function addOverlapRangeOnCurve(curve: Curve2, info: CurveXInfo): void {
+        if (!info.range1) return
+        try {
+            const parts = curve.trim(info.range1)
+            if (parts.length === 0) return
+            const options = resolveDiscretizeOptions()
+            for (const part of parts) {
+                const polyline = discretizePolylinePoints(part, options)
+                addOverlapPolyline(polyline)
+            }
+        } catch {
+            // Ignore overlap rendering failure to keep main visualization responsive.
+        }
+    }
+
+    function renderSelfIntersections(entity: DrawEntity): void {
+        if (!entity.curve.isBSpline()) return
+        const results = intersectCurveSelf(entity.curve)
+        for (const info of results) {
+            if (!info.isOverlap) {
+                addIntersectionPointMarker(info.point)
+            }
+        }
+    }
+
+    function renderPairIntersections(curveA: Curve2, curveB: Curve2): void {
+        const results = intersectCurveCurve(curveA, curveB)
+        for (const info of results) {
+            if (info.isOverlap) {
+                addOverlapRangeOnCurve(curveA, info)
+            } else {
+                addIntersectionPointMarker(info.point)
+            }
+        }
+    }
+
+    function rebuildIntersectionLayer(): void {
+        clearIntersectionRenderObjects()
+        if (!showIntersections.value) return
+
+        const curves = collectCurveEntities()
+        for (const entity of entities) {
+            try {
+                renderSelfIntersections(entity)
+            } catch (error) {
+                const t = entity.curve.getType()
+                statusHint.value = `自交检测失败：${t}`
+                completionMessage.value = error instanceof Error ? error.message : String(error)
+                console.error('[math-viz] self intersection failed:', { type: t, error })
+            }
+        }
+        for (let i = 0; i < curves.length; i++) {
+            for (let j = i + 1; j < curves.length; j++) {
+                try {
+                    renderPairIntersections(curves[i], curves[j])
+                } catch (error) {
+                    const t1 = curves[i].getType()
+                    const t2 = curves[j].getType()
+                    statusHint.value = `求交失败：${t1} x ${t2}`
+                    completionMessage.value = error instanceof Error ? error.message : String(error)
+                    console.error('[math-viz] intersectCurveCurve failed:', { t1, t2, error })
+                }
+            }
+        }
+    }
+    async function exportPairSnapshot(): Promise<void> {
+        const hasPairInput = entities.length >= 2
+        const hasSelfInput = entities.some((entity) => entity.curve.isBSpline())
+        if (!hasPairInput && !hasSelfInput) {
+            statusHint.value = '当前曲线不足两条且无 B 样条，无法导出求交快照'
+            completionMessage.value = ''
+            return
+        }
+
+        const dedupTol = 1e-5
+        const serializeResult = (r: CurveXInfo) => ({
+            point: { x: r.point.x, y: r.point.y },
+            u1: r.u1,
+            u2: r.u2,
+            isOverlap: r.isOverlap,
+            range1: r.range1 ? { start: r.range1.start, end: r.range1.end } : undefined,
+            range2: r.range2 ? { start: r.range2.start, end: r.range2.end } : undefined,
+        })
+        const uniquePointResults = (results: CurveXInfo[]) => {
+            const unique: CurveXInfo[] = []
+            for (const r of results) {
+                if (r.isOverlap) continue
+                const dup = unique.some((u) =>
+                    !u.isOverlap && u.point.distanceTo(r.point) <= dedupTol,
+                )
+                if (!dup) unique.push(r)
+            }
+            return unique
+        }
+
+        const curves = entities.map((entity) => entity.curve)
+        const curveItems = entities.map((entity, idx) => {
+            let bbox: ReturnType<Curve2['boundingBox']> | null = null
+            try {
+                bbox = entity.curve.boundingBox()
+            } catch {
+                bbox = null
+            }
+            const range = entity.curve.getRange()
+            return {
+                i: idx,
+                entityId: entity.id,
+                drawType: entity.type,
+                curveType: entity.curve.getType(),
+                curveDump: entity.curve.dump(),
+                range: { start: range.start, end: range.end },
+                bbox: bbox ? {
+                    min: { x: bbox.minX, y: bbox.minY },
+                    max: { x: bbox.maxX, y: bbox.maxY },
+                } : null,
+            }
+        })
+        const items: Array<Record<string, unknown>> = []
+        for (let i = 0; i < curves.length; i++) {
+            const selfCurve = curves[i]
+            if (selfCurve.isBSpline()) {
+                const selfItem: Record<string, unknown> = {
+                    i,
+                    j: i,
+                    self: true,
+                    type1: selfCurve.getType(),
+                    type2: selfCurve.getType(),
+                    curve1Dump: selfCurve.dump(),
+                    curve2Dump: selfCurve.dump(),
+                }
+                try {
+                    const results = intersectCurveSelf(selfCurve)
+                    const overlapCount = results.filter((r) => r.isOverlap).length
+                    const pointCount = results.length - overlapCount
+                    const uniquePoints = uniquePointResults(results)
+                    selfItem.resultCount = results.length
+                    selfItem.pointCount = pointCount
+                    selfItem.overlapCount = overlapCount
+                    selfItem.uniquePointCount = uniquePoints.length
+                    selfItem.results = results.map(serializeResult)
+                    selfItem.uniquePointResults = uniquePoints.map(serializeResult)
+                } catch (error) {
+                    selfItem.error = error instanceof Error ? error.message : String(error)
+                }
+                items.push(selfItem)
+            }
+
+            for (let j = i + 1; j < curves.length; j++) {
+                const c1 = curves[i]
+                const c2 = curves[j]
+                const base: Record<string, unknown> = {
+                    i,
+                    j,
+                    type1: c1.getType(),
+                    type2: c2.getType(),
+                    curve1Dump: c1.dump(),
+                    curve2Dump: c2.dump(),
+                }
+                try {
+                    const results = intersectCurveCurve(c1, c2)
+                    const overlapCount = results.filter((r) => r.isOverlap).length
+                    const pointCount = results.length - overlapCount
+                    const uniquePoints = uniquePointResults(results)
+                    base.resultCount = results.length
+                    base.pointCount = pointCount
+                    base.overlapCount = overlapCount
+                    base.uniquePointCount = uniquePoints.length
+                    base.results = results.map(serializeResult)
+                    base.uniquePointResults = uniquePoints.map(serializeResult)
+                } catch (error) {
+                    base.error = error instanceof Error ? error.message : String(error)
+                }
+                items.push(base)
+            }
+        }
+        const payload = JSON.stringify({
+            at: new Date().toISOString(),
+            entityCount: entities.length,
+            pairCount: items.length,
+            dedupPointTol: dedupTol,
+            curves: curveItems,
+            items,
+        }, null, 2)
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(payload)
+                completionMessage.value = 'Pair 快照已复制到剪贴板'
+                return
+            }
+        } catch {
+            // Ignore clipboard errors and fallback to console output.
+        }
+        console.log('[math-viz] pair-snapshot-json:', payload)
+        completionMessage.value = '剪贴板不可用，pair 快照已输出到控制台'
+    }
+
     function rebuildBatchedLayers(): void {
         if (!viewport) return
         clearBatchedRenderObjects()
@@ -294,6 +520,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     function rebuildEntities(): void {
         rebuildBatchedLayers()
         rebuildOverlayLayers()
+        rebuildIntersectionLayer()
     }
 
     function createEntity(type: DrawTool, curve: Curve2): DrawEntity {
@@ -337,6 +564,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         try {
             attachEntityGroup(entity)
             rebuildBatchedLayers()
+            rebuildIntersectionLayer()
         } catch (error) {
             reportDiscretizeError(error, type, curve)
         }
@@ -354,6 +582,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         const half = span * 0.5
         return new Vec2(randomIn(-half, half), randomIn(-half, half))
     }
+
 
     function randomCurveSpec(): { type: Exclude<DrawTool, 'select'>; curve: Curve2 } {
         const types: Array<Exclude<DrawTool, 'select'>> = ['line', 'circle', 'arc', 'ellipse', 'ellipseArc', 'bspline']
@@ -436,18 +665,192 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
                     const { type, curve } = randomCurveSpec()
                     addCurveEntity(type, curve, true)
                 }
-                statusHint.value = '正在随机追加曲线：' + created + '/' + count
+                statusHint.value = `正在随机追加曲线：${created}/${count}`
                 await new Promise<void>((resolve) => {
                     requestAnimationFrame(() => resolve())
                 })
             }
 
-            statusHint.value = '正在合批渲染：新增 ' + count + ' 条'
+            statusHint.value = `正在合批渲染：新增 ${count} 条曲线`
             rebuildEntities()
         } finally {
             isGenerating.value = false
             updateStatus()
         }
+    }
+
+
+    function randomUnitVector(): Vec2 {
+        const theta = randomIn(-Math.PI, Math.PI)
+        return new Vec2(Math.cos(theta), Math.sin(theta))
+    }
+
+    function createExtremeLineLinePairs(count = 5): LineLinePairCase[] {
+        const scenarios: LineLineScenarioBuilder[] = [
+            () => {
+                const c = randomPoint(100)
+                const d1 = randomUnitVector()
+                const d2 = new Vec2(-d1.y, d1.x).scale(randomBool() ? 1 : -1)
+                return {
+                    name: 'normal-cross',
+                    l1: new Line2(c.added(d1.scaled(-20)), c.added(d1.scaled(20))),
+                    l2: new Line2(c.added(d2.scaled(-20)), c.added(d2.scaled(20))),
+                }
+            },
+            () => {
+                const p = randomPoint(100)
+                const d1 = randomUnitVector()
+                const d2 = randomUnitVector()
+                return {
+                    name: 'endpoint-touch',
+                    l1: new Line2(p.added(d1.scaled(-24)), p),
+                    l2: new Line2(p, p.added(d2.scaled(24))),
+                }
+            },
+            () => {
+                const p0 = randomPoint(100)
+                const d = randomUnitVector()
+                const n = new Vec2(-d.y, d.x)
+                const dist = randomIn(0.5, 3.0)
+                return {
+                    name: 'parallel-disjoint',
+                    l1: new Line2(p0.added(d.scaled(-24)), p0.added(d.scaled(24))),
+                    l2: new Line2(
+                        p0.added(n.scaled(dist)).added(d.scaled(-24)),
+                        p0.added(n.scaled(dist)).added(d.scaled(24)),
+                    ),
+                }
+            },
+            () => {
+                const anchor = randomPoint(100)
+                const d = randomUnitVector()
+                return {
+                    name: 'collinear-overlap',
+                    l1: new Line2(anchor.added(d.scaled(-26)), anchor.added(d.scaled(18))),
+                    l2: new Line2(anchor.added(d.scaled(-8)), anchor.added(d.scaled(30))),
+                }
+            },
+            () => {
+                const c = randomPoint(100)
+                const d1 = randomUnitVector()
+                const n = new Vec2(-d1.y, d1.x)
+                return {
+                    name: 'near-parallel-cross',
+                    l1: new Line2(c.added(d1.scaled(-38)), c.added(d1.scaled(38))),
+                    l2: new Line2(
+                        c.added(d1.scaled(-38)).added(n.scaled(0.03)),
+                        c.added(d1.scaled(38)).added(n.scaled(-0.03)),
+                    ),
+                }
+            },
+            () => {
+                const c = randomPoint(100)
+                const d = randomUnitVector()
+                const n = new Vec2(-d.y, d.x)
+                return {
+                    name: 'almost-collinear-nonoverlap',
+                    l1: new Line2(c.added(d.scaled(-30)), c.added(d.scaled(-2))),
+                    l2: new Line2(c.added(d.scaled(2)).added(n.scaled(0.01)), c.added(d.scaled(32)).added(n.scaled(0.01))),
+                }
+            },
+            () => {
+                const c = randomPoint(100)
+                const d1 = randomUnitVector()
+                const d2 = new Vec2(-d1.y, d1.x)
+                return {
+                    name: 'tiny-segment-touch',
+                    l1: new Line2(c.added(d1.scaled(-0.06)), c.added(d1.scaled(0.06))),
+                    l2: new Line2(c.added(d2.scaled(-18)), c.added(d2.scaled(18))),
+                }
+            },
+            () => {
+                const c = randomPoint(100)
+                const d = randomUnitVector()
+                return {
+                    name: 'same-line-reversed',
+                    l1: new Line2(c.added(d.scaled(-22)), c.added(d.scaled(22))),
+                    l2: new Line2(c.added(d.scaled(22)), c.added(d.scaled(-22))),
+                }
+            },
+        ]
+
+        const picks: LineLineScenarioBuilder[] = []
+        const pool = scenarios.slice()
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            const t = pool[i]
+            pool[i] = pool[j]
+            pool[j] = t
+        }
+        for (let i = 0; i < Math.min(count, pool.length); i++) {
+            picks.push(pool[i])
+        }
+
+        let pairs = picks.map((build) => build())
+        let signature = pairs.map((p) => p.name).sort().join('|')
+        if (signature === lastLineLineScenarioSignature) {
+            pairs = pool.slice().reverse().slice(0, Math.min(count, pool.length)).map((build) => build())
+            signature = pairs.map((p) => p.name).sort().join('|')
+        }
+        lastLineLineScenarioSignature = signature
+        return pairs
+    }
+
+    function addIntersectionPointMarker(point: Vec2): void {
+        const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(point.x, point.y, 0)])
+        const material = new THREE.PointsMaterial({
+            color: 0xdc2626,
+            size: 9,
+            sizeAttenuation: false,
+        })
+        intersectionRoot.add(new THREE.Points(geometry, material))
+    }
+
+    function addOverlapSegment(line: Line2, info: CurveXInfo): void {
+        if (!info.range1) return
+        const p0 = line.pointAt(info.range1.start)
+        const p1 = line.pointAt(info.range1.end)
+        const geometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(p0.x, p0.y, 0),
+            new THREE.Vector3(p1.x, p1.y, 0),
+        ])
+        const material = new THREE.LineBasicMaterial({ color: 0x16a34a })
+        intersectionRoot.add(new THREE.Line(geometry, material))
+    }
+
+    function renderLineLineIntersections(lineA: Line2, results: CurveXInfo[]): void {
+        for (const info of results) {
+            if (info.isOverlap) {
+                addOverlapSegment(lineA, info)
+            } else {
+                addIntersectionPointMarker(info.point)
+            }
+        }
+    }
+
+    function runRandomLineLineIntersectionCases(): void {
+        activeTool.value = 'select'
+        clearDraft()
+        clearScene()
+        clearIntersectionRenderObjects()
+
+        const pairs = createExtremeLineLinePairs()
+        const summaries: string[] = []
+
+        for (let i = 0; i < pairs.length; i++) {
+            const pair = pairs[i]
+            addCurveEntity('line', pair.l1, true)
+            addCurveEntity('line', pair.l2, true)
+            const result = intersectCurveCurve(pair.l1, pair.l2)
+            renderLineLineIntersections(pair.l1, result)
+            const overlapCount = result.filter((item) => item.isOverlap).length
+            const pointCount = result.length - overlapCount
+            summaries.push(`#${i + 1} ${pair.name}: p=${pointCount}, o=${overlapCount}`)
+        }
+
+        rebuildEntities()
+        statusHint.value = '线线随机求交样例已生成（5组）'
+        completionMessage.value = summaries.join(' | ')
     }
     function pointToWorld(event: PointerEvent): Vec2 | null {
         if (!viewport) return null
@@ -549,6 +952,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function finalizeFromDraft(tool: DrawTool, points: Vec2[]): Curve2 | null {
         if (tool === 'line' && points.length >= 2) {
+            if (points[0].distanceTo(points[1]) <= Precision.CURVE_LENGTH_EPS) return null
             return new Line2(points[0], points[1])
         }
         if (tool === 'circle' && points.length >= 2) {
@@ -689,27 +1093,29 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         const ellipseSteps = ['点中心', '点长轴端点', '点短轴参考点']
         const ellipseArcSteps = ['点中心', '点长轴端点', '点短轴参考点', '点弧起点', '点弧终点']
 
-        let hint = '当前绘制：' + toolLabel(activeTool.value) + '，左键取点，右键结束。' + draftPoints.length + '/' + required
+        let hint = `当前绘制：${toolLabel(activeTool.value)}，左键取点，右键结束（${draftPoints.length}/${required}）`
         if (activeTool.value === 'select') {
-            hint = '选择模式：可平移缩放查看，点击顶部按钮进入绘制模式'
+            hint = '选择模式：可平移缩放查看，点击顶部按钮切换绘制模式'
         } else if (activeTool.value === 'bspline') {
-            hint = '左键连续添加控制点，右键结束并生成 B 样条'
+            hint = 'B样条模式：左键连续添加控制点，右键结束并生成曲线'
         } else if (activeTool.value === 'ellipse') {
             const step = ellipseSteps[Math.min(draftPoints.length, ellipseSteps.length - 1)]
-            hint = '当前绘制：椭圆，下一步：' + step + '（' + draftPoints.length + '/' + required + '）'
+            hint = `当前绘制：椭圆，下一步：${step}（${draftPoints.length}/${required}）`
         } else if (activeTool.value === 'ellipseArc') {
             const step = ellipseArcSteps[Math.min(draftPoints.length, ellipseArcSteps.length - 1)]
-            hint = '当前绘制：椭圆弧，下一步：' + step + '（' + draftPoints.length + '/' + required + '）'
+            hint = `当前绘制：椭圆弧，下一步：${step}（${draftPoints.length}/${required}）`
         }
 
         if (isRefining.value) {
-            statusHint.value = statusHint.value.startsWith('后台精化离散') ? statusHint.value : '后台精化离散中...'
+            statusHint.value = statusHint.value.startsWith('后台精化离散')
+                ? statusHint.value
+                : '后台精化离散中...'
             completionMessage.value = ''
             return
         }
 
         const done = lastCompleted && performance.now() - lastCompleted.at < 2200
-            ? '已完成第 ' + lastCompleted.id + ' 个' + toolLabel(lastCompleted.tool) + '，可继续绘制；右键可结束当前模式。'
+            ? `已完成第 ${lastCompleted.id} 个 ${toolLabel(lastCompleted.tool)}`
             : ''
 
         statusHint.value = hint
@@ -819,6 +1225,11 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         rebuildOverlayLayers()
     }
 
+    function setShowIntersections(checked: boolean): void {
+        showIntersections.value = checked
+        rebuildIntersectionLayer()
+    }
+
     function showOnlyPoints(): void {
         showDiscrete.value = false
         showDiscretePoints.value = true
@@ -832,6 +1243,11 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         rebuildEntities()
     }
 
+    function clearIntersections(): void {
+        showIntersections.value = false
+        rebuildIntersectionLayer()
+    }
+
     function clearScene(): void {
         for (const entity of entities) {
             if (entity.group) {
@@ -840,6 +1256,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
             }
         }
         clearBatchedRenderObjects()
+        clearIntersectionRenderObjects()
         linePositionCache = []
         pointPositionCache = []
         discreteCacheDirty = false
@@ -857,6 +1274,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         viewport.scene.add(entityRoot)
         viewport.scene.add(batchedRoot)
         viewport.scene.add(draftRoot)
+        viewport.scene.add(intersectionRoot)
 
         const canvasDom = viewport.renderer.domElement
         const onContextMenu = (event: MouseEvent) => {
@@ -903,6 +1321,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         eventDisposers = []
 
         clearScene()
+        clearIntersectionRenderObjects()
         viewport?.dispose()
         viewport = null
         perfMonitor = null
@@ -928,6 +1347,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         showDiscretePoints,
         showBoundingBox,
         showDirection,
+        showIntersections,
         preset,
         toolLabel,
         setActiveTool,
@@ -936,10 +1356,14 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         setShowDiscretePoints,
         setShowBoundingBox,
         setShowDirection,
+        setShowIntersections,
         showOnlyPoints,
         clearBbox,
+        exportPairSnapshot,
+        clearIntersections,
         clearScene,
         endDrawingMode,
         generateRandomCurves,
+        runRandomLineLineIntersectionCases,
     }
 }
