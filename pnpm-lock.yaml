@@ -38,7 +38,7 @@ importers:
 
   apps/math-visual-test:
     dependencies:
-      '@cc/math':
+      '@ccpc/math':
         specifier: workspace:*
         version: link:../../packages/math
       '@vueuse/core':

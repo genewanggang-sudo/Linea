@@ -12,7 +12,7 @@
     intersectCurveSelf,
     type Curve2,
     type CurveXInfo,
-} from '@cc/math'
+} from '@ccpc/math'
 import { useEventListener } from '@vueuse/core'
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
 import * as THREE from 'three'
@@ -171,7 +171,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         }
 
         payload.replayTemplate = [
-            "import { geomMgr, DiscretizeOptions, type Curve2 } from '@cc/math'",
+            "import { geomMgr, DiscretizeOptions, type Curve2 } from '@ccpc/math'",
             'const payload = /* 绮樿创瀵煎嚭鐨勯敊璇?JSON */',
             'const curve = geomMgr.load(payload.curveDump) as Curve2',
             'const opt = new DiscretizeOptions(',
