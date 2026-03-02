@@ -140,7 +140,7 @@ describe('Curve2 base methods', () => {
     it('getRange returns defensive copy', () => {
         const c = new MockCurve2()
         const r = c.getRange()
-        r.expand(1)
+        r.expandByPt(2)
 
         const current = c.getRange()
         expect(current.equals(new Interval(0, 1))).toBe(true)
@@ -150,7 +150,7 @@ describe('Curve2 base methods', () => {
         const c = new MockCurve2()
         const src = new Interval(2, 3)
         c.setRangeForTest(src)
-        src.expand(1)
+        src.expandByPt(1)
         expect(c.getRange().equals(new Interval(2, 3))).toBe(true)
     })
 

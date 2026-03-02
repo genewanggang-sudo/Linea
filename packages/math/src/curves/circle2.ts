@@ -54,14 +54,11 @@ export class Circle2 extends CircleCurve2 {
 
     public override split(u: number) {
         const range = this._range as PeriodInterval
-        const uu = range.normalizeInPeriod(u, range.start)
-        if (Math.abs(uu - range.start) <= Precision.CURVE_PARAM_EPS || Math.abs(uu - range.end) <= Precision.CURVE_PARAM_EPS) {
-            return []
-        }
-
-        const first = new Arc2(this._center, this._radius, range.start, uu, false)
-        const second = new Arc2(this._center, this._radius, uu, range.start + range.period, false)
-        return [first, second].filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+        const parts = range.split(u, Precision.CURVE_PARAM_EPS)
+        if (parts.length === 0) return []
+        return parts
+            .map((seg) => new Arc2(this._center, this._radius, seg.start, seg.end, false))
+            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {
@@ -97,7 +94,8 @@ export class Circle2 extends CircleCurve2 {
         let u = this._range.start
 
         if (v.len() > Precision.CURVE_NEWTON_EPS) {
-            u = (this._range as PeriodInterval).normalizeInPeriod(Math.atan2(v.y, v.x), this._range.start)
+            const range = this._range as PeriodInterval
+            u = PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), range.period, range.start)
         }
 
         const point = this.pointAt(u)

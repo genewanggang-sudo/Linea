@@ -186,10 +186,10 @@ export class EllipseArc2 extends EllipseCurve2 {
     protected override angleToParam(theta: number) {
         const range = this._range as PeriodInterval
         if (!this._clockwise) {
-            return range.normalizeInPeriod(theta, range.start)
+            return PeriodInterval.normalizeParam(theta, range.period, range.start)
         }
         const reflected = 2 * range.start - theta
-        return range.normalizeInPeriod(reflected, range.start)
+        return PeriodInterval.normalizeParam(reflected, range.period, range.start)
     }
 
     protected override angleDerivativeSign(): 1 | -1 {

@@ -3,13 +3,19 @@
  * PeriodInterval: 周期参数区间
  */
 
+import { MathConst } from '../constants/math_const'
 import { MathError } from '../utils/math_error'
 import { Precision } from '../utils/precision'
 import { Interval } from './interval'
 
+/**
+ * 周期区间
+ * min in [0, period)
+ * (max - min) in [0, period]
+ */
 export class PeriodInterval extends Interval {
     /** 周期长度，必须 > 0 */
-    public readonly period: number
+    private readonly _period: number
 
     /**
      * 创建周期区间。
@@ -17,48 +23,41 @@ export class PeriodInterval extends Interval {
      * @param end 区间终点，可为任意实数。
      * @param period 周期长度，必须大于 0。
      */
-    constructor(start = 0, end = 0, period = Math.PI * 2) {
+    constructor(start: number, end: number, period = MathConst.PI2) {
         MathError.assert(Number.isFinite(start) && Number.isFinite(end), 'PeriodInterval: start/end must be finite')
         MathError.assert(period > 0, 'PeriodInterval: period must be > 0')
-        const canonical = PeriodInterval.canonicalize(start, end, period)
-        super(canonical.start, canonical.end)
-        this.period = period
+        super()
+        this._start = start
+        this._end = end
+        this._period = period
+        this.normalizeRange()
     }
 
-    /**
-     * 将参数归一化到 `[0, period)`。
-     * @param u 待归一化参数。
-     * @returns 归一化后的参数值。
-     */
-    public normalize(u: number) {
-        return PeriodInterval.mod(u, this.period)
+    /** 周期长度（只读） */
+    public get period() {
+        return this._period
     }
 
-    /**
-     * 将参数归一化到指定周期窗口 `[start, start + period)`。
-     * @param u 待归一化参数。
-     * @param start 周期窗口起点，默认当前区间起点。
-     * @returns 与 `u` 周期等价，且落在窗口内的参数。
-     */
-    public normalizeInPeriod(u: number, start = this.start) {
-        return start + PeriodInterval.mod(u - start, this.period)
+    /** 区间起点（周期语义） */
+    public override get start() {
+        return this._start
     }
 
-    /**
-     * 区间整体平移（按周期等价）。
-     * @param offset 平移量。
-     * @returns 平移后的新区间实例。
-     */
-    public shift(offset: number) {
-        return new PeriodInterval(this._start + offset, this._start + this.span() + offset, this.period)
+    /** 区间起点（周期语义） */
+    public override set start(v: number) {
+        this._start = v
+        this.normalizeRange()
     }
 
-    /**
-     * 计算周期区间长度（沿正方向）。
-     * @returns 区间跨度，范围在 `[0, period]`。
-     */
-    public override length() {
-        return this.span()
+    /** 区间终点（周期语义） */
+    public override get end() {
+        return this._end
+    }
+
+    /** 区间终点（周期语义） */
+    public override set end(v: number) {
+        this._end = v
+        this.normalizeRange()
     }
 
     /**
@@ -68,9 +67,36 @@ export class PeriodInterval extends Interval {
      * @returns 落在区间内（含容差）返回 `true`。
      */
     public override contains(u: number, eps = Precision.EPS) {
-        if (this.isFull(eps)) return true
-        const d = this.forwardDelta(this._start, this.normalize(u))
-        return d <= this.span() + eps || this.period - d <= eps
+        if (this.isClosed(eps)) return true
+        const d = this.offsetFromStart(u, eps)
+        return d <= this.length() + eps || this._period - d <= eps
+    }
+
+    /**
+     * 判断参数是否落在区间起点或终点上（周期语义）。
+     * @param u 待判断参数。
+     * @param eps 端点比较容差。
+     * @returns 在任一端点（容差内）返回 `true`。
+     */
+    public override containsAtStartOrEnd(u: number, eps = Precision.EPS) {
+        const d = this.offsetFromStart(u, eps)
+        return d <= eps || this._period - d <= eps || Math.abs(d - this.length()) <= eps
+    }
+
+    /**
+     * 判断是否完整包含另一区间（周期语义）。
+     * @param other 待判断区间。
+     * @param eps 区间边界比较容差。
+     * @returns 完整包含返回 `true`，否则返回 `false`。
+     */
+    public override containsInterval(other: Interval, eps = Precision.EPS) {
+        if (!(other instanceof PeriodInterval)) return false
+        if (!Precision.equal(this._period, other.period, eps)) return false
+        if (this.isClosed(eps)) return true
+        if (other.isClosed(eps)) return false
+
+        const offset = PeriodInterval.normalizeParam(other.start - this._start, this._period, 0, eps)
+        return offset <= this.length() + eps && offset + other.length() <= this.length() + eps
     }
 
     /**
@@ -79,13 +105,36 @@ export class PeriodInterval extends Interval {
      * @returns 已在区间内返回归一化参数；否则返回最近边界参数。
      */
     public override clamp(u: number) {
-        const t = this.normalize(u)
-        if (this.contains(t)) return t
+        const dp = this.offsetFromStart(u, Precision.EPS)
+        const len = this.length()
+        if (dp <= len) return this._start + dp
 
-        const end = this.normalize(this._start + this.span())
-        const dStart = this.circularDistance(t, this._start)
-        const dEnd = this.circularDistance(t, end)
-        return dStart <= dEnd ? this._start : end
+        const dEnd = dp - len
+        const dStart = this._period - dp
+        const end = this._start + len
+        return PeriodInterval.normalizeParam(dEnd < dStart ? end : this._start, this._period)
+    }
+
+    /**
+     * 按点原地扩展周期区间，使区间覆盖该点。
+     * @param pt 目标点。
+     * @returns 当前实例（便于链式调用）。
+     */
+    public override expandByPt(pt: number) {
+        MathError.assert(Number.isFinite(pt), 'PeriodInterval.expandByPt: point must be finite')
+
+        const d = this.offsetFromStart(pt, Precision.EPS)
+        const len = this.length()
+        if (d <= len) return this
+
+        const dEnd = d - len
+        const dStart = this._period - d
+        if (dEnd < dStart) {
+            this._end = this._start + d
+        } else {
+            this._start -= dStart
+        }
+        return this.normalizeRange()
     }
 
     /**
@@ -95,10 +144,21 @@ export class PeriodInterval extends Interval {
      * @returns 周期一致且区间位置/长度一致时返回 `true`。
      */
     public override equals(other: PeriodInterval, eps = Precision.EPS) {
-        if (!Precision.equal(this.period, other.period, eps)) return false
-        if (this.isFull(eps) && other.isFull(eps)) return true
+        if (!Precision.equal(this._period, other.period, eps)) return false
+        if (this.isClosed(eps) && other.isClosed(eps)) return true
         return Precision.equal(this._start, other._start, eps) &&
-            Precision.equal(this.span(), other.span(), eps)
+            Precision.equal(this.length(), other.length(), eps)
+    }
+
+    /**
+     * 判断与另一区间在周期语义下是否连通（相交或相接）。
+     * @param other 对比区间。
+     * @param eps 判定容差。
+     * @returns 周期下有交集返回 `true`，否则返回 `false`。
+     */
+    public override isConnected(other: PeriodInterval, eps = Precision.EPS) {
+        this.assertSamePeriod(other, 'isConnected', eps)
+        return this.intersect(other, eps).length > 0
     }
 
     /**
@@ -108,17 +168,14 @@ export class PeriodInterval extends Interval {
      * @returns 交集结果，按线性分段返回 `PeriodInterval[]`（最多 2 段）。
      */
     public override intersect(other: PeriodInterval, eps = Precision.EPS): PeriodInterval[] {
-        if (!Precision.equal(this.period, other.period, eps)) {
-            MathError.throw('PeriodInterval.intersect: period mismatch')
-        }
-
+        this.assertSamePeriod(other, 'intersect', eps)
         const ret: Interval[] = []
-        for (const a of this.toLinearSegments(eps)) {
-            for (const b of other.toLinearSegments(eps)) {
+        for (const a of this.toIntervals(eps)) {
+            for (const b of other.toIntervals(eps)) {
                 ret.push(...a.intersect(b, eps))
             }
         }
-        return Interval.merge(ret, eps).map((seg) => new PeriodInterval(seg.start, seg.end, this.period))
+        return Interval.merge(ret, eps).map((seg) => new PeriodInterval(seg.start, seg.end, this._period))
     }
 
     /**
@@ -128,24 +185,77 @@ export class PeriodInterval extends Interval {
      * @returns 并集结果，按线性分段返回 `PeriodInterval[]`（1 到 2 段）。
      */
     public override union(other: PeriodInterval, eps = Precision.EPS): PeriodInterval[] {
-        if (!Precision.equal(this.period, other.period, eps)) {
-            MathError.throw('PeriodInterval.union: period mismatch')
-        }
+        this.assertSamePeriod(other, 'union', eps)
 
         const merged = Interval.merge([
-            ...this.toLinearSegments(eps),
-            ...other.toLinearSegments(eps),
+            ...this.toIntervals(eps),
+            ...other.toIntervals(eps),
         ], eps)
 
         if (merged.length >= 2) {
             const first = merged[0]
             const last = merged[merged.length - 1]
-            if (Precision.equal(first.start, 0, eps) && Precision.equal(last.end, this.period, eps)) {
-                const stitched = new Interval(last.start, this.period + first.end)
-                return [stitched, ...merged.slice(1, -1)].map((seg) => new PeriodInterval(seg.start, seg.end, this.period))
+            if (Precision.equal(first.start, 0, eps) && Precision.equal(last.end, this._period, eps)) {
+                const stitched = new Interval(last.start, this._period + first.end)
+                return [stitched, ...merged.slice(1, -1)].map((seg) => new PeriodInterval(seg.start, seg.end, this._period))
             }
         }
-        return merged.map((seg) => new PeriodInterval(seg.start, seg.end, this.period))
+        return merged.map((seg) => new PeriodInterval(seg.start, seg.end, this._period))
+    }
+
+    /**
+     * 计算与另一区间在周期语义下的最短距离。
+     * @param other 对比区间。
+     * @param eps 判定“连通/相离”时的容差。
+     * @returns 连通返回 `0`；相离返回圆周上的最小间隙（非负）。
+     */
+    public override distanceTo(other: PeriodInterval, eps = Precision.EPS) {
+        this.assertSamePeriod(other, 'distanceTo', eps)
+        const overlap = this.intersect(other, eps)
+        if (overlap.length > 0) {
+            return -overlap[0].length()
+        }
+
+        return Math.min(
+            PeriodInterval.normalizeParam(other._start - this._end, this._period, 0, eps),
+            PeriodInterval.normalizeParam(this._start - other._end, this._period, 0, eps),
+        )
+    }
+
+    /**
+     * 从当前周期区间减去一组周期区间。
+     * @param ranges 待减去区间集合。
+     * @param eps 判定“相离/相接”时的容差。
+     * @returns 差集结果区间数组（周期语义）。
+     */
+    public override subtracted(ranges: readonly Interval[], eps = Precision.EPS): PeriodInterval[] {
+        if (ranges.length === 0) return [this.clone()]
+
+        const periodicRanges: PeriodInterval[] = []
+        for (const range of ranges) {
+            MathError.assert(range instanceof PeriodInterval, 'PeriodInterval.subtracted: range must be PeriodInterval')
+            this.assertSamePeriod(range, 'subtracted', eps)
+            periodicRanges.push(range)
+        }
+
+        const cutters = Interval.merge(periodicRanges.flatMap((r) => r.toIntervals(eps)), eps)
+        let pieces: Interval[] = []
+        for (const seg of this.toIntervals(eps)) {
+            pieces.push(...seg.subtracted(cutters, eps))
+        }
+        if (pieces.length === 0) return []
+
+        pieces = Interval.merge(pieces, eps)
+        if (pieces.length >= 2) {
+            const first = pieces[0]
+            const last = pieces[pieces.length - 1]
+            if (Precision.equal(first.start, 0, eps) && Precision.equal(last.end, this._period, eps)) {
+                const stitched = new Interval(last.start, this._period + first.end)
+                pieces = [stitched, ...pieces.slice(1, -1)]
+            }
+        }
+
+        return pieces.map((seg) => new PeriodInterval(seg.start, seg.end, this._period))
     }
 
     /**
@@ -156,14 +266,15 @@ export class PeriodInterval extends Interval {
      */
     public override split(u: number, eps = Precision.EPS): PeriodInterval[] {
         if (!this.contains(u, eps)) return []
-        const d = this.forwardDelta(this._start, this.normalize(u))
-        const len = this.span()
-        if (d <= eps || d >= len - eps) return []
+        if (this.containsAtStartOrEnd(u, eps)) return []
+        const d = this.offsetFromStart(u, eps)
+        const len = this.length()
+        if (d >= len - eps) return []
 
         const mid = this._start + d
         return [
-            new PeriodInterval(this._start, mid, this.period),
-            new PeriodInterval(mid, this._start + len, this.period),
+            new PeriodInterval(this._start, mid, this._period),
+            new PeriodInterval(mid, this._start + len, this._period),
         ]
     }
 
@@ -172,15 +283,29 @@ export class PeriodInterval extends Interval {
      * @returns 与当前数值等价的新实例。
      */
     public override clone() {
-        return new PeriodInterval(this._start, this._start + this.span(), this.period)
+        return new PeriodInterval(this._start, this._start + this.length(), this._period)
     }
 
     /**
-     * 当前区间沿正方向长度。
-     * @returns `_end - _start`。
+     * 设置区间端点（周期语义）。
+     * @param start 区间起点。
+     * @param end 区间终点。
+     * @returns 当前实例。
      */
-    private span() {
-        return this._end - this._start
+    public override set(start: number, end: number) {
+        this._start = start
+        this._end = end
+        return this.normalizeRange()
+    }
+
+    /**
+     * 周期区间不支持原点缩放，仅允许恒等缩放。
+     * @param scale 缩放比例。
+     * @returns 当前实例。
+     */
+    public override multiply(scale: number) {
+        MathError.assert(scale === 1, 'PeriodInterval.multiply: Not support multiply')
+        return this
     }
 
     /**
@@ -188,29 +313,27 @@ export class PeriodInterval extends Interval {
      * @param eps 比较容差。
      * @returns 近似等于整周期长度时返回 `true`。
      */
-    private isFull(eps = Precision.EPS) {
-        return Precision.equal(this.span(), this.period, eps)
+    private isClosed(eps = Precision.EPS) {
+        return Precision.equal(this.length(), this._period, eps)
     }
 
     /**
-     * 计算两参数在圆周上的最短距离。
-     * @param a 参数 a。
-     * @param b 参数 b。
-     * @returns 最短圆周距离。
+     * 校验两个周期区间周期一致。
+     * @param other 另一区间。
+     * @param fnName 调用方方法名，用于报错定位。
+     * @param eps 周期比较容差。
      */
-    private circularDistance(a: number, b: number) {
-        const d = Math.abs(a - b)
-        return Math.min(d, this.period - d)
+    private assertSamePeriod(other: PeriodInterval, fnName: string, eps = Precision.EPS) {
+        if (!Precision.equal(this._period, other.period, eps)) {
+            MathError.throw(`PeriodInterval.${fnName}: period mismatch`)
+        }
     }
 
     /**
-     * 计算从 `a` 到 `b` 的正方向差值。
-     * @param a 起点参数。
-     * @param b 终点参数。
-     * @returns 归一化到 `[0, period)` 的正向差值。
+     * 计算参数相对区间起点的周期偏移，返回值在 `[0, period)`。
      */
-    private forwardDelta(a: number, b: number) {
-        return PeriodInterval.mod(b - a, this.period)
+    private offsetFromStart(u: number, eps = Precision.EPS) {
+        return PeriodInterval.normalizeParam(u - this._start, this._period, 0, eps)
     }
 
     /**
@@ -218,46 +341,54 @@ export class PeriodInterval extends Interval {
      * @param eps 判定整周期与边界贴合的容差。
      * @returns 线性区间段数组。
      */
-    private toLinearSegments(eps = Precision.EPS): Interval[] {
-        if (this.isFull(eps)) {
-            return [new Interval(0, this.period)]
+    private toIntervals(eps = Precision.EPS): Interval[] {
+        if (this.isClosed(eps)) {
+            return [new Interval(0, this._period)]
         }
 
         const s = this._start
-        const e = this._start + this.span()
-        if (e <= this.period + eps) {
-            return [new Interval(s, Math.min(e, this.period))]
+        const e = this._start + this.length()
+        if (e <= this._period + eps) {
+            return [new Interval(s, Math.min(e, this._period))]
         }
         return [
-            new Interval(s, this.period),
-            new Interval(0, e - this.period),
+            new Interval(s, this._period),
+            new Interval(0, e - this._period),
         ]
     }
 
     /**
-     * 规范化输入到内部表示。
-     * @param start 输入起点。
-     * @param end 输入终点。
-     * @param period 周期长度。
-     * @returns 规范化后的 `{ start, end }`，满足 `start in [0, period)` 且 `end = start + len`。
+     * 将当前实例中的区间参数正规化到内部表示。
+     * @returns 当前实例；写回后满足 `_start in [0, period)` 且 `(_end - _start) in [0, period]`。
      */
-    private static canonicalize(start: number, end: number, period: number) {
-        const s = PeriodInterval.mod(start, period)
-        let len = PeriodInterval.mod(end - start, period)
-        if (Precision.equal(len, 0, Precision.EPS) && !Precision.equal(start, end, Precision.EPS)) {
-            len = period
+    public normalizeRange() {
+        const s = PeriodInterval.normalizeParam(this._start, this._period)
+        let len = PeriodInterval.normalizeParam(this._end - this._start, this._period)
+        if (Precision.nearlyZero(len, Precision.EPS) && !Precision.equal(this._start, this._end)) {
+            len = this._period
         }
-        return { start: s, end: s + len }
+        this._start = s;
+        this._end = s + len;
+        return this;
     }
 
     /**
-     * 正模运算。
-     * @param x 被取模值。
-     * @param m 模（周期）。
-     * @returns 结果范围在 `[0, m)`。
+     * 将参数正规化到周期窗口 `[ref, ref + m)`，并在边界附近执行容差吸附。
+     * @param param 待正规化参数。
+     * @param period 周期长度（模），必须大于 0。
+     * @param refParam 目标窗口起点，默认 `0`。
+     * @param eps 边界吸附容差，默认 `Precision.EPS`。
+     * @returns 正规化后的参数值。
      */
-    private static mod(x: number, m: number) {
-        const r = x % m
-        return r < 0 ? r + m : r
+    public static normalizeParam(param: number, period: number, refParam = 0, eps = Precision.EPS) {
+        MathError.assert(period > 0, 'PeriodInterval.normalizeParam: period must be > 0')
+
+        let r = (param - refParam) % period
+        if (r < 0) r += period
+
+        if (r <= eps || period - r <= eps) {
+            r = 0
+        }
+        return refParam + r
     }
 }

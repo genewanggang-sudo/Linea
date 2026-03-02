@@ -237,7 +237,7 @@ export abstract class EllipseCurve2 extends Curve2 {
         if (Math.abs(u - end) <= Precision.CURVE_PARAM_EPS) return end
 
         if (this._range instanceof PeriodInterval) {
-            return this._range.normalizeInPeriod(u, start)
+            return PeriodInterval.normalizeParam(u, this._range.period, start)
         }
         return u
     }
@@ -289,8 +289,8 @@ export abstract class EllipseCurve2 extends Curve2 {
 
     protected compareParamForTieBreak(a: number, b: number) {
         if (this._range instanceof PeriodInterval) {
-            const aa = this._range.normalizeInPeriod(a, this._range.start)
-            const bb = this._range.normalizeInPeriod(b, this._range.start)
+            const aa = PeriodInterval.normalizeParam(a, this._range.period, this._range.start)
+            const bb = PeriodInterval.normalizeParam(b, this._range.period, this._range.start)
             return aa - bb
         }
         return a - b

@@ -34,7 +34,7 @@ export class Ellipse2 extends EllipseCurve2 {
 
     public override split(u: number) {
         const range = this._range as PeriodInterval
-        const uu = range.normalizeInPeriod(u, range.start)
+        const uu = PeriodInterval.normalizeParam(u, range.period, range.start)
         if (Math.abs(uu - range.start) <= Precision.CURVE_PARAM_EPS || Math.abs(uu - range.end) <= Precision.CURVE_PARAM_EPS) {
             return []
         }
@@ -134,12 +134,12 @@ export class Ellipse2 extends EllipseCurve2 {
 
     protected override paramToAngle(u: number) {
         const range = this._range as PeriodInterval
-        return range.normalizeInPeriod(u, range.start)
+        return PeriodInterval.normalizeParam(u, range.period, range.start)
     }
 
     protected override angleToParam(theta: number) {
         const range = this._range as PeriodInterval
-        return range.normalizeInPeriod(theta, range.start)
+        return PeriodInterval.normalizeParam(theta, range.period, range.start)
     }
 
     protected override angleDerivativeSign(): 1 | -1 {

@@ -23,8 +23,8 @@ export function sampleParams(range: Interval, count = 8, eps = 1e-9) {
     }
 
     if (range instanceof PeriodInterval && Math.abs(range.length() - range.period) <= eps) {
-        ret.add(range.normalizeInPeriod(s - eps, s))
-        ret.add(range.normalizeInPeriod(e + eps, s))
+        ret.add(PeriodInterval.normalizeParam(s - eps, range.period, s))
+        ret.add(PeriodInterval.normalizeParam(e + eps, range.period, s))
     }
 
     return [...ret].sort((a, b) => a - b)

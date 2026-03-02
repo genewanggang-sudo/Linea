@@ -182,8 +182,8 @@ export class Arc2 extends CircleCurve2 {
                 continue
             }
             if (Math.abs(d - bestD) <= Precision.CURVE_LENGTH_EPS) {
-                const uu = range.normalizeInPeriod(u, range.start)
-                const bb = range.normalizeInPeriod(bestU, range.start)
+                const uu = PeriodInterval.normalizeParam(u, range.period, range.start)
+                const bb = PeriodInterval.normalizeParam(bestU, range.period, range.start)
                 if (uu < bb) {
                     bestU = u
                     bestP = q
@@ -277,11 +277,11 @@ export class Arc2 extends CircleCurve2 {
     private paramFromAngle(theta: number) {
         const range = this._range as PeriodInterval
         if (!this._clockwise) {
-            return range.normalizeInPeriod(theta, range.start)
+            return PeriodInterval.normalizeParam(theta, range.period, range.start)
         }
         // 反向参数化：关于 start 角做镜像。
         const reflected = 2 * range.start - theta
-        return range.normalizeInPeriod(reflected, range.start)
+        return PeriodInterval.normalizeParam(reflected, range.period, range.start)
     }
 
     private resetAngles(startAngle: number, endAngle: number, clockwise: boolean) {
