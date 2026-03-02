@@ -1,4 +1,4 @@
-import { DiscretizeOptions, type Box2, type Curve2, type Vec2 } from '@linea/math'
+import { DiscretizeOptions, type Box2, type Curve2, type Vec2 } from '@cc/math'
 import * as THREE from 'three'
 
 function toVec3(v: Vec2): THREE.Vector3 {
