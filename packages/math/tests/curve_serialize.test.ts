@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Arc2 } from '../src/curves/arc2'
 import { BSpline2 } from '../src/curves/bspline2'
@@ -16,11 +16,12 @@ describe('Curve serialize round-trip', () => {
         const arc = new Arc2(new Vec2(0, 0), 2, 0.2, 1.2, true)
         const ellipse = new Ellipse2(new Vec2(-1, 3), 4, 2, 0.3)
         const ellipseArc = new EllipseArc2(new Vec2(0, 0), 4, 2, 0.2, 0.1, 1.2, false)
-        const bspline = new BSpline2(
-            [new Vec2(0, 0), new Vec2(1, 1), new Vec2(2, 0)],
-            2,
-            { expandedKnots: [0, 0, 0, 1, 1, 1] },
-        )
+        const bspline = new BSpline2({
+            controlPoints: [new Vec2(0, 0), new Vec2(1, 1), new Vec2(2, 0)],
+            degree: 2,
+            knots: [0, 1],
+            multiplicities: [3, 3],
+        })
 
         const restoredLine = geomMgr.load<Line2>(line.dump())
         const restoredCircle = geomMgr.load<Circle2>(circle.dump())

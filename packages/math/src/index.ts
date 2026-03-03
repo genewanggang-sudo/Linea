@@ -17,7 +17,7 @@ export { Arc2 } from './curves/arc2'
 export { Ellipse2 } from './curves/ellipse2'
 export { EllipseArc2 } from './curves/ellipse_arc2'
 export { BSpline2 } from './curves/bspline2'
-export type { IBSpline2Options } from './curves/bspline2'
+export type { IBSpline2Param } from './curves/bspline2'
 
 export { Precision } from './utils/precision'
 export { MathUtils } from './utils/math_utils'

@@ -1,6 +1,6 @@
-/*
+﻿/*
  * Linea Math - Serialize
- * 序列化结构类型定义
+ * 搴忓垪鍖栫粨鏋勭被鍨嬪畾涔?
  */
 
 import { EN_GEO_TYPE } from '../constants/geom_type'
@@ -80,7 +80,11 @@ export type IDBBSpline2 = IDB & {
     type: EN_GEO_TYPE.BSpline2
     controlPoints: Array<{ x: number; y: number }>
     degree: number
-    expandedKnots: number[]
-    weights?: number[]
+    knots: Array<number>
+    multiplicities: Array<number>
+    weights?: Array<number>
+    isClosed?: boolean
     isPeriodic?: boolean
 }
+
+

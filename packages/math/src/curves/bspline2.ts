@@ -4,110 +4,111 @@ import { Mat3 } from '../core/mat3'
 import { Vec2 } from '../core/vec2'
 import type { IDBBSpline2 } from '../serialize/dump_types'
 import { RegisterGeom } from '../serialize/geom_mgr'
-import { Axis2D, type IClosestPointResult, type IWeightedPoint2 } from '../types/type_define'
+import { Axis2D, type IClosestPointResult, type IVec2, type IWeightedPoint2 } from '../types/type_define'
 import { MathError } from '../utils/math_error'
 import { Precision } from '../utils/precision'
 import { Curve2 } from './curve2'
 import { Interval } from './interval'
 
-/**
- * B 样条构造选项。
- * - `expandedKnots` 与 `knots + multiplicities` 二选一或同时提供（同时提供需一致）。
- * - `weights` 省略时按全 1 处理。
- * - 第一版仅支持 `isPeriodic !== true`。
- */
-export type IBSpline2Options = {
-    expandedKnots?: readonly number[]
-    knots?: readonly number[]
-    multiplicities?: readonly number[]
-    weights?: readonly number[]
+export type IBSpline2Param = Readonly<{
+    controlPoints: readonly IVec2[]
+    degree: number
+    weights?: ReadonlyArray<number>
+    isClosed?: boolean
     isPeriodic?: boolean
-}
+    knots: readonly [number, number, ...number[]]
+    multiplicities: readonly [number, number, ...number[]]
+}>
 
 @RegisterGeom
-/**
- * 二维有理 B 样条（NURBS）曲线。
- * 内部统一使用 expanded knot vector 存储与计算。
- */
+
 export class BSpline2 extends Curve2 {
     public static readonly type = EN_GEO_TYPE.BSpline2
 
-    /**
-     * 控制点序列（内部存储）。
-     * 约定：始终为深拷贝后的可变数组，不直接暴露引用给外部。
-     */
     private _controlPoints: Vec2[]
 
-    /**
-     * 样条次数（degree）。
-     * 约束：构造后保持 >= 1，且与控制点数量/节点向量长度匹配。
-     */
     private _degree: number
 
-    /**
-     * 权重序列（与控制点一一对应）。
-     * 约定：长度始终等于控制点数量；未传入时按全 1 处理。
-     */
-    private _weights: number[]
+    private _weights: Array<number>
 
-    /**
-     * 展开后的节点向量（expanded knot vector）。
-     * 约定：非递减；长度始终满足 n + p + 2（n 为控制点末索引，p 为次数）。
-     */
-    private _knots: number[]
+    private _knots: Array<number>
 
-    /**
-     * 构造 B 样条曲线。
-     * @param controlPoints 控制点数组。
-     * @param degree 样条次数（`>=1`）。
-     * @param options 节点、权重与周期配置。
-     */
-    constructor(controlPoints: readonly Vec2[], degree: number, options: IBSpline2Options = {}) {
+    private _isPeriodic: boolean
+
+    private _isClosed: boolean
+
+    constructor(input: IBSpline2Param) {
         super()
+        const { controlPoints, degree } = input
         MathError.assert(Number.isInteger(degree) && degree >= 1, 'BSpline2: degree must be an integer >= 1')
         MathError.assert(controlPoints.length >= degree + 1, 'BSpline2: controlPoints.length must be >= degree + 1')
-        MathError.assert(options.isPeriodic !== true, 'BSpline2: periodic is not supported in v1')
 
         this._degree = degree
-        this._controlPoints = controlPoints.map((p) => p.clone())
+        this._controlPoints = controlPoints.map((p) => new Vec2(p))
         this.assertFiniteControlPoints(this._controlPoints)
 
-        this._weights = this.resolveWeights(options.weights)
-        this._knots = this.resolveKnots(options)
+        this._weights = this.resolveWeights(input.weights)
+        this._knots = this.resolveKnots(input)
         this.validateExpandedKnots(this._knots, this._controlPoints.length, degree)
 
         const domainStart = this._knots[this._degree]
         const domainEnd = this._knots[this._knots.length - this._degree - 1]
         MathError.assert(domainEnd > domainStart, 'BSpline2: invalid parameter domain')
         this.setRange(new Interval(domainStart, domainEnd))
+
+        this._isPeriodic = input.isPeriodic === true
+        if (this._isPeriodic) {
+            this.validatePeriodicInput(this._knots, input.multiplicities, domainStart, domainEnd)
+            this._isClosed = true
+        } else {
+            this._isClosed = input.isClosed ?? this.endpointsAreNear()
+        }
     }
 
-    /** 控制点数组（返回深拷贝） */
+    private static compactKnotDataFromExpanded(expandedKnots: ReadonlyArray<number>) {
+        MathError.assert(expandedKnots.length >= 2, 'BSpline2.compactKnotDataFromExpanded: expandedKnots requires at least two values')
+        const knots: Array<number> = []
+        const multiplicities: Array<number> = []
+        for (const value of expandedKnots) {
+            if (
+                knots.length === 0 ||
+                !Precision.equal(value, knots[knots.length - 1], Precision.CURVE_PARAM_EPS)
+            ) {
+                knots.push(value)
+                multiplicities.push(1)
+            } else {
+                multiplicities[multiplicities.length - 1]++
+            }
+        }
+        return { knots, multiplicities }
+    }
+
     public get controlPoints() {
         return this._controlPoints.map((p) => p.clone())
     }
 
-    /** 样条次数 */
     public get degree() {
         return this._degree
     }
 
-    /** 展开节点向量（返回副本） */
     public get expandedKnots() {
         return [...this._knots]
     }
 
-    /** 权重数组（返回副本） */
     public get weights() {
         return [...this._weights]
     }
 
-    /**
-     * 获取参数域内部的连续性断点参数。
-     * 当 knot 重数 >= degree 时，可视为连续性下降断点。
-     */
-    public getContinuityBreakParams(eps = Precision.CURVE_PARAM_EPS): number[] {
-        const breaks: number[] = []
+    public get isPeriodic() {
+        return this._isPeriodic
+    }
+
+    public override isClosed(): boolean {
+        return this._isClosed
+    }
+
+    public getContinuityBreakParams(eps = Precision.CURVE_PARAM_EPS): Array<number> {
+        const breaks: Array<number> = []
         const range = this._range
         for (let i = 0; i < this._knots.length;) {
             const knot = this._knots[i]
@@ -134,7 +135,7 @@ export class BSpline2 extends Curve2 {
 
     public override derivatives(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'BSpline2.derivatives: n must be a non-negative integer')
-        const uu = this.snapParam(u)
+        const uu = this.normalizeParamForEval(u)
 
         const p = this._degree
         const du = Math.min(n, p)
@@ -199,7 +200,7 @@ export class BSpline2 extends Curve2 {
     }
 
     public override lengthAtParam(u: number) {
-        const uu = this.snapParam(u)
+        const uu = this.normalizeParamForEval(u)
         return this.integrateLength(this._range.start, uu)
     }
 
@@ -219,7 +220,6 @@ export class BSpline2 extends Curve2 {
         if (total - s <= tol) return end
 
         const target = Math.min(total, Math.max(0, s))
-        // 使用基类统一的“Newton + 二分”模板，保证边界与收敛行为一致。
         return this.solveParamByHybridNewton(
             target,
             start,
@@ -236,7 +236,7 @@ export class BSpline2 extends Curve2 {
         const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
         if (parts.length === 0) return []
 
-        const uu = this.snapParam(u)
+        const uu = this.normalizeParamForEval(u)
         const p = this._degree
         const U = [...this._knots]
         const n = this._controlPoints.length - 1
@@ -319,8 +319,7 @@ export class BSpline2 extends Curve2 {
 
     public override closestPoint(p: Vec2, tol = Precision.CURVE_LENGTH_EPS): IClosestPointResult {
         MathError.assert(Number.isFinite(tol) && tol > 0, 'BSpline2.closestPoint: tol must be > 0')
-        // 先采样粗定位，再用 Newton 在局部窗口细化，避免直接迭代落入错误极值点。
-        return this.solveClosestPointBySampleNewton(
+        const result = this.solveClosestPointBySampleNewton(
             p,
             tol,
             96,
@@ -328,7 +327,14 @@ export class BSpline2 extends Curve2 {
             (u) => this.derivativeAt(u, 1),
             (u) => this.derivativeAt(u, 2),
             'BSpline2.closestPoint: failed to converge',
+            this._isPeriodic
+                ? (a, b) => this.normalizePeriodicParam(a) - this.normalizePeriodicParam(b)
+                : undefined,
         )
+        if (!this._isPeriodic) return result
+        const param = this.normalizePeriodicParam(result.param)
+        const point = this.pointAt(param)
+        return { point, param, distance: point.distanceTo(p) }
     }
 
     public override boundingBox(accurate = false) {
@@ -369,20 +375,24 @@ export class BSpline2 extends Curve2 {
 
         const domainStart = this._knots[this._degree]
         const domainEnd = this._knots[this._knots.length - this._degree - 1]
-        return Number.isFinite(domainStart) && Number.isFinite(domainEnd) && domainEnd - domainStart > eps
+        if (!Number.isFinite(domainStart) || !Number.isFinite(domainEnd) || domainEnd - domainStart <= eps) return false
+        if (this._isPeriodic) {
+            if (!this._isClosed) return false
+            if (domainEnd - domainStart <= Precision.CURVE_PARAM_EPS) return false
+            const startMul = BSpline2.endpointMultiplicity(this._knots, true)
+            const endMul = BSpline2.endpointMultiplicity(this._knots, false)
+            if (startMul !== endMul) return false
+        }
+        return true
     }
 
     public override isBSpline(): this is BSpline2 {
         return true
     }
 
-    /**
-     * 结构等价判断（字段级）。
-     * @param other 对比样条。
-     * @param eps 数值容差。
-     * @returns 阶次、控制点、权重与节点向量逐项近似相等时返回 `true`。
-     */
     public equals(other: BSpline2, eps = Precision.EPS) {
+        if (this._isPeriodic !== other._isPeriodic) return false
+        if (this._isClosed !== other._isClosed) return false
         if (this._degree !== other._degree) return false
         if (this._controlPoints.length !== other._controlPoints.length) return false
         if (this._weights.length !== other._weights.length) return false
@@ -399,41 +409,46 @@ export class BSpline2 extends Curve2 {
     }
 
     public override clone(): this {
-        return new BSpline2(this._controlPoints, this._degree, {
-            expandedKnots: this._knots,
+        const compact = BSpline2.compactKnotDataFromExpanded(this._knots)
+        return new BSpline2({
+            controlPoints: this._controlPoints,
+            degree: this._degree,
+            knots: BSpline2.requireAtLeastTwo(compact.knots, 'BSpline2.clone: knots requires at least two values'),
+            multiplicities: BSpline2.requireAtLeastTwo(compact.multiplicities, 'BSpline2.clone: multiplicities requires at least two values'),
             weights: this._weights,
-            isPeriodic: false,
+            isClosed: this._isClosed,
+            isPeriodic: this._isPeriodic,
         }) as this
     }
 
     public override dump(): IDBBSpline2 {
+        const compact = BSpline2.compactKnotDataFromExpanded(this._knots)
         return {
             type: BSpline2.type,
             controlPoints: this._controlPoints.map((p) => ({ x: p.x, y: p.y })),
             degree: this._degree,
-            expandedKnots: [...this._knots],
+            knots: compact.knots,
+            multiplicities: compact.multiplicities,
             weights: [...this._weights],
-            isPeriodic: false,
+            isClosed: this._isClosed,
+            isPeriodic: this._isPeriodic,
         }
     }
 
     public static load(data: IDBBSpline2) {
-        return new BSpline2(
-            data.controlPoints.map((p) => new Vec2(p.x, p.y)),
-            data.degree,
-            {
-                expandedKnots: data.expandedKnots,
-                weights: data.weights,
-                isPeriodic: data.isPeriodic,
-            },
-        )
+        MathError.assert(data.knots && data.multiplicities, 'BSpline2.load: knots and multiplicities are required')
+        return new BSpline2({
+            controlPoints: data.controlPoints.map((p) => new Vec2(p.x, p.y)),
+            degree: data.degree,
+            knots: BSpline2.requireAtLeastTwo(data.knots, 'BSpline2.load: knots requires at least two values'),
+            multiplicities: BSpline2.requireAtLeastTwo(data.multiplicities, 'BSpline2.load: multiplicities requires at least two values'),
+            weights: data.weights,
+            isClosed: data.isClosed,
+            isPeriodic: data.isPeriodic,
+        })
     }
 
-    /**
-     * 解析并校验权重。
-     * @param weights 输入权重；未传时返回全 1。
-     */
-    private resolveWeights(weights?: readonly number[]) {
+    private resolveWeights(weights?: ReadonlyArray<number>) {
         if (!weights) {
             return new Array<number>(this._controlPoints.length).fill(1)
         }
@@ -446,42 +461,11 @@ export class BSpline2 extends Curve2 {
         return w
     }
 
-    /**
-     * 解析并统一节点输入。
-     * @param options 构造选项。
-     * @returns 统一后的 expanded knots。
-     */
-    private resolveKnots(options: IBSpline2Options): number[] {
-        const fromExpanded = options.expandedKnots ? [...options.expandedKnots] : undefined
-        const fromCompact = options.knots && options.multiplicities
-            ? BSpline2.expandKnots(options.knots, options.multiplicities)
-            : undefined
-        const resolved = fromExpanded ?? fromCompact
-
-        if (!resolved) {
-            MathError.throw('BSpline2: expandedKnots or (knots+multiplicities) is required')
-        }
-
-        if (fromExpanded && fromCompact) {
-            MathError.assert(fromExpanded.length === fromCompact.length, 'BSpline2: expandedKnots mismatch with knots+multiplicities')
-            for (let i = 0; i < fromExpanded.length; i++) {
-                MathError.assert(
-                    Precision.equal(fromExpanded[i], fromCompact[i], Precision.CURVE_PARAM_EPS),
-                    'BSpline2: expandedKnots mismatch with knots+multiplicities',
-                )
-            }
-        }
-
-        return resolved
+    private resolveKnots(input: IBSpline2Param): Array<number> {
+        return BSpline2.expandKnots(input.knots, input.multiplicities)
     }
 
-    /**
-     * 校验 expanded knots 基本合法性。
-     * @param knots 展开节点向量。
-     * @param controlPointCount 控制点数量。
-     * @param degree 样条次数。
-     */
-    private validateExpandedKnots(knots: readonly number[], controlPointCount: number, degree: number) {
+    private validateExpandedKnots(knots: ReadonlyArray<number>, controlPointCount: number, degree: number) {
         MathError.assert(
             knots.length === controlPointCount + degree + 1,
             'BSpline2: invalid expandedKnots length',
@@ -496,20 +480,12 @@ export class BSpline2 extends Curve2 {
         }
     }
 
-    /**
-     * 校验控制点坐标有限性。
-     * @param points 控制点数组。
-     */
     private assertFiniteControlPoints(points: readonly Vec2[]) {
         for (const p of points) {
             MathError.assert(Number.isFinite(p.x) && Number.isFinite(p.y), 'BSpline2: control point must be finite')
         }
     }
 
-    /**
-     * 转换为齐次控制点。
-     * @returns 齐次点数组 `{x,y,w}`。
-     */
     private homogeneousControlPoints() {
         const ret: IWeightedPoint2[] = []
         for (let i = 0; i < this._controlPoints.length; i++) {
@@ -520,12 +496,6 @@ export class BSpline2 extends Curve2 {
         return ret
     }
 
-    /**
-     * 自适应积分计算弧长。
-     * @param u0 起始参数。
-     * @param u1 结束参数。
-     * @param depth 当前递归深度。
-     */
     private integrateLength(u0: number, u1: number, depth = 0): number {
         if (u1 < u0) return 0
         const f = (u: number) => this.tangentAt(u).len()
@@ -588,7 +558,7 @@ export class BSpline2 extends Curve2 {
     }
 
     private getUniqueKnotsInRange(start: number, end: number) {
-        const unique: number[] = []
+        const unique: Array<number> = []
         for (const knot of this._knots) {
             if (knot <= start + Precision.CURVE_PARAM_EPS || knot >= end - Precision.CURVE_PARAM_EPS) continue
             if (unique.length > 0 && Math.abs(unique[unique.length - 1] - knot) <= Precision.CURVE_PARAM_EPS) continue
@@ -598,7 +568,7 @@ export class BSpline2 extends Curve2 {
     }
 
     private solveComponentExtremaInSpan(axis: Axis2D, u0: number, u1: number) {
-        const roots: number[] = []
+        const roots: Array<number> = []
         const brackets = this.findRootBrackets(axis, u0, u1)
         for (const [b0, b1] of brackets) {
             const root = this.refineRootBracketedNewton(axis, b0, b1)
@@ -711,8 +681,6 @@ export class BSpline2 extends Curve2 {
     }
 
     private bboxRootSampleCount() {
-        // Degree-scaled sampling keeps low-order curves fast while giving higher-order curves
-        // enough brackets for extrema detection without a single hard-coded global level.
         return Math.max(8, Math.min(32, this._degree * 4))
     }
 
@@ -744,35 +712,79 @@ export class BSpline2 extends Curve2 {
         return u
     }
 
-    /**
-     * 参数吸附到端点，避免边界浮点抖动。
-     * @param u 输入参数。
-     * @returns 吸附后的参数。
-     */
-    private snapParam(u: number) {
+    private normalizeParamForEval(u: number) {
+        if (this._isPeriodic) {
+            return this.normalizePeriodicParam(u)
+        }
         this._range.assertContains(u, Precision.CURVE_PARAM_EPS)
+        return this.snapBoundary(u)
+    }
+
+    private normalizePeriodicParam(u: number) {
+        const start = this._range.start
+        const period = this._range.length()
+        let local = (u - start) % period
+        if (local < 0) local += period
+        return this.snapBoundary(start + local)
+    }
+
+    private snapBoundary(u: number) {
         const start = this._range.start
         const end = this._range.end
         if (Math.abs(u - start) <= Precision.CURVE_PARAM_EPS) return start
-        if (Math.abs(u - end) <= Precision.CURVE_PARAM_EPS) return end
+        if (Math.abs(u - end) <= Precision.CURVE_PARAM_EPS) {
+            return this._isPeriodic ? start : end
+        }
         return u
     }
 
-    private static fromHomogeneous(points: IWeightedPoint2[], degree: number, knots: number[]) {
+    private static fromHomogeneous(points: IWeightedPoint2[], degree: number, knots: Array<number>) {
         const cps: Vec2[] = []
-        const ws: number[] = []
+        const ws: Array<number> = []
         for (const p of points) {
             MathError.assert(Math.abs(p.w) > Precision.CURVE_NEWTON_EPS, 'BSpline2.fromHomogeneous: invalid homogeneous weight')
             cps.push(new Vec2(p.x / p.w, p.y / p.w))
             ws.push(p.w)
         }
-        return new BSpline2(cps, degree, { expandedKnots: knots, weights: ws, isPeriodic: false })
+        const compact = BSpline2.compactKnotDataFromExpanded(knots)
+        return new BSpline2({
+            controlPoints: cps,
+            degree,
+            knots: BSpline2.requireAtLeastTwo(compact.knots, 'BSpline2.fromHomogeneous: knots requires at least two values'),
+            multiplicities: BSpline2.requireAtLeastTwo(compact.multiplicities, 'BSpline2.fromHomogeneous: multiplicities requires at least two values'),
+            weights: ws,
+            isClosed: false,
+            isPeriodic: false,
+        })
     }
 
-    private static expandKnots(knots: readonly number[], multiplicities: readonly number[]) {
+    private static requireAtLeastTwo(values: ReadonlyArray<number>, errorMessage: string): [number, number, ...number[]] {
+        MathError.assert(values.length >= 2, errorMessage)
+        return [values[0], values[1], ...values.slice(2)]
+    }
+
+    private static endpointMultiplicity(knots: ReadonlyArray<number>, atStart: boolean) {
+        if (knots.length === 0) return 0
+        const v = atStart ? knots[0] : knots[knots.length - 1]
+        let count = 0
+        if (atStart) {
+            for (let i = 0; i < knots.length; i++) {
+                if (!Precision.equal(knots[i], v, Precision.CURVE_PARAM_EPS)) break
+                count++
+            }
+        } else {
+            for (let i = knots.length - 1; i >= 0; i--) {
+                if (!Precision.equal(knots[i], v, Precision.CURVE_PARAM_EPS)) break
+                count++
+            }
+        }
+        return count
+    }
+
+    private static expandKnots(knots: ReadonlyArray<number>, multiplicities: ReadonlyArray<number>) {
         MathError.assert(knots.length === multiplicities.length, 'BSpline2: knots and multiplicities length mismatch')
 
-        const expanded: number[] = []
+        const expanded: Array<number> = []
         for (let i = 0; i < knots.length; i++) {
             const m = multiplicities[i]
             MathError.assert(Number.isInteger(m) && m > 0, 'BSpline2: multiplicity must be positive integer')
@@ -781,7 +793,7 @@ export class BSpline2 extends Curve2 {
         return expanded
     }
 
-    private static findSpan(n: number, p: number, u: number, U: readonly number[]) {
+    private static findSpan(n: number, p: number, u: number, U: ReadonlyArray<number>) {
         if (u >= U[n + 1] - Precision.CURVE_PARAM_EPS) return n
         if (u <= U[p] + Precision.CURVE_PARAM_EPS) return p
 
@@ -796,7 +808,7 @@ export class BSpline2 extends Curve2 {
         return mid
     }
 
-    private static knotMultiplicity(u: number, U: readonly number[]) {
+    private static knotMultiplicity(u: number, U: ReadonlyArray<number>) {
         let s = 0
         for (const k of U) {
             if (Precision.equal(k, u, Precision.CURVE_PARAM_EPS)) s++
@@ -804,7 +816,7 @@ export class BSpline2 extends Curve2 {
         return s
     }
 
-    private static insertKnotOnce(points: IWeightedPoint2[], knots: number[], degree: number, u: number) {
+    private static insertKnotOnce(points: IWeightedPoint2[], knots: Array<number>, degree: number, u: number) {
         const n = points.length - 1
         const k = BSpline2.findSpan(n, degree, u, knots)
         const s = BSpline2.knotMultiplicity(u, knots)
@@ -834,7 +846,7 @@ export class BSpline2 extends Curve2 {
         return { points: outPoints, knots: outKnots }
     }
 
-    private static basisFunctionDerivatives(span: number, u: number, p: number, n: number, U: readonly number[]) {
+    private static basisFunctionDerivatives(span: number, u: number, p: number, n: number, U: ReadonlyArray<number>) {
         const ndu = Array.from({ length: p + 1 }, () => new Array<number>(p + 1).fill(0))
         const left = new Array<number>(p + 1).fill(0)
         const right = new Array<number>(p + 1).fill(0)
@@ -922,5 +934,30 @@ export class BSpline2 extends Curve2 {
             result = (result * (n - kk + i)) / i
         }
         return result
+    }
+
+    private validatePeriodicInput(knots: ReadonlyArray<number>, multiplicities: ReadonlyArray<number> | undefined, domainStart: number, domainEnd: number) {
+        if (!(domainEnd - domainStart > Precision.CURVE_PARAM_EPS)) {
+            MathError.throw('BSpline2: invalid periodic input')
+        }
+
+        if (multiplicities && multiplicities.length > 0) {
+            if (multiplicities[0] !== multiplicities[multiplicities.length - 1]) {
+                MathError.throw('BSpline2: invalid periodic input')
+            }
+            return
+        }
+
+        const startMul = BSpline2.endpointMultiplicity(knots, true)
+        const endMul = BSpline2.endpointMultiplicity(knots, false)
+        if (startMul !== endMul) {
+            MathError.throw('BSpline2: invalid periodic input')
+        }
+    }
+
+    private endpointsAreNear(eps = Precision.CURVE_LENGTH_EPS) {
+        const start = this._range.start
+        const end = this._range.end
+        return this.pointAt(start).distanceTo(this.pointAt(end)) <= eps
     }
 }

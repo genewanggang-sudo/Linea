@@ -44,17 +44,18 @@ describe('curve type predicates', () => {
     })
 
     it('covers bspline continuity break extraction and predicate', () => {
-        const bspline = new BSpline2(
-            [
+        const bspline = new BSpline2({
+            controlPoints: [
                 new Vec2(0, 0),
                 new Vec2(1, 1),
                 new Vec2(2, 0),
                 new Vec2(3, 1),
                 new Vec2(4, 0),
             ],
-            2,
-            { expandedKnots: [0, 0, 0, 0.5, 0.5, 1, 1, 1] },
-        )
+            degree: 2,
+            knots: [0, 0.5, 1],
+            multiplicities: [3, 2, 3],
+        })
         expect(bspline.isBSpline()).toBe(true)
         const breaks = bspline.getContinuityBreakParams()
         expect(breaks.length).toBe(1)

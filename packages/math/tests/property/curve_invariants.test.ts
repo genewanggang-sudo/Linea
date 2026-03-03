@@ -20,11 +20,12 @@ describe('Curve property invariants', () => {
             new Arc2(new Vec2(0, 0), 2, -0.3, 1.8, false),
             new Ellipse2(new Vec2(0.5, -1), 4, 2, 0.3),
             new EllipseArc2(new Vec2(0, 0), 3, 1.5, 0.2, -0.4, 2.1, true),
-            new BSpline2(
-                [new Vec2(0, 0), new Vec2(1, 2), new Vec2(2, -1), new Vec2(3, 1)],
-                2,
-                { expandedKnots: [0, 0, 0, 1, 2, 2, 2] },
-            ),
+            new BSpline2({
+                controlPoints: [new Vec2(0, 0), new Vec2(1, 2), new Vec2(2, -1), new Vec2(3, 1)],
+                degree: 2,
+                knots: [0, 1, 2],
+                multiplicities: [3, 1, 3],
+            }),
         ]
 
         for (const c of curves) {
@@ -47,11 +48,12 @@ describe('Curve property invariants', () => {
             new Arc2(new Vec2(0, 0), 2, -0.3, 1.8, false),
             new Ellipse2(new Vec2(0.5, -1), 4, 2, 0.3),
             new EllipseArc2(new Vec2(0, 0), 3, 1.5, 0.2, -0.4, 2.1, true),
-            new BSpline2(
-                [new Vec2(0, 0), new Vec2(1, 2), new Vec2(2, -1), new Vec2(3, 1)],
-                2,
-                { expandedKnots: [0, 0, 0, 1, 2, 2, 2] },
-            ),
+            new BSpline2({
+                controlPoints: [new Vec2(0, 0), new Vec2(1, 2), new Vec2(2, -1), new Vec2(3, 1)],
+                degree: 2,
+                knots: [0, 1, 2],
+                multiplicities: [3, 1, 3],
+            }),
         ]
 
         for (const c of curves) {

@@ -145,11 +145,12 @@ describe('DiscretizeEngine', () => {
         const arc = new Arc2(new Vec2(0, 0), 1, 0, Math.PI / 2, false)
         const ellipse = new Ellipse2(new Vec2(0, 0), 3, 1, 0.1)
         const ellipseArc = new EllipseArc2(new Vec2(0, 0), 3, 1, 0.1, 0, Math.PI / 2, false)
-        const bspline = new BSpline2(
-            [new Vec2(0, 0), new Vec2(1, 2), new Vec2(2, 0), new Vec2(3, 1)],
-            2,
-            { expandedKnots: [0, 0, 0, 1, 2, 2, 2] },
-        )
+        const bspline = new BSpline2({
+            controlPoints: [new Vec2(0, 0), new Vec2(1, 2), new Vec2(2, 0), new Vec2(3, 1)],
+            degree: 2,
+            knots: [0, 1, 2],
+            multiplicities: [3, 1, 3],
+        })
 
         const linePts = DiscretizeEngine.discretize(line)
         expect(linePts.length).toBe(2)
@@ -365,11 +366,12 @@ describe('DiscretizeEngine', () => {
         const init = engine.buildInitialEllipseSegments(line, 2)
         expect(init.length).toBe(2)
 
-        const bspline = new BSpline2(
-            [new Vec2(0, 0), new Vec2(1, 1), new Vec2(2, 0), new Vec2(3, 1), new Vec2(4, 0)],
-            2,
-            { expandedKnots: [0, 0, 0, 0.5, 0.5, 1, 1, 1] },
-        )
+        const bspline = new BSpline2({
+            controlPoints: [new Vec2(0, 0), new Vec2(1, 1), new Vec2(2, 0), new Vec2(3, 1), new Vec2(4, 0)],
+            degree: 2,
+            knots: [0, 0.5, 1],
+            multiplicities: [3, 2, 3],
+        })
         const bInit = engine.buildInitialBSplineSegments(bspline)
         expect(bInit.length).toBeGreaterThan(0)
 

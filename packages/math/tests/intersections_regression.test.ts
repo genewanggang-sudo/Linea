@@ -3,8 +3,8 @@ import { BSpline2, Circle2, Ellipse2, Line2, Vec2, intersectCurveCurve, intersec
 
 describe('intersections regression', () => {
     it('bspline self-intersection should be found for known snapshot case', () => {
-        const curve = new BSpline2(
-            [
+        const curve = new BSpline2({
+            controlPoints: [
                 new Vec2(-9.589858087117241, 5.725944476947604),
                 new Vec2(-6.977386057485579, 6.536828110078608),
                 new Vec2(-12.676948182347818, 3.338908048921967),
@@ -17,13 +17,12 @@ describe('intersections regression', () => {
                 new Vec2(-3.608864585817204, 1.9061575151515584),
                 new Vec2(-5.697236999095774, 0.8318480092617876),
             ],
-            3,
-            {
-                expandedKnots: [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8, 8],
-                weights: new Array(11).fill(1),
-                isPeriodic: false,
-            },
-        )
+            degree: 3,
+            knots: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            multiplicities: [4, 1, 1, 1, 1, 1, 1, 1, 4],
+            weights: new Array(11).fill(1),
+            isPeriodic: false,
+        })
 
         const result = intersectCurveSelf(curve)
         expect(result.length).toBeGreaterThan(0)
@@ -35,8 +34,8 @@ describe('intersections regression', () => {
     })
 
     it('bspline self-intersection should reject diagonal pseudo-solutions', () => {
-        const curve = new BSpline2(
-            [
+        const curve = new BSpline2({
+            controlPoints: [
                 new Vec2(-4.806333910963993, 9.48474299388984),
                 new Vec2(-13.20823438432106, 5.917096057447496),
                 new Vec2(-4.235309955437865, 4.316006494445661),
@@ -49,13 +48,12 @@ describe('intersections regression', () => {
                 new Vec2(-4.07573287890349, 1.2008410100175546),
                 new Vec2(-5.76307176607934, 1.8621618936994355),
             ],
-            3,
-            {
-                expandedKnots: [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8, 8],
-                weights: new Array(11).fill(1),
-                isPeriodic: false,
-            },
-        )
+            degree: 3,
+            knots: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            multiplicities: [4, 1, 1, 1, 1, 1, 1, 1, 4],
+            weights: new Array(11).fill(1),
+            isPeriodic: false,
+        })
 
         const result = intersectCurveSelf(curve)
         expect(result.length).toBe(1)
@@ -63,8 +61,8 @@ describe('intersections regression', () => {
     })
 
     it('bspline self-intersection should find three intersections for multi-loop snapshot', () => {
-        const curve = new BSpline2(
-            [
+        const curve = new BSpline2({
+            controlPoints: [
                 new Vec2(-5.622669194368708, 8.501255772756485),
                 new Vec2(-11.886651297276986, 6.263101501942873),
                 new Vec2(-5.369127516778522, 4.711314313168606),
@@ -75,21 +73,20 @@ describe('intersections regression', () => {
                 new Vec2(-6.785980156337389, 0.36929502779019713),
                 new Vec2(-6.532438478747205, 5.382760594412691),
             ],
-            3,
-            {
-                expandedKnots: [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 6, 6, 6],
-                weights: new Array(9).fill(1),
-                isPeriodic: false,
-            },
-        )
+            degree: 3,
+            knots: [0, 1, 2, 3, 4, 5, 6],
+            multiplicities: [4, 1, 1, 1, 1, 1, 4],
+            weights: new Array(9).fill(1),
+            isPeriodic: false,
+        })
 
         const result = intersectCurveSelf(curve)
         expect(result.length).toBe(3)
     })
 
     it('bspline-ellipse should not miss intersections for latest exported snapshot case', () => {
-        const bspline = new BSpline2(
-            [
+        const bspline = new BSpline2({
+            controlPoints: [
                 new Vec2(-10.114583015441895, 5.394629246457196),
                 new Vec2(-7.54368447414322, 5.164394195213687),
                 new Vec2(-12.06085747654279, 3.423476705992265),
@@ -103,13 +100,12 @@ describe('intersections regression', () => {
                 new Vec2(-13.25290210418723, 2.6332274117400156),
                 new Vec2(-7.280960539701358, 4.269326800763631),
             ],
-            3,
-            {
-                expandedKnots: [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 9],
-                weights: new Array(12).fill(1),
-                isPeriodic: false,
-            },
-        )
+            degree: 3,
+            knots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            multiplicities: [4, 1, 1, 1, 1, 1, 1, 1, 1, 4],
+            weights: new Array(12).fill(1),
+            isPeriodic: false,
+        })
         const ellipse = new Ellipse2(
             new Vec2(-8.02083444595337, 4.4881439877168905),
             5.365393745882672,
@@ -159,8 +155,8 @@ describe('intersections regression', () => {
             new Vec2(-6.4270830154418945, 5.540500119544892),
             new Vec2(-12.322916507720947, -0.22141224536456905),
         )
-        const bspline = new BSpline2(
-            [
+        const bspline = new BSpline2({
+            controlPoints: [
                 new Vec2(-5.46875, 3.0606895535227405),
                 new Vec2(-8.020833015441895, 5.165402771100628),
                 new Vec2(-7.4895830154418945, 3.2586579165089526),
@@ -180,13 +176,12 @@ describe('intersections regression', () => {
                 new Vec2(-11.302071542980656, -0.15889602062328306),
                 new Vec2(-11.802082075087801, -0.3151865824755882),
             ],
-            3,
-            {
-                expandedKnots: [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 15, 15],
-                weights: new Array(18).fill(1),
-                isPeriodic: false,
-            },
-        )
+            degree: 3,
+            knots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            multiplicities: [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4],
+            weights: new Array(18).fill(1),
+            isPeriodic: false,
+        })
         const result = intersectCurveCurve(line, bspline)
         expect(result.length).toBe(8)
     })
