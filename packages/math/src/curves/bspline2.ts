@@ -10,15 +10,15 @@ import { Precision } from '../utils/precision'
 import { Curve2 } from './curve2'
 import { Interval } from './interval'
 
-export type IBSpline2Param = Readonly<{
-    controlPoints: readonly IVec2[]
+export type IBSpline2Param = {
+    controlPoints: IVec2[]
     degree: number
-    weights?: ReadonlyArray<number>
+    weights?: Array<number>
     isClosed?: boolean
     isPeriodic?: boolean
-    knots: readonly [number, number, ...number[]]
-    multiplicities: readonly [number, number, ...number[]]
-}>
+    knots: [number, number, ...number[]]
+    multiplicities: [number, number, ...number[]]
+}
 
 @RegisterGeom
 
