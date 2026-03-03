@@ -643,9 +643,10 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
             points.push(cursor)
         }
         const degree = Math.min(3, points.length - 1)
+        const { knots, multiplicities } = buildClampedKnotData(points.length, degree)
         return {
             type,
-            curve: new BSpline2(points, degree, { expandedKnots: buildClampedKnots(points.length, degree) }),
+            curve: new BSpline2({ controlPoints: points, degree, knots, multiplicities }),
         }
     }
 
@@ -941,13 +942,25 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         return buildEllipseArcPreview(ellipse.center, ellipse, startPoint, endPoint)
     }
 
-    function buildClampedKnots(pointCount: number, degree: number): number[] {
+    function buildClampedKnotData(pointCount: number, degree: number): {
+        knots: [number, number, ...number[]]
+        multiplicities: [number, number, ...number[]]
+    } {
         const spanCount = pointCount - degree
         const knots: number[] = []
-        for (let i = 0; i <= degree; i++) knots.push(0)
-        for (let i = 1; i < spanCount; i++) knots.push(i)
-        for (let i = 0; i <= degree; i++) knots.push(spanCount)
-        return knots
+        const multiplicities: number[] = []
+        for (let i = 0; i <= spanCount; i++) {
+            knots.push(i)
+            if (i === 0 || i === spanCount) {
+                multiplicities.push(degree + 1)
+            } else {
+                multiplicities.push(1)
+            }
+        }
+        return {
+            knots: [knots[0], knots[1], ...knots.slice(2)],
+            multiplicities: [multiplicities[0], multiplicities[1], ...multiplicities.slice(2)],
+        }
     }
 
     function finalizeFromDraft(tool: DrawTool, points: Vec2[]): Curve2 | null {
@@ -979,7 +992,8 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         }
         if (tool === 'bspline' && points.length >= 4) {
             const degree = Math.min(3, points.length - 1)
-            return new BSpline2(points, degree, { expandedKnots: buildClampedKnots(points.length, degree) })
+            const { knots, multiplicities } = buildClampedKnotData(points.length, degree)
+            return new BSpline2({ controlPoints: points, degree, knots, multiplicities })
         }
         return null
     }

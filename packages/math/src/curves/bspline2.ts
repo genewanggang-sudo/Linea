@@ -359,7 +359,8 @@ export class BSpline2 extends Curve2 {
 
         if (candidates.length < 2) return controlBox
         const tightBox = Box2.fromPoints(candidates)
-        return this.expandBoxBySpanSamples(tightBox, spanBounds)
+        // Perf experiment: skip span sampling fallback.
+        return tightBox
     }
 
     public override isValid(eps = Precision.CURVE_LENGTH_EPS) {
