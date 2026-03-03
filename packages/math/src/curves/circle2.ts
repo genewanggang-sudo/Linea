@@ -63,7 +63,7 @@ export class Circle2 extends CircleCurve2 {
 
     public override trim(range: Interval) {
         this._range.assertContainsRange(range)
-        if (range.length() <= Precision.CURVE_PARAM_EPS) return []
+        if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
         return [new Arc2(this._center, this._radius, range.start, range.end, false)]
     }
 

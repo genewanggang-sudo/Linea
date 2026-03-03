@@ -178,8 +178,8 @@ function addOverlapSeed(seeds: ClipOverlapSeed[], next: ClipOverlapSeed, limit: 
         const overlap2 = next.range2.intersect(cur.range2, Precision.CURVE_PARAM_EPS * 8)
         if (overlap1.length === 0 || overlap2.length === 0) continue
         seeds[i] = {
-            range1: new Interval(Math.min(cur.range1.start, next.range1.start), Math.max(cur.range1.end, next.range1.end)),
-            range2: new Interval(Math.min(cur.range2.start, next.range2.start), Math.max(cur.range2.end, next.range2.end)),
+            range1: new Interval(cur.range1.start, next.range1.end),
+            range2: new Interval(cur.range2.start, next.range2.end),
         }
         return
     }

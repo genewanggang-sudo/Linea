@@ -267,7 +267,7 @@ export class BSpline2 extends Curve2 {
 
     public override trim(range: Interval) {
         this._range.assertContainsRange(range)
-        if (range.length() <= Precision.CURVE_PARAM_EPS) return []
+        if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
         const fullStart = this._range.start
         const fullEnd = this._range.end
@@ -346,7 +346,7 @@ export class BSpline2 extends Curve2 {
             const xRoots = this.solveComponentExtremaInSpan(Axis2D.X, u0, u1)
             const yRoots = this.solveComponentExtremaInSpan(Axis2D.Y, u0, u1)
             for (const u of [...xRoots, ...yRoots]) {
-                if (!range.contains(u, Precision.CURVE_PARAM_EPS)) continue
+                if (!range.contains(u)) continue
                 candidates.push(this.pointAt(u))
             }
         }
@@ -574,7 +574,7 @@ export class BSpline2 extends Curve2 {
         const range = this.getRange()
         const boundaries = [range.start, range.end, ...this.getUniqueKnotsInRange(range.start, range.end)]
         const sorted = [...new Set(boundaries)]
-            .filter((u) => Number.isFinite(u) && range.contains(u, Precision.CURVE_PARAM_EPS))
+            .filter((u) => Number.isFinite(u) && range.contains(u))
             .sort((a, b) => a - b)
 
         const spans: Array<[number, number]> = []

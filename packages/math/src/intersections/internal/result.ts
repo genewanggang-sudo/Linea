@@ -96,7 +96,7 @@ function mergeOverlaps(items: CurveXInfo[]) {
 function mergeRange(a?: Interval, b?: Interval) {
     if (!a) return b ? new Interval(b.start, b.end) : undefined
     if (!b) return new Interval(a.start, a.end)
-    return new Interval(Math.min(a.start, b.start), Math.max(a.end, b.end))
+    return new Interval(a.start, b.end)
 }
 
 function isSameCurveXInfo(a: CurveXInfo, b: CurveXInfo, pointTol: number) {

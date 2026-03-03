@@ -198,8 +198,9 @@ export class Line2 extends Curve2 {
      */
     private snapParam(u: number) {
         this._range.assertContains(u, Precision.CURVE_PARAM_EPS)
-        if (Math.abs(u - this._range.start) <= Precision.CURVE_PARAM_EPS) return this._range.start
-        if (Math.abs(u - this._range.end) <= Precision.CURVE_PARAM_EPS) return this._range.end
+        if (this._range.containsAtStartOrEnd(u, Precision.CURVE_PARAM_EPS)) {
+            return Precision.equal(u, this._range.start, Precision.CURVE_PARAM_EPS) ? this._range.start : this._range.end
+        }
         return u
     }
 

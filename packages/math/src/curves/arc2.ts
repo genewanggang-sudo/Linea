@@ -104,7 +104,7 @@ export class Arc2 extends CircleCurve2 {
 
     public override trim(range: Interval) {
         this._range.assertContainsRange(range)
-        if (range.length() <= Precision.CURVE_PARAM_EPS) return []
+        if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
         const s = this.angleAtParam(range.start)
         const e = this.angleAtParam(range.end)

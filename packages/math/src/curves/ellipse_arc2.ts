@@ -72,7 +72,7 @@ export class EllipseArc2 extends EllipseCurve2 {
 
     public override trim(range: Interval) {
         this._range.assertContainsRange(range)
-        if (range.length() <= Precision.CURVE_PARAM_EPS) return []
+        if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
         const start = this.paramToAngle(range.start)
         const end = this.paramToAngle(range.end)

@@ -79,7 +79,7 @@ export function projectRangeToCurve(
     const cpStart = closestPoint(otherCurve, startOnBase, tol)
     const cpEnd = closestPoint(otherCurve, endOnBase, tol)
     if (!cpStart || !cpEnd) return undefined
-    return new Interval(Math.min(cpStart.param, cpEnd.param), Math.max(cpStart.param, cpEnd.param))
+    return new Interval(cpStart.param, cpEnd.param)
 }
 
 export function certifyOverlapMonotone(
