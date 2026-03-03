@@ -89,8 +89,8 @@ export class Line2 extends Curve2 {
     }
 
     public override split(u: number) {
-        const splitParts = this._range.split(u, Precision.CURVE_PARAM_EPS)
-        if (splitParts.length === 0) return []
+        const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
+        if (parts.length === 0) return []
 
         const p = this.pointAt(u)
         const left = new Line2(this._start, p)

@@ -57,10 +57,17 @@ export class EllipseArc2 extends EllipseCurve2 {
         const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
         if (parts.length === 0) return []
 
-        const theta = this.paramToAngle(u)
-        const left = new EllipseArc2(this._center, this._rx, this._ry, this._rotation, this.startAngle, theta, this._clockwise)
-        const right = new EllipseArc2(this._center, this._rx, this._ry, this._rotation, theta, this.endAngle, this._clockwise)
-        return [left, right].filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+        return parts
+            .map((seg) => new EllipseArc2(
+                this._center,
+                this._rx,
+                this._ry,
+                this._rotation,
+                this.paramToAngle(seg.start),
+                this.paramToAngle(seg.end),
+                this._clockwise,
+            ))
+            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {

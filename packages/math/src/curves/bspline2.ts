@@ -233,8 +233,8 @@ export class BSpline2 extends Curve2 {
     }
 
     public override split(u: number) {
-        const splitParts = this._range.split(u, Precision.CURVE_PARAM_EPS)
-        if (splitParts.length === 0) return []
+        const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
+        if (parts.length === 0) return []
 
         const uu = this.snapParam(u)
         const p = this._degree
@@ -262,8 +262,7 @@ export class BSpline2 extends Curve2 {
         const left = BSpline2.fromHomogeneous(leftPw, p, leftKnots)
         const right = BSpline2.fromHomogeneous(rightPw, p, rightKnots)
 
-        const ret = [left, right].filter((c) => c.length() > Precision.CURVE_LENGTH_EPS)
-        return ret
+        return [left, right].filter((c) => c.length() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {

@@ -34,14 +34,12 @@ export class Ellipse2 extends EllipseCurve2 {
 
     public override split(u: number) {
         const range = this._range as PeriodInterval
-        const uu = PeriodInterval.normalizeParam(u, range.period, range.start)
-        if (Math.abs(uu - range.start) <= Precision.CURVE_PARAM_EPS || Math.abs(uu - range.end) <= Precision.CURVE_PARAM_EPS) {
-            return []
-        }
+        const parts = range.split(u, Precision.CURVE_PARAM_EPS)
+        if (parts.length === 0) return []
 
-        const left = new EllipseArc2(this._center, this._rx, this._ry, this._rotation, range.start, uu, false)
-        const right = new EllipseArc2(this._center, this._rx, this._ry, this._rotation, uu, range.start + range.period, false)
-        return [left, right].filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+        return parts
+            .map((seg) => new EllipseArc2(this._center, this._rx, this._ry, this._rotation, seg.start, seg.end, false))
+            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {

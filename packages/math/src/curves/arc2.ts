@@ -88,13 +88,18 @@ export class Arc2 extends CircleCurve2 {
     }
 
     public override split(u: number) {
-        const pieces = this._range.split(u, Precision.CURVE_PARAM_EPS)
-        if (pieces.length === 0) return []
+        const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
+        if (parts.length === 0) return []
 
-        const theta = this.angleAtParam(u)
-        const left = new Arc2(this._center, this._radius, this.startAngle, theta, this._clockwise)
-        const right = new Arc2(this._center, this._radius, theta, this.endAngle, this._clockwise)
-        return [left, right].filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+        return parts
+            .map((seg) => new Arc2(
+                this._center,
+                this._radius,
+                this.angleAtParam(seg.start),
+                this.angleAtParam(seg.end),
+                this._clockwise,
+            ))
+            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {
