@@ -124,7 +124,7 @@ export abstract class CircleCurve2 extends Curve2 {
         if (Math.abs(u - end) <= Precision.CURVE_PARAM_EPS) return end
 
         if (this._range instanceof PeriodInterval) {
-            return PeriodInterval.normalizeParam(u, this._range.period, start)
+            return this._range.clamp(u)
         }
         return u
     }
