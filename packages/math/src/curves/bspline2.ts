@@ -37,6 +37,9 @@ export class BSpline2 extends Curve2 {
 
     private _isClosed: boolean
 
+    /**
+     * 初始化 B 样条曲线并校验输入约束。
+     */
     constructor(input: IBSpline2Param) {
         super()
         const { controlPoints, degree } = input
@@ -65,6 +68,9 @@ export class BSpline2 extends Curve2 {
         }
     }
 
+    /**
+     * 将展开结向量压缩为唯一结值与重数。
+     */
     private static compactKnotDataFromExpanded(expandedKnots: ReadonlyArray<number>) {
         MathError.assert(expandedKnots.length >= 2, 'BSpline2.compactKnotDataFromExpanded: expandedKnots requires at least two values')
         const knots: Array<number> = []
@@ -83,30 +89,51 @@ export class BSpline2 extends Curve2 {
         return { knots, multiplicities }
     }
 
+    /**
+     * 返回控制点副本，避免外部修改内部状态。
+     */
     public get controlPoints() {
         return this._controlPoints.map((p) => p.clone())
     }
 
+    /**
+     * 返回样条曲线的多项式次数。
+     */
     public get degree() {
         return this._degree
     }
 
+    /**
+     * 返回展开结向量的副本。
+     */
     public get expandedKnots() {
         return [...this._knots]
     }
 
+    /**
+     * 返回有理权重数组的副本。
+     */
     public get weights() {
         return [...this._weights]
     }
 
+    /**
+     * 判断当前曲线是否使用周期参数化。
+     */
     public get isPeriodic() {
         return this._isPeriodic
     }
 
+    /**
+     * 判断曲线在几何意义下是否闭合。
+     */
     public override isClosed(): boolean {
         return this._isClosed
     }
 
+    /**
+     * 收集可能发生连续性下降的内部结参数。
+     */
     public getContinuityBreakParams(eps = Precision.CURVE_PARAM_EPS): Array<number> {
         const breaks: Array<number> = []
         const range = this._range
@@ -125,14 +152,23 @@ export class BSpline2 extends Curve2 {
         return breaks
     }
 
+    /**
+     * 计算参数 u 处的曲线点。
+     */
     public override pointAt(u: number) {
         return this.derivatives(u, 0)[0]
     }
 
+    /**
+     * 计算参数 u 处的一阶导数（切向量）。
+     */
     public override tangentAt(u: number) {
         return this.derivativeAt(u, 1)
     }
 
+    /**
+     * 使用有理 B 样条公式计算 0 阶到 n 阶导数。
+     */
     public override derivatives(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'BSpline2.derivatives: n must be a non-negative integer')
         const uu = this.normalizeParamForEval(u)
@@ -182,6 +218,9 @@ export class BSpline2 extends Curve2 {
         return ret
     }
 
+    /**
+     * 计算参数 u 处的曲率绝对值。
+     */
     public override curvatureAt(u: number) {
         const d1 = this.derivativeAt(u, 1)
         const d2 = this.derivativeAt(u, 2)
@@ -190,6 +229,9 @@ export class BSpline2 extends Curve2 {
         return Math.abs(d1.cross(d2)) / denom
     }
 
+    /**
+     * 计算全区间或子区间内的弧长。
+     */
     public override length(range?: Interval) {
         if (!range) {
             return this.integrateLength(this._range.start, this._range.end)
@@ -199,11 +241,17 @@ export class BSpline2 extends Curve2 {
         return this.integrateLength(range.start, range.end)
     }
 
+    /**
+     * 计算参数域起点到 u 的累计弧长。
+     */
     public override lengthAtParam(u: number) {
         const uu = this.normalizeParamForEval(u)
         return this.integrateLength(this._range.start, uu)
     }
 
+    /**
+     * 通过 Newton 与二分混合迭代将弧长反解为参数。
+     */
     public override paramAtLength(s: number, tol = Precision.CURVE_LENGTH_EPS) {
         MathError.assert(Number.isFinite(tol) && tol > 0, 'BSpline2.paramAtLength: tol must be > 0')
 
@@ -232,6 +280,9 @@ export class BSpline2 extends Curve2 {
         )
     }
 
+    /**
+     * 通过插结在参数 u 处分割曲线。
+     */
     public override split(u: number) {
         const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
         if (parts.length === 0) return []
@@ -265,6 +316,9 @@ export class BSpline2 extends Curve2 {
         return [left, right].filter((c) => c.length() > Precision.CURVE_LENGTH_EPS)
     }
 
+    /**
+     * 通过多次分割将曲线裁剪到目标参数区间。
+     */
     public override trim(range: Interval) {
         this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
@@ -289,6 +343,9 @@ export class BSpline2 extends Curve2 {
         return cur.length() > Precision.CURVE_LENGTH_EPS ? [cur] : []
     }
 
+    /**
+     * 原地反转控制点顺序与结向量方向。
+     */
     public override reverse() {
         const m = this._knots.length - 1
         const start = this._range.start
@@ -306,6 +363,9 @@ export class BSpline2 extends Curve2 {
         return this
     }
 
+    /**
+     * 原地对全部控制点应用仿射变换。
+     */
     public override transform(m: Mat3) {
         const next = this._controlPoints.map((p) => m.transformedPoint(p))
         this.assertFiniteControlPoints(next)
@@ -313,10 +373,16 @@ export class BSpline2 extends Curve2 {
         return this
     }
 
+    /**
+     * 返回变换后的克隆对象，不修改当前曲线。
+     */
     public override transformed(m: Mat3): this {
         return this.clone().transform(m)
     }
 
+    /**
+     * 求解查询点 p 到曲线的最近点。
+     */
     public override closestPoint(p: Vec2, tol = Precision.CURVE_LENGTH_EPS): IClosestPointResult {
         MathError.assert(Number.isFinite(tol) && tol > 0, 'BSpline2.closestPoint: tol must be > 0')
         const result = this.solveClosestPointBySampleNewton(
@@ -337,6 +403,9 @@ export class BSpline2 extends Curve2 {
         return { point, param, distance: point.distanceTo(p) }
     }
 
+    /**
+     * 计算包围盒：快速控制盒或基于极值根的紧包围盒。
+     */
     public override boundingBox(accurate = false) {
         const controlBox = Box2.fromPoints(this._controlPoints)
         if (!accurate) return controlBox
@@ -363,6 +432,9 @@ export class BSpline2 extends Curve2 {
         return tightBox
     }
 
+    /**
+     * 校验几何与参数化相关的不变量是否成立。
+     */
     public override isValid(eps = Precision.CURVE_LENGTH_EPS) {
         if (!Number.isInteger(this._degree) || this._degree < 1) return false
         if (this._controlPoints.length < this._degree + 1) return false
@@ -387,10 +459,16 @@ export class BSpline2 extends Curve2 {
         return true
     }
 
+    /**
+     * 运行时类型守卫：判断是否为 B 样条曲线。
+     */
     public override isBSpline(): this is BSpline2 {
         return true
     }
 
+    /**
+     * 在给定容差下比较两条 B 样条是否等价。
+     */
     public equals(other: BSpline2, eps = Precision.EPS) {
         if (this._isPeriodic !== other._isPeriodic) return false
         if (this._isClosed !== other._isClosed) return false
@@ -409,6 +487,9 @@ export class BSpline2 extends Curve2 {
         return true
     }
 
+    /**
+     * 深拷贝当前曲线，并保留紧凑结数据语义。
+     */
     public override clone(): this {
         const compact = BSpline2.compactKnotDataFromExpanded(this._knots)
         return new BSpline2({
@@ -422,6 +503,9 @@ export class BSpline2 extends Curve2 {
         }) as this
     }
 
+    /**
+     * 将曲线序列化为可持久化的 dump 结构。
+     */
     public override dump(): IDBBSpline2 {
         const compact = BSpline2.compactKnotDataFromExpanded(this._knots)
         return {
@@ -436,6 +520,9 @@ export class BSpline2 extends Curve2 {
         }
     }
 
+    /**
+     * 从序列化数据重建 B 样条曲线。
+     */
     public static load(data: IDBBSpline2) {
         MathError.assert(data.knots && data.multiplicities, 'BSpline2.load: knots and multiplicities are required')
         return new BSpline2({
@@ -449,6 +536,9 @@ export class BSpline2 extends Curve2 {
         })
     }
 
+    /**
+     * 规范化可选权重输入并校验其为正值。
+     */
     private resolveWeights(weights?: ReadonlyArray<number>) {
         if (!weights) {
             return new Array<number>(this._controlPoints.length).fill(1)
@@ -462,10 +552,16 @@ export class BSpline2 extends Curve2 {
         return w
     }
 
+    /**
+     * 将紧凑的结值与重数展开为完整结向量。
+     */
     private resolveKnots(input: IBSpline2Param): Array<number> {
         return BSpline2.expandKnots(input.knots, input.multiplicities)
     }
 
+    /**
+     * 校验展开结向量的长度、有限性与非递减顺序。
+     */
     private validateExpandedKnots(knots: ReadonlyArray<number>, controlPointCount: number, degree: number) {
         MathError.assert(
             knots.length === controlPointCount + degree + 1,
@@ -481,12 +577,18 @@ export class BSpline2 extends Curve2 {
         }
     }
 
+    /**
+     * 断言所有控制点坐标均为有限数。
+     */
     private assertFiniteControlPoints(points: readonly Vec2[]) {
         for (const p of points) {
             MathError.assert(Number.isFinite(p.x) && Number.isFinite(p.y), 'BSpline2: control point must be finite')
         }
     }
 
+    /**
+     * 构造用于有理求值的齐次控制点。
+     */
     private homogeneousControlPoints() {
         const ret: IWeightedPoint2[] = []
         for (let i = 0; i < this._controlPoints.length; i++) {
@@ -497,6 +599,9 @@ export class BSpline2 extends Curve2 {
         return ret
     }
 
+    /**
+     * 使用自适应 5 点高斯-勒让德积分递归计算弧长。
+     */
     private integrateLength(u0: number, u1: number, depth = 0): number {
         if (u1 < u0) return 0
         const f = (u: number) => this.tangentAt(u).len()
@@ -516,6 +621,9 @@ export class BSpline2 extends Curve2 {
         return this.integrateLength(u0, mid, depth + 1) + this.integrateLength(mid, u1, depth + 1)
     }
 
+    /**
+     * 在区间 [a, b] 上执行 5 点高斯-勒让德求积。
+     */
     private gaussLegendre5(f: (u: number) => number, a: number, b: number) {
         const nodes = [
             0,
@@ -541,6 +649,9 @@ export class BSpline2 extends Curve2 {
         return c1 * sum
     }
 
+    /**
+     * 构建用于包围盒极值求解的参数分段。
+     */
     private buildBBoxSpanBounds() {
         const range = this.getRange()
         const boundaries = [range.start, range.end, ...this.getUniqueKnotsInRange(range.start, range.end)]
@@ -558,6 +669,9 @@ export class BSpline2 extends Curve2 {
         return spans
     }
 
+    /**
+     * 收集给定参数区间内的唯一内部结值。
+     */
     private getUniqueKnotsInRange(start: number, end: number) {
         const unique: Array<number> = []
         for (const knot of this._knots) {
@@ -568,6 +682,9 @@ export class BSpline2 extends Curve2 {
         return unique
     }
 
+    /**
+     * 在单个分段内求解某坐标分量导数的根。
+     */
     private solveComponentExtremaInSpan(axis: Axis2D, u0: number, u1: number) {
         const roots: Array<number> = []
         const brackets = this.findRootBrackets(axis, u0, u1)
@@ -582,6 +699,9 @@ export class BSpline2 extends Curve2 {
         return roots
     }
 
+    /**
+     * 通过导数采样符号变化构造根区间。
+     */
     private findRootBrackets(axis: Axis2D, u0: number, u1: number) {
         const brackets: Array<[number, number]> = []
         const steps = this.bboxRootSampleCount()
@@ -608,6 +728,9 @@ export class BSpline2 extends Curve2 {
         return this.mergeBrackets(brackets, u0, u1)
     }
 
+    /**
+     * 使用带保护的 Newton 迭代细化已包围的根。
+     */
     private refineRootBracketedNewton(axis: Axis2D, uL: number, uR: number) {
         let lo = this.clampParamForBBox(Math.min(uL, uR))
         let hi = this.clampParamForBBox(Math.max(uL, uR))
@@ -655,6 +778,9 @@ export class BSpline2 extends Curve2 {
         return undefined
     }
 
+    /**
+     * 合并重叠根区间并裁剪到目标参数范围。
+     */
     private mergeBrackets(brackets: Array<[number, number]>, u0: number, u1: number) {
         if (brackets.length === 0) return []
         const sorted = brackets
@@ -681,10 +807,16 @@ export class BSpline2 extends Curve2 {
         return merged.filter(([a, b]) => b - a > Precision.CURVE_PARAM_EPS)
     }
 
+    /**
+     * 选择包围盒极值求根时的采样密度。
+     */
     private bboxRootSampleCount() {
         return Math.max(8, Math.min(32, this._degree * 4))
     }
 
+    /**
+     * 通过分段补采样扩展包围盒（兜底辅助）。
+     */
     private expandBoxBySpanSamples(box: Box2, spans: Array<[number, number]>) {
         let expanded = box
         const samplesPerSpan = Math.max(4, Math.floor(this.bboxRootSampleCount() / 2))
@@ -701,11 +833,17 @@ export class BSpline2 extends Curve2 {
         return expanded
     }
 
+    /**
+     * 计算参数 u 处指定坐标分量的导数值。
+     */
     private componentDerivative(axis: Axis2D, u: number, order: 1 | 2) {
         const d = this.derivativeAt(this.clampParamForBBox(u), order)
         return axis === Axis2D.X ? d.x : d.y
     }
 
+    /**
+     * 将参数裁剪到当前曲线参数域（包围盒流程）。
+     */
     private clampParamForBBox(u: number) {
         const range = this._range
         if (u <= range.start) return range.start
@@ -713,6 +851,9 @@ export class BSpline2 extends Curve2 {
         return u
     }
 
+    /**
+     * 在求值前归一化并校验输入参数。
+     */
     private normalizeParamForEval(u: number) {
         if (this._isPeriodic) {
             return this.normalizePeriodicParam(u)
@@ -721,6 +862,9 @@ export class BSpline2 extends Curve2 {
         return this.snapBoundary(u)
     }
 
+    /**
+     * 将参数映射到周期域并执行边界吸附。
+     */
     private normalizePeriodicParam(u: number) {
         const start = this._range.start
         const period = this._range.length()
@@ -729,6 +873,9 @@ export class BSpline2 extends Curve2 {
         return this.snapBoundary(start + local)
     }
 
+    /**
+     * 将接近边界的参数吸附到稳定端点值。
+     */
     private snapBoundary(u: number) {
         const start = this._range.start
         const end = this._range.end
@@ -739,6 +886,9 @@ export class BSpline2 extends Curve2 {
         return u
     }
 
+    /**
+     * 由齐次控制点构建非周期 B 样条。
+     */
     private static fromHomogeneous(points: IWeightedPoint2[], degree: number, knots: Array<number>) {
         const cps: Vec2[] = []
         const ws: Array<number> = []
@@ -759,11 +909,17 @@ export class BSpline2 extends Curve2 {
         })
     }
 
+    /**
+     * 约束输入至少包含两个值（用于元组类型）。
+     */
     private static requireAtLeastTwo(values: ReadonlyArray<number>, errorMessage: string): [number, number, ...number[]] {
         MathError.assert(values.length >= 2, errorMessage)
         return [values[0], values[1], ...values.slice(2)]
     }
 
+    /**
+     * 统计展开结向量起点或终点的重数。
+     */
     private static endpointMultiplicity(knots: ReadonlyArray<number>, atStart: boolean) {
         if (knots.length === 0) return 0
         const v = atStart ? knots[0] : knots[knots.length - 1]
@@ -782,6 +938,9 @@ export class BSpline2 extends Curve2 {
         return count
     }
 
+    /**
+     * 按重数展开紧凑结表示。
+     */
     private static expandKnots(knots: ReadonlyArray<number>, multiplicities: ReadonlyArray<number>) {
         MathError.assert(knots.length === multiplicities.length, 'BSpline2: knots and multiplicities length mismatch')
 
@@ -794,6 +953,9 @@ export class BSpline2 extends Curve2 {
         return expanded
     }
 
+    /**
+     * 定位参数 u 所在的结区间索引。
+     */
     private static findSpan(n: number, p: number, u: number, U: ReadonlyArray<number>) {
         if (u >= U[n + 1] - Precision.CURVE_PARAM_EPS) return n
         if (u <= U[p] + Precision.CURVE_PARAM_EPS) return p
@@ -809,6 +971,9 @@ export class BSpline2 extends Curve2 {
         return mid
     }
 
+    /**
+     * 统计参数 u 在结向量 U 中的重数。
+     */
     private static knotMultiplicity(u: number, U: ReadonlyArray<number>) {
         let s = 0
         for (const k of U) {
@@ -817,6 +982,9 @@ export class BSpline2 extends Curve2 {
         return s
     }
 
+    /**
+     * 在齐次控制多边形中执行一次插结。
+     */
     private static insertKnotOnce(points: IWeightedPoint2[], knots: Array<number>, degree: number, u: number) {
         const n = points.length - 1
         const k = BSpline2.findSpan(n, degree, u, knots)
@@ -847,6 +1015,9 @@ export class BSpline2 extends Curve2 {
         return { points: outPoints, knots: outKnots }
     }
 
+    /**
+     * 计算非有理 B 样条基函数及其至 n 阶导数。
+     */
     private static basisFunctionDerivatives(span: number, u: number, p: number, n: number, U: ReadonlyArray<number>) {
         const ndu = Array.from({ length: p + 1 }, () => new Array<number>(p + 1).fill(0))
         const left = new Array<number>(p + 1).fill(0)
@@ -925,6 +1096,9 @@ export class BSpline2 extends Curve2 {
         return ders
     }
 
+    /**
+     * 计算二项式系数 C(n, k)。
+     */
     private static binomial(n: number, k: number) {
         if (k < 0 || k > n) return 0
         if (k === 0 || k === n) return 1
@@ -937,6 +1111,9 @@ export class BSpline2 extends Curve2 {
         return result
     }
 
+    /**
+     * 校验周期曲线特有的结与重数约束。
+     */
     private validatePeriodicInput(knots: ReadonlyArray<number>, multiplicities: ReadonlyArray<number> | undefined, domainStart: number, domainEnd: number) {
         if (!(domainEnd - domainStart > Precision.CURVE_PARAM_EPS)) {
             MathError.throw('BSpline2: invalid periodic input')
@@ -956,6 +1133,9 @@ export class BSpline2 extends Curve2 {
         }
     }
 
+    /**
+     * 判断起终点是否足够接近以视作闭合。
+     */
     private endpointsAreNear(eps = Precision.CURVE_LENGTH_EPS) {
         const start = this._range.start
         const end = this._range.end
