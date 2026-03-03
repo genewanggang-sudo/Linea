@@ -83,7 +83,7 @@ export abstract class EllipseCurve2 extends Curve2 {
         if (!range) {
             return this.integrateLength(this._range.start, this._range.end)
         }
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         return this.integrateLength(range.start, range.end)
     }
 

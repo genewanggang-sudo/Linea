@@ -43,7 +43,7 @@ export class Ellipse2 extends EllipseCurve2 {
     }
 
     public override trim(range: Interval) {
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_PARAM_EPS) return []
 
         return [new EllipseArc2(this._center, this._rx, this._ry, this._rotation, range.start, range.end, false)]

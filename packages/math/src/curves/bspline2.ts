@@ -194,7 +194,7 @@ export class BSpline2 extends Curve2 {
             return this.integrateLength(this._range.start, this._range.end)
         }
 
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         return this.integrateLength(range.start, range.end)
     }
 
@@ -266,7 +266,7 @@ export class BSpline2 extends Curve2 {
     }
 
     public override trim(range: Interval) {
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_PARAM_EPS) return []
 
         const fullStart = this._range.start

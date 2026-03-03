@@ -74,7 +74,7 @@ export class Line2 extends Curve2 {
 
     public override length(range?: Interval) {
         if (!range) return this._len
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         return range.length()
     }
 
@@ -100,8 +100,7 @@ export class Line2 extends Curve2 {
     }
 
     public override trim(range: Interval) {
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
-        if (range.length() <= Precision.CURVE_PARAM_EPS) return []
+        this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
         const s = this.pointAt(range.start)

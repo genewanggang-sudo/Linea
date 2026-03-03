@@ -70,7 +70,7 @@ export class Arc2 extends CircleCurve2 {
 
     public override length(range?: Interval) {
         if (!range) return this._range.length() * this._radius
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         return range.length() * this._radius
     }
 
@@ -103,7 +103,7 @@ export class Arc2 extends CircleCurve2 {
     }
 
     public override trim(range: Interval) {
-        this._range.assertContainsRange(range, Precision.CURVE_PARAM_EPS)
+        this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_PARAM_EPS) return []
 
         const s = this.angleAtParam(range.start)
