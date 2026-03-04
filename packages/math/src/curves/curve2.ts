@@ -37,6 +37,22 @@ export abstract class Curve2 extends GeomBase {
     }
 
     /**
+     * 获取参数域起点。
+     * @returns 参数域起点。
+     */
+    public startParam(): number {
+        return this._range.start
+    }
+
+    /**
+     * 获取参数域终点。
+     * @returns 参数域终点。
+     */
+    public endParam(): number {
+        return this._range.end
+    }
+
+    /**
      * 判断参数是否落在当前曲线参数域内。
      * @param u 待判断参数。
      * @param eps 区间边界比较容差。

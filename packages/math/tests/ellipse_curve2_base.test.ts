@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Box2 } from '../src/core/box2'
 import { Mat3 } from '../src/core/mat3'
@@ -125,14 +125,14 @@ describe('EllipseCurve2 base', () => {
         const e = new MockEllipseCurve2(new Vec2(0, 0), 4, 2, 0)
         const total = e.length()
         expect(total).toBeGreaterThan(0)
-        expect(e.lengthAtParam(e.getRange().start)).toBeCloseTo(0, 8)
+        expect(e.lengthAtParam(e.startParam())).toBeCloseTo(0, 8)
 
         const u = e.paramAtLength(total * 0.3)
-        expect(u).toBeGreaterThanOrEqual(e.getRange().start)
-        expect(u).toBeLessThanOrEqual(e.getRange().end)
+        expect(u).toBeGreaterThanOrEqual(e.startParam())
+        expect(u).toBeLessThanOrEqual(e.endParam())
 
-        expect(e.paramAtLength(0, 1e-8)).toBeCloseTo(e.getRange().start, 12)
-        expect(e.paramAtLength(total, 1e-8)).toBeCloseTo(e.getRange().end, 12)
+        expect(e.paramAtLength(0, 1e-8)).toBeCloseTo(e.startParam(), 12)
+        expect(e.paramAtLength(total, 1e-8)).toBeCloseTo(e.endParam(), 12)
 
         expect(() => e.paramAtLength(1, 0)).toThrow('EllipseCurve2.paramAtLength: tol must be > 0')
         expect(e.length(new Interval(-1, 0))).toBeGreaterThan(0)

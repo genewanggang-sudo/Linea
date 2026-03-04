@@ -230,7 +230,7 @@ function clamp01(x: number) {
 }
 
 function linePointDistance(line: Line2, point: Vec2) {
-    const dir = line.tangentAt(line.getRange().start)
+    const dir = line.tangentAt(line.startParam())
     const v = point.subtracted(line.start)
     return Math.abs(v.cross(dir))
 }
@@ -1063,7 +1063,7 @@ export class CircleCirclePairSolver implements ICurvePairIntersector {
         if (hit.kind === 'none') return []
 
         if (hit.kind === 'overlap') {
-            const p = circle1.pointAt(circle1.getRange().start)
+            const p = circle1.pointAt(circle1.startParam())
             const overlap = createOverlapInfo(circle1, circle2, p, circle1.getRange(), circle2.getRange())
             return overlap ? [overlap] : []
         }
@@ -1082,9 +1082,9 @@ export class CircleArcPairSolver implements ICurvePairIntersector {
         const arc = assertArc(c2)
 
         if (isSameSupportCircle(circle, arc)) {
-            const p = arc.pointAt(arc.getRange().start)
-            const uStart = tryParamOnCurve(circle, arc.pointAt(arc.getRange().start))
-            const uEnd = tryParamOnCurve(circle, arc.pointAt(arc.getRange().end))
+            const p = arc.pointAt(arc.startParam())
+            const uStart = tryParamOnCurve(circle, arc.pointAt(arc.startParam()))
+            const uEnd = tryParamOnCurve(circle, arc.pointAt(arc.endParam()))
             const range1 = (uStart !== undefined && uEnd !== undefined)
                 ? new Interval(uStart, uEnd)
                 : undefined
@@ -1135,7 +1135,7 @@ export class ArcArcPairSolver implements ICurvePairIntersector {
             const sample2 = sampleRangeContains(arc2, arc1, 64)
             const sharedCount = Math.max(sample1.hit, sample2.hit)
             if (sharedCount >= 3) {
-                const p = sample1.representative ?? sample2.representative ?? arc1.pointAt(arc1.getRange().start)
+                const p = sample1.representative ?? sample2.representative ?? arc1.pointAt(arc1.startParam())
                 const range1 = estimateOverlapRange(arc1, arc2, 128)
                 const range2 = estimateOverlapRange(arc2, arc1, 128)
                 const overlap = createOverlapInfo(arc1, arc2, p, range1, range2)
@@ -1144,10 +1144,10 @@ export class ArcArcPairSolver implements ICurvePairIntersector {
 
             const out: CurveXInfo[] = []
             const endpoints = [
-                arc1.pointAt(arc1.getRange().start),
-                arc1.pointAt(arc1.getRange().end),
-                arc2.pointAt(arc2.getRange().start),
-                arc2.pointAt(arc2.getRange().end),
+                arc1.pointAt(arc1.startParam()),
+                arc1.pointAt(arc1.endParam()),
+                arc2.pointAt(arc2.startParam()),
+                arc2.pointAt(arc2.endParam()),
             ]
             for (const p of endpoints) {
                 if (tryParamOnCurve(arc1, p) === undefined || tryParamOnCurve(arc2, p) === undefined) continue

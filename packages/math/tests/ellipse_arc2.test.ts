@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { EllipseArc2 } from '../src/curves/ellipse_arc2'
 import { Interval } from '../src/curves/interval'
@@ -9,25 +9,25 @@ import { Vec2 } from '../src/core/vec2'
 describe('EllipseArc2', () => {
     it('handles clockwise and counter-clockwise mapping', () => {
         const ccw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, Math.PI / 2, false)
-        expect(ccw.pointAt(ccw.getRange().start).equals(new Vec2(4, 0), 1e-9)).toBe(true)
-        expect(ccw.pointAt(ccw.getRange().end).equals(new Vec2(0, 2), 1e-9)).toBe(true)
+        expect(ccw.pointAt(ccw.startParam()).equals(new Vec2(4, 0), 1e-9)).toBe(true)
+        expect(ccw.pointAt(ccw.endParam()).equals(new Vec2(0, 2), 1e-9)).toBe(true)
         expect(new EllipseArc2(new Vec2(0, 0), 4, 2, 0, -0.2, 0.3, false).startAngle).toBeGreaterThan(0)
 
         const cw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, -Math.PI / 2, true)
-        expect(cw.pointAt(cw.getRange().end).equals(new Vec2(0, -2), 1e-9)).toBe(true)
-        expect(cw.tangentAt(cw.getRange().start).y).toBeLessThan(0)
+        expect(cw.pointAt(cw.endParam()).equals(new Vec2(0, -2), 1e-9)).toBe(true)
+        expect(cw.tangentAt(cw.startParam()).y).toBeLessThan(0)
         expect(cw.endAngle).toBeLessThanOrEqual(Math.PI * 2)
         expect(() => new EllipseArc2(new Vec2(0, 0), 4, 2, 0, Number.NaN, 0)).toThrow('EllipseArc2: startAngle/endAngle must be finite')
     })
 
     it('split/trim/reverse', () => {
         const arc = new EllipseArc2(new Vec2(0, 0), 4, 2, 0.2, 0, Math.PI, false)
-        expect(arc.split(arc.getRange().start)).toEqual([])
-        const mid = (arc.getRange().start + arc.getRange().end) * 0.5
+        expect(arc.split(arc.startParam())).toEqual([])
+        const mid = (arc.startParam() + arc.endParam()) * 0.5
         const parts = arc.split(mid)
         expect(parts.length).toBe(2)
 
-        const trimmed = arc.trim(new Interval(arc.getRange().start, mid))
+        const trimmed = arc.trim(new Interval(arc.startParam(), mid))
         expect(trimmed.length).toBe(1)
         expect(arc.trim(new Interval(mid, mid))).toEqual([])
         expect(arc.trim(new Interval(mid, mid + 2e-9))).toEqual([])
@@ -59,7 +59,7 @@ describe('EllipseArc2', () => {
 
     it('strict range and dump/load', () => {
         const arc = new EllipseArc2(new Vec2(1, 2), 4, 2, 0.1, 0, 1.2, false)
-        expect(() => arc.pointAt(arc.getRange().end + 0.5)).toThrow('Interval.assertContains: parameter out of range')
+        expect(() => arc.pointAt(arc.endParam() + 0.5)).toThrow('Interval.assertContains: parameter out of range')
 
         const restored = EllipseArc2.load(arc.dump())
         expect(restored.length()).toBeCloseTo(arc.length(), 10)
@@ -67,10 +67,10 @@ describe('EllipseArc2', () => {
         expect(arc.equals(new EllipseArc2(new Vec2(1, 2), 4, 2, 0.1, 0, 1.2, true))).toBe(false)
         const ccw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, Math.PI / 2, false)
         const mappedCcw = (ccw as unknown as { angleToParam: (theta: number) => number }).angleToParam(Math.PI * 3)
-        expect(mappedCcw).toBeGreaterThanOrEqual(ccw.getRange().start)
+        expect(mappedCcw).toBeGreaterThanOrEqual(ccw.startParam())
         const cw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, -Math.PI / 2, true)
         const mapped = (cw as unknown as { angleToParam: (theta: number) => number }).angleToParam(-Math.PI / 4)
-        expect(mapped).toBeGreaterThanOrEqual(cw.getRange().start)
+        expect(mapped).toBeGreaterThanOrEqual(cw.startParam())
         expect(cw.boundingBox().isFinite()).toBe(true)
         expect(arc.isValid()).toBe(true)
 

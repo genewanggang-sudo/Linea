@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { BSpline2 } from '../src/curves/bspline2'
 import { DiscretizeOptions } from '../src/discretize/discretize_options'
@@ -99,16 +99,16 @@ describe('BSpline2', () => {
 
         const s = c.split(0.5)
         expect(s.length).toBe(2)
-        expect(s[0].pointAt(s[0].getRange().end).equals(new Vec2(1, 0), 1e-6)).toBe(true)
-        expect(s[1].pointAt(s[1].getRange().start).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[0].pointAt(s[0].endParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[1].pointAt(s[1].startParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
         expect(c.split(0)).toEqual([])
 
         const t = c.trim(new Interval(0.25, 0.75))
         expect(t.length).toBe(1)
-        expect(t[0].getRange().start).toBeGreaterThanOrEqual(0.25 - 1e-9)
+        expect(t[0].startParam()).toBeGreaterThanOrEqual(0.25 - 1e-9)
         expect(c.trim(new Interval(0.2, 0.2))).toEqual([])
-        expect(c.trim(new Interval(c.getRange().start, 0.8)).length).toBe(1)
-        expect(c.trim(new Interval(0.2, c.getRange().end)).length).toBe(1)
+        expect(c.trim(new Interval(c.startParam(), 0.8)).length).toBe(1)
+        expect(c.trim(new Interval(0.2, c.endParam())).length).toBe(1)
         const tiny = new BSpline2({
             controlPoints: [new Vec2(0, 0), new Vec2(5e-13, 0), new Vec2(1e-12, 0)],
             degree: 2,
@@ -124,7 +124,7 @@ describe('BSpline2', () => {
         expect(() => c.closestPoint(new Vec2(0, 0), 0)).toThrow('BSpline2.closestPoint: tol must be > 0')
 
         const rev = c.clone().reverse()
-        expect(rev.pointAt(rev.getRange().start).equals(c.pointAt(c.getRange().end), 1e-6)).toBe(true)
+        expect(rev.pointAt(rev.startParam()).equals(c.pointAt(c.endParam()), 1e-6)).toBe(true)
 
         const moved = c.transformed(Mat3.translation(1, 2))
         expect(moved.pointAt(0).equals(new Vec2(1, 2), 1e-6)).toBe(true)
@@ -286,8 +286,8 @@ describe('BSpline2', () => {
         for (const p of samples) {
             expect(tightBox.containsPoint(p)).toBe(true)
         }
-        expect(tightBox.containsPoint(c.pointAt(c.getRange().start))).toBe(true)
-        expect(tightBox.containsPoint(c.pointAt(c.getRange().end))).toBe(true)
+        expect(tightBox.containsPoint(c.pointAt(c.startParam()))).toBe(true)
+        expect(tightBox.containsPoint(c.pointAt(c.endParam()))).toBe(true)
 
         const fastArea = fastBox.width() * fastBox.height()
         const tightArea = tightBox.width() * tightBox.height()

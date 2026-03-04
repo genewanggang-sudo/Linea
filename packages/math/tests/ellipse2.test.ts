@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Ellipse2 } from '../src/curves/ellipse2'
 import { EllipseArc2 } from '../src/curves/ellipse_arc2'
@@ -35,8 +35,8 @@ describe('Ellipse2', () => {
 
         const half = e.length() * 0.5
         const u = e.paramAtLength(half)
-        expect(u).toBeGreaterThanOrEqual(e.getRange().start)
-        expect(u).toBeLessThanOrEqual(e.getRange().end)
+        expect(u).toBeGreaterThanOrEqual(e.startParam())
+        expect(u).toBeLessThanOrEqual(e.endParam())
     })
 
     it('supports generic affine transform', () => {

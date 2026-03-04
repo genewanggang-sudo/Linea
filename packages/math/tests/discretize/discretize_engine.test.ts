@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { EN_GEO_TYPE } from '../../src/constants/geom_type'
 import { Box2 } from '../../src/core/box2'
@@ -154,22 +154,22 @@ describe('DiscretizeEngine', () => {
 
         const linePts = DiscretizeEngine.discretize(line)
         expect(linePts.length).toBe(2)
-        expect(linePts[0].equals(line.pointAt(line.getRange().start), 1e-12)).toBe(true)
-        expect(linePts[1].equals(line.pointAt(line.getRange().end), 1e-12)).toBe(true)
+        expect(linePts[0].equals(line.pointAt(line.startParam()), 1e-12)).toBe(true)
+        expect(linePts[1].equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
 
         const circlePts = DiscretizeEngine.discretize(circle, DiscretizeOptions.low)
         expect(circlePts.length).toBeGreaterThan(3)
         expect(circlePts[0].distanceTo(circlePts[circlePts.length - 1])).toBeGreaterThan(1e-8)
 
         const arcPts = DiscretizeEngine.discretize(arc, DiscretizeOptions.low)
-        expect(arcPts[0].equals(arc.pointAt(arc.getRange().start), 1e-12)).toBe(true)
-        expect(arcPts[arcPts.length - 1].equals(arc.pointAt(arc.getRange().end), 1e-12)).toBe(true)
+        expect(arcPts[0].equals(arc.pointAt(arc.startParam()), 1e-12)).toBe(true)
+        expect(arcPts[arcPts.length - 1].equals(arc.pointAt(arc.endParam()), 1e-12)).toBe(true)
 
         const tightEllipse = DiscretizeEngine.discretize(ellipse, new DiscretizeOptions(1e-12, 1e-12, 1e-3))
         expect(tightEllipse.length).toBeGreaterThan(2)
 
         const eaPts = DiscretizeEngine.discretize(ellipseArc, DiscretizeOptions.low)
-        expect(eaPts[eaPts.length - 1].equals(ellipseArc.pointAt(ellipseArc.getRange().end), 1e-12)).toBe(true)
+        expect(eaPts[eaPts.length - 1].equals(ellipseArc.pointAt(ellipseArc.endParam()), 1e-12)).toBe(true)
 
         const bPts = DiscretizeEngine.discretize(bspline, DiscretizeOptions.low)
         expect(bPts.length).toBeGreaterThan(1)
@@ -250,14 +250,14 @@ describe('DiscretizeEngine', () => {
 
         const line = new Line2(new Vec2(0, 0), new Vec2(1, 0))
         const openRes = engine.postprocessResult(line, [{ u: 0.4, p: new Vec2(9, 9) }], opts)
-        expect(openRes[openRes.length - 1].p.equals(line.pointAt(line.getRange().end), 1e-12)).toBe(true)
+        expect(openRes[openRes.length - 1].p.equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
 
         const emptyRawRes = engine.postprocessResult(line, [], opts)
         expect(emptyRawRes.length).toBe(1)
-        expect(emptyRawRes[0].p.equals(line.pointAt(line.getRange().end), 1e-12)).toBe(true)
+        expect(emptyRawRes[0].p.equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
 
         const circle = new Circle2(new Vec2(0, 0), 1)
-        const s = circle.getRange().start
+        const s = circle.startParam()
         const p = circle.pointAt(s)
         const middle = circle.pointAt(s + Math.PI / 2)
         const nearHead = p.added(new Vec2(1e-8, 0))
@@ -274,7 +274,7 @@ describe('DiscretizeEngine', () => {
             engine.deduplicateAdjacent = () => []
             const pushed = engine.postprocessResult(line, [{ u: 0.3, p: new Vec2(1, 1) }], opts)
             expect(pushed.length).toBe(1)
-            expect(pushed[0].p.equals(line.pointAt(line.getRange().end), 1e-12)).toBe(true)
+            expect(pushed[0].p.equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
         } finally {
             engine.deduplicateAdjacent = oldDedup
         }

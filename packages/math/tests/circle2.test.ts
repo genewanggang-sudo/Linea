@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Arc2 } from '../src/curves/arc2'
 import { Circle2 } from '../src/curves/circle2'
@@ -39,7 +39,7 @@ describe('Circle2', () => {
     it('closestPoint tie-break at center picks range start', () => {
         const c = new Circle2(new Vec2(0, 0), 2)
         const result = c.closestPoint(new Vec2(0, 0))
-        expect(result.param).toBeCloseTo(c.getRange().start, 12)
+        expect(result.param).toBeCloseTo(c.startParam(), 12)
     })
 
     it('transform requires similarity and supports mirror', () => {

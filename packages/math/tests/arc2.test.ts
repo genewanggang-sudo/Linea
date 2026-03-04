@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Arc2 } from '../src/curves/arc2'
 import { Mat3 } from '../src/core/mat3'
@@ -19,32 +19,32 @@ describe('Arc2', () => {
 
     it('evaluates clockwise and counter-clockwise arcs', () => {
         const ccw = new Arc2(new Vec2(0, 0), 1, 0, Math.PI / 2, false)
-        expect(ccw.pointAt(ccw.getRange().start).equals(new Vec2(1, 0), 1e-9)).toBe(true)
-        expect(ccw.pointAt(ccw.getRange().end).equals(new Vec2(0, 1), 1e-9)).toBe(true)
-        expect(ccw.tangentAt(ccw.getRange().start).equals(new Vec2(0, 1), 1e-9)).toBe(true)
-        const ds = ccw.derivatives(ccw.getRange().start, 4)
+        expect(ccw.pointAt(ccw.startParam()).equals(new Vec2(1, 0), 1e-9)).toBe(true)
+        expect(ccw.pointAt(ccw.endParam()).equals(new Vec2(0, 1), 1e-9)).toBe(true)
+        expect(ccw.tangentAt(ccw.startParam()).equals(new Vec2(0, 1), 1e-9)).toBe(true)
+        const ds = ccw.derivatives(ccw.startParam(), 4)
         expect(ds.length).toBe(5)
         expect(ds[2].x).toBeCloseTo(-1, 9)
 
         const cw = new Arc2(new Vec2(0, 0), 1, 0, -Math.PI / 2, true)
-        expect(cw.pointAt(cw.getRange().start).equals(new Vec2(1, 0), 1e-9)).toBe(true)
-        expect(cw.pointAt(cw.getRange().end).equals(new Vec2(0, -1), 1e-9)).toBe(true)
-        expect(cw.tangentAt(cw.getRange().start).equals(new Vec2(0, -1), 1e-9)).toBe(true)
-        expect(cw.derivatives(cw.getRange().start, 2)[1].y).toBeLessThan(0)
+        expect(cw.pointAt(cw.startParam()).equals(new Vec2(1, 0), 1e-9)).toBe(true)
+        expect(cw.pointAt(cw.endParam()).equals(new Vec2(0, -1), 1e-9)).toBe(true)
+        expect(cw.tangentAt(cw.startParam()).equals(new Vec2(0, -1), 1e-9)).toBe(true)
+        expect(cw.derivatives(cw.startParam(), 2)[1].y).toBeLessThan(0)
         expect(() => cw.derivatives(0, -1)).toThrow('Arc2.derivatives: n must be a non-negative integer')
-        expect(cw.curvatureAt(cw.getRange().start)).toBeCloseTo(1, 12)
+        expect(cw.curvatureAt(cw.startParam())).toBeCloseTo(1, 12)
     })
 
     it('split/trim/reverse', () => {
         const arc = new Arc2(new Vec2(0, 0), 2, 0, Math.PI, false)
-        expect(arc.split(arc.getRange().start)).toEqual([])
+        expect(arc.split(arc.startParam())).toEqual([])
 
-        const mid = (arc.getRange().start + arc.getRange().end) * 0.5
+        const mid = (arc.startParam() + arc.endParam()) * 0.5
         const parts = arc.split(mid)
         expect(parts.length).toBe(2)
         expect(parts[0].length() + parts[1].length()).toBeCloseTo(arc.length(), 9)
 
-        const trimmed = arc.trim(new Interval(arc.getRange().start, mid))
+        const trimmed = arc.trim(new Interval(arc.startParam(), mid))
         expect(trimmed.length).toBe(1)
         expect(arc.trim(new Interval(mid, mid))).toEqual([])
         expect(arc.trim(new Interval(mid, mid + 2e-9))).toEqual([])
@@ -62,17 +62,17 @@ describe('Arc2', () => {
         const opposite = arc.closestPoint(new Vec2(-3, 0))
         expect(new Vec2(opposite.point).equals(new Vec2(0, 2), 1e-9)).toBe(true)
         const nearCenter = arc.closestPoint(new Vec2(0, 0))
-        expect(nearCenter.param).toBeCloseTo(arc.getRange().start, 9)
-        expect(arc.length(new Interval(arc.getRange().start, arc.getRange().end))).toBeCloseTo(arc.length(), 10)
-        expect(arc.lengthAtParam(arc.getRange().end)).toBeCloseTo(arc.length(), 10)
+        expect(nearCenter.param).toBeCloseTo(arc.startParam(), 9)
+        expect(arc.length(new Interval(arc.startParam(), arc.endParam()))).toBeCloseTo(arc.length(), 10)
+        expect(arc.lengthAtParam(arc.endParam())).toBeCloseTo(arc.length(), 10)
         expect(() => arc.paramAtLength(1, 0)).toThrow('Arc2.paramAtLength: tol must be > 0')
-        expect(() => arc.pointAt(arc.getRange().end + 1)).toThrow('Interval.assertContains: parameter out of range')
+        expect(() => arc.pointAt(arc.endParam() + 1)).toThrow('Interval.assertContains: parameter out of range')
 
         const oldLenEps = Precision.CURVE_LENGTH_EPS
         try {
             Precision.CURVE_LENGTH_EPS = 10
             const tie = arc.closestPoint(new Vec2(2, 2))
-            expect(tie.param).toBeCloseTo(arc.getRange().start, 9)
+            expect(tie.param).toBeCloseTo(arc.startParam(), 9)
         } finally {
             Precision.CURVE_LENGTH_EPS = oldLenEps
         }
