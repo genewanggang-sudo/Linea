@@ -12,10 +12,10 @@ export class ElementMgr {
     }
 
     public add(element: IElement, force = true) {
-        if (!force && this._elements.has(element.id)) {
+        if (!force && this._elements.has(element.id.asInt())) {
             return false
         }
-        this._elements.set(element.id, element)
+        this._elements.set(element.id.asInt(), element)
         return true
     }
 

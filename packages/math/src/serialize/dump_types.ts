@@ -86,5 +86,3 @@ export type IDBBSpline2 = IDB & {
     isClosed?: boolean
     isPeriodic?: boolean
 }
-
-
