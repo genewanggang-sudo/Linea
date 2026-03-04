@@ -1,11 +1,13 @@
-import type { IElementCtor } from '../element/i_element'
+import type { IElement, IElementCtor } from '../element/i_element'
+import type { IDocument } from './i_document'
 import { ElementMgr } from './element_mgr'
 import { IDPool } from './id_pool'
+import { ElementId } from '../element/element_id'
 
-export class Document {
+export class Document implements IDocument {
     public readonly elementMgr: ElementMgr
 
-    private _idPool = new IDPool()
+    public readonly idPool = new IDPool()
 
     constructor() {
         this.elementMgr = new ElementMgr()
@@ -15,10 +17,15 @@ export class Document {
     public create<T extends IElementCtor>(ctor: T) {
         const ele = new ctor()
         // TODO 设置doc
-        const id = this._idPool.genId(ele)
+        const id = this.idPool.genId(ele)
         // TODO 二次尝试
         ele.id = id!
         this.elementMgr.add(ele)
         // TODO 事务相关处理
+    }
+
+    public getElementById<T extends IElement>(id: ElementId | number): T | undefined {
+        const eId = id instanceof ElementId ? id.asInt() : id;
+        return this.elementMgr.getElementById<T>(eId)
     }
 }

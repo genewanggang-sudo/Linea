@@ -1,3 +1,4 @@
+import { IDocument } from '../document/i_document'
 import { ElementId } from './element_id'
 
 export interface IElement {
@@ -5,9 +6,24 @@ export interface IElement {
 
     name: string
 
+    readonly db: Record<string, unknown>
+
+    readonly cache: Record<string, unknown>
+
+    getDoc(): IDocument
+
     isTemporary(): boolean
 
     dontSave(): boolean
 }
 
-export type IElementCtor<T extends IElement = IElement> = new () => T
+export type T_SerializedId = {
+    /**类序列化的唯一标识*/
+    ctor: string
+}
+
+export type IElementCtor<T extends IElement = IElement> = {
+    new(): T
+
+    serializedId: T_SerializedId
+}
