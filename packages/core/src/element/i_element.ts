@@ -12,6 +12,16 @@ export interface IElement {
 
     getDoc(): IDocument
 
+    setDoc(doc: IDocument): void
+
+    getModified(): IModifiedProps[]
+
+    commit(): void
+
+    rollBack(): void
+
+    getSerialId(): string
+
     isTemporary(): boolean
 
     dontSave(): boolean
@@ -26,4 +36,10 @@ export type IElementCtor<T extends IElement = IElement> = {
     new(): T
 
     serializedId: T_SerializedId
+}
+
+export type IModifiedProps = {
+    propertyName: string;
+    oldValue: unknown;
+    newValue: unknown;
 }

@@ -1,5 +1,5 @@
 import { ElementId } from './element_id'
-import type { IElement, T_SerializedId } from './i_element'
+import type { IElement, IModifiedProps, T_SerializedId } from './i_element'
 import type { IDocument } from '../document/i_document'
 
 export class Element implements IElement {
@@ -37,6 +37,45 @@ export class Element implements IElement {
 
     public setDoc(doc: IDocument) {
         this._doc = doc
+    }
+
+    /**
+     * 获取修改的数据
+     */
+    public getModified(): IModifiedProps[] {
+        const result: IModifiedProps[] = [];
+        for (const propName in this._cache) {
+            result.push({
+                propertyName: propName,
+                oldValue: this._db[propName],
+                newValue: this._cache[propName],
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 数据入库
+     */
+    public commit() {
+        for (const key in this._cache) {
+            this.db[key] = this._cache[key];
+        }
+        this._clearCache();
+    }
+
+    /**
+     * 数据回滚
+     */
+    public rollBack() {
+        this._clearCache();
+    }
+
+    /**
+     * 清空缓存
+     */
+    private _clearCache() {
+        this._cache = {}
     }
 
     /**
