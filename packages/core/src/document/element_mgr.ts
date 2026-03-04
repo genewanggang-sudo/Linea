@@ -1,0 +1,29 @@
+import type { IElement } from '../element/i_element'
+
+export class ElementMgr {
+    private readonly _elements = new Map<number, IElement>()
+
+    public getElementById<T extends IElement>(id: number) {
+        return this._elements.get(id) as T
+    }
+
+    public getAllElements(): IElement[] {
+        return [...this._elements.values()]
+    }
+
+    public add(element: IElement, force = true) {
+        if (!force && this._elements.has(element.id)) {
+            return false
+        }
+        this._elements.set(element.id, element)
+        return true
+    }
+
+    public delete(id: number) {
+        return this._elements.delete(id)
+    }
+
+    public clear() {
+        this._elements.clear()
+    }
+}
