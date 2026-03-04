@@ -1,0 +1,26 @@
+{
+    "name": "@ccpc/canvas",
+    "version": "0.1.0",
+    "private": false,
+    "description": "Canvas rendering layer for editor",
+    "license": "MIT",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+        "build": "tsc -p tsconfig.json",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix"
+    }
+}
