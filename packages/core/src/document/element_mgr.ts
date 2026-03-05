@@ -11,6 +11,10 @@ export class ElementMgr {
         return [...this._elements.values()]
     }
 
+    public getAllElementIds(): number[] {
+        return [...this._elements.keys()]
+    }
+
     public add(element: IElement, force = true) {
         if (!force && this._elements.has(element.id.asInt())) {
             return false

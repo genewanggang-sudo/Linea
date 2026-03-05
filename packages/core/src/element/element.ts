@@ -1,6 +1,8 @@
 import { ElementId } from './element_id'
 import type { IElement, IModifiedProps, T_SerializedId } from './i_element'
 import type { IDocument } from '../document/i_document'
+import { DebugUtil } from '../toolkit/debug_util';
+import { Document } from '../document/document';
 
 export class Element implements IElement {
 
@@ -20,7 +22,7 @@ export class Element implements IElement {
     public name: string = ''
 
     constructor() {
-
+        DebugUtil.assert(Document.canCreate, '创建Element必须通过Document.create方法', 'wg', '2025-11-18');
     }
 
     public get db() {

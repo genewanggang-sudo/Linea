@@ -1,5 +1,5 @@
-export class DebugWarn {
-    public static assert(value: boolean, message: string, name: string, time: string) {
+export class DebugUtil {
+    public static assert<T>(value: T, message: string, name: string, time: string): asserts value is NonNullable<T> {
         if (!value) {
             const showMesg = `${message}\n报告人:${name}\n报告时间：${time}\n点击确定可debug`;
             // TODO 触发事件
