@@ -11,6 +11,7 @@
     "build": "pnpm -r build",
     "build:docs": "pnpm --filter docs build",
     "build:math-viz": "pnpm --filter math-visual-test build",
+    "publish:core": "pnpm --filter @ccpc/core publish --access public --no-git-checks",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
     "test": "pnpm -r test",

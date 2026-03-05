@@ -1,6 +1,6 @@
-{
+﻿{
     "name": "@ccpc/core",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "private": false,
     "description": "Core data model layer for editor",
     "license": "MIT",
@@ -15,12 +15,18 @@
     },
     "files": [
         "dist",
-        "README.md"
+        "README.md",
+        "LICENSE"
     ],
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "build": "tsc -p tsconfig.json",
         "lint": "eslint . --ext .ts",
-        "lint:fix": "eslint . --ext .ts --fix"
+        "lint:fix": "eslint . --ext .ts --fix",
+        "prepublishOnly": "pnpm run build"
     }
 }
+
