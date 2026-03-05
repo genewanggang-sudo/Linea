@@ -45,6 +45,13 @@ export class RequestMgr {
         this._doc = doc
     }
 
+    /**
+     * 注册请求
+     */
+    public registerRequest(requestId: string, request: IConstructor<Request>) {
+        this._requestClsMgr.registerCls(requestId, request);
+    }
+
     public startSession(name: string = ''): void {
         DebugUtil.assert(!this._transGroup, '请先提交上一个 request', 'wg', '2026-03-05')
         this._transGroup = new TransactionGroup(this._doc, name)
