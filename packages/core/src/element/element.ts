@@ -4,6 +4,7 @@ import type { IDocument } from '../document/i_document'
 import { DebugUtil } from '../toolkit/debug_util';
 import { Document } from '../document/document';
 
+// TODO 补充一些方法
 export class Element implements IElement {
 
     /**

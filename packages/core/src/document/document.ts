@@ -1,10 +1,12 @@
-import type { IElement, IElementCtor } from '../element/i_element'
+import type { IElement } from '../element/i_element'
 import type { IDocument } from './i_document'
 import { ElementMgr } from './element_mgr'
 import { IDPool } from './id_pool'
 import { ElementId } from '../element/element_id'
 import { TransactionMgr } from '../transaction/transaction_mgr'
 import { DebugUtil } from '../toolkit/debug_util'
+import { IConstructor } from '../types/type_guard'
+import { requestMgr } from '../request/request_mgr'
 
 export class Document implements IDocument {
 
@@ -17,13 +19,16 @@ export class Document implements IDocument {
 
     public readonly transactionMgr: TransactionMgr;
 
+    public readonly requestMgr = requestMgr
+
     constructor() {
         this.elementMgr = new ElementMgr()
-        this.transactionMgr = new TransactionMgr();
-        this.transactionMgr.init(this);
+        this.transactionMgr = new TransactionMgr()
+        this.transactionMgr.init(this)
+        this.requestMgr.init(this)
     }
 
-    public create<T extends IElementCtor>(ctor: T) {
+    public create<T extends IElement>(ctor: IConstructor<T>): T {
         Document.canCreate = true;
         const e = new ctor();
         e.setDoc(this);
@@ -38,7 +43,7 @@ export class Document implements IDocument {
         }
         DebugUtil.assert(id, 'Id资源已耗尽', 'wg', '2026-03-05');
 
-        e.id = id!;
+        e.id = id;
         Document.canCreate = false;
 
         DebugUtil.assert(!this.getElementById(e.id), '该Id已存在', 'wg', '2026-03-05');

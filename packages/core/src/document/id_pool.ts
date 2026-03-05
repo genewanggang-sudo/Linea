@@ -1,6 +1,6 @@
 import { ElementId } from '../element/element_id';
 import type { IElement } from '../element/i_element';
-import { DebugWarn } from '../toolkit/debug_warn';
+import { DebugUtil } from '../toolkit/debug_util';
 
 export class IDPool {
     public static readonly MAX_TMP_NUM = 1000;
@@ -72,7 +72,7 @@ export class IDPool {
 
     public genStableId(): ElementId {
         const id = ++this._currentStableIndex;
-        DebugWarn.assert(id < IDPool.MAX_UNSTABLE_OFFSET, 'stable id资源已耗尽', 'wg', '2026-03-04');
+        DebugUtil.assert(id < IDPool.MAX_UNSTABLE_OFFSET, 'stable id资源已耗尽', 'wg', '2026-03-04');
         return new ElementId(id);
     }
 

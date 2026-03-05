@@ -7,6 +7,7 @@
     "dev": "pnpm -r dev",
     "dev:docs": "pnpm --filter docs dev",
     "dev:math-viz": "pnpm --parallel --filter \"@ccpc/math\" --filter math-visual-test dev",
+    "dev:core-flow-test": "pnpm --parallel --filter \"@ccpc/core\" --filter core-flow-test dev",
     "build": "pnpm -r build",
     "build:docs": "pnpm --filter docs build",
     "build:math-viz": "pnpm --filter math-visual-test build",

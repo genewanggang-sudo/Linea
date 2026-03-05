@@ -30,6 +30,19 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.39.2)
 
+  apps/core-flow-test:
+    dependencies:
+      '@ccpc/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.2.4
+        version: 7.3.1(@types/node@24.10.9)
+
   apps/docs:
     dependencies:
       vitepress:

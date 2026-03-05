@@ -1,6 +1,8 @@
 import { ElementId } from '../element/element_id'
-import type { IElement, IElementCtor } from '../element/i_element'
+import type { IElement } from '../element/i_element'
+import { RequestMgr } from '../request/request_mgr';
 import { TransactionMgr } from '../transaction/transaction_mgr';
+import { IConstructor } from '../types/type_guard';
 import type { ElementMgr } from './element_mgr'
 
 export interface IDocument {
@@ -10,7 +12,9 @@ export interface IDocument {
     /**事务管理器*/
     readonly transactionMgr: TransactionMgr;
 
-    create<T extends IElement>(ctor: IElementCtor<T>): void
+    readonly requestMgr: RequestMgr
+
+    create<T extends IElement>(ctor: IConstructor<T>): T
 
     getElementById<T extends IElement>(id: ElementId | number): T | undefined
 

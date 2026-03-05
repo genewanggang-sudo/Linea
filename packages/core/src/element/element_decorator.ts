@@ -1,15 +1,15 @@
-import { Document } from '../document/document';
+﻿import { Document } from '../document/document';
 import { IElement, IElementCtor } from './i_element';
 
-export const ElementClass = (ctorStr: string) => {
+export const RegisterElement = (ctorStr: string) => {
     return function <T extends IElement>(Ctor: IElementCtor<T>) {
         Ctor.serializedId = {
             ctor: ctorStr,
         }
         Document.canCreate = true
-        const ele = new Ctor();
+        const tmpEle = new Ctor();
         Document.canCreate = false;
-        const props = Object.keys(ele);
+        const props = Object.keys(tmpEle).filter(key => !key.startsWith('_'))
         props.forEach(propName => {
             Object.defineProperty(Ctor.prototype, propName, {
                 set(this: T, value: unknown) {

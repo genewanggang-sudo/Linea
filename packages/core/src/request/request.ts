@@ -2,7 +2,7 @@ import { IDocument } from '../document/i_document';
 import { IRequest } from './i_request';
 
 export abstract class Request implements IRequest {
-    private _doc!: IDocument
+    protected _doc!: IDocument
 
     public setDoc(doc: IDocument) {
         this._doc = doc;
