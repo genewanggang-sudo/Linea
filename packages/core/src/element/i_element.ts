@@ -1,4 +1,5 @@
 import { IDocument } from '../document/i_document'
+import { GRep } from '../grep/grep'
 import { ElementId } from './element_id'
 
 export interface IElement {
@@ -22,9 +23,15 @@ export interface IElement {
 
     getSerialId(): string
 
+    getGRep(): GRep
+
+    isElementVisible(): boolean
+
     isTemporary(): boolean
 
     dontSave(): boolean
+
+    dontShowView(): boolean
 }
 
 export type T_SerializedId = {

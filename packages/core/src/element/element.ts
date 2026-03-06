@@ -3,6 +3,7 @@ import type { IElement, IModifiedProps, T_SerializedId } from './i_element'
 import type { IDocument } from '../document/i_document'
 import { DebugUtil } from '../toolkit/debug_util';
 import { Document } from '../document/document';
+import { GRep } from '../grep/grep';
 
 // TODO 补充一些方法
 export class Element implements IElement {
@@ -21,6 +22,10 @@ export class Element implements IElement {
     public id = ElementId.INVALID
 
     public name: string = ''
+
+    public visible = true;
+
+    public C_GRep = GRep.empty
 
     constructor() {
         DebugUtil.assert(Document.canCreate, '创建Element必须通过Document.create方法', 'wg', '2025-11-18');
@@ -88,11 +93,32 @@ export class Element implements IElement {
         return (this.constructor as typeof Element).serializedId.ctor;
     }
 
+    public getGRep() {
+        const grep = this.C_GRep
+        if (!grep.elementId.isValid()) {
+            grep.elementId = this.id
+        }
+        return grep
+    }
+
+    public isElementVisible() {
+        // TODO 补充完整
+        return this.visible
+    }
+
+    /**
+     * 是否为临时对象
+     * 临时对象不受事务监管
+     */
     public isTemporary() {
         return false
     }
 
     public dontSave(): boolean {
+        return false
+    }
+
+    public dontShowView() {
         return false
     }
 }

@@ -17,7 +17,7 @@ export class Document implements IDocument {
 
     public readonly elementMgr: ElementMgr
 
-    public readonly transactionMgr: TransactionMgr;
+    public readonly transactionMgr: TransactionMgr
 
     public readonly requestMgr = requestMgr
 
