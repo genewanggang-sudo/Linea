@@ -57,6 +57,10 @@ export class Document implements IDocument {
         return e;
     }
 
+    public deleteElementsById(...eIds: Array<number | ElementId>) {
+
+    }
+
     public getElementById<T extends IElement>(id: ElementId | number): T | undefined {
         const eId = id instanceof ElementId ? id.asInt() : id;
         return this.elementMgr.getElementById<T>(eId)

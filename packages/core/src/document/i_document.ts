@@ -10,16 +10,18 @@ export interface IDocument {
     readonly elementMgr: ElementMgr
 
     /**事务管理器*/
-    readonly transactionMgr: TransactionMgr;
+    readonly transactionMgr: TransactionMgr
 
     readonly requestMgr: RequestMgr
 
     create<T extends IElement>(ctor: IConstructor<T>): T
 
+    deleteElementsById(...ids: Array<number | ElementId>): void
+
     getElementById<T extends IElement>(id: ElementId | number): T | undefined
 
     /**根据id获取对象*/
-    getElementByIdEnsure<T extends IElement>(eleId: ElementId | number): T;
+    getElementByIdEnsure<T extends IElement>(eleId: ElementId | number): T
 
-    checkIfCanModifyDoc(): void;
+    checkIfCanModifyDoc(): void
 }
