@@ -94,6 +94,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
     const batchedRoot = new THREE.Group()
     const draftRoot = new THREE.Group()
     const intersectionRoot = new THREE.Group()
+    const analysisRoot = new THREE.Group()
     let batchedLineObject: THREE.LineSegments | null = null
     let batchedPointObject: THREE.Points | null = null
     let discreteCacheDirty = true
@@ -257,6 +258,14 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         const children = [...intersectionRoot.children]
         for (const child of children) {
             intersectionRoot.remove(child)
+            disposeObjectTree(child)
+        }
+    }
+
+    function clearAnalysisRenderObjects(): void {
+        const children = [...analysisRoot.children]
+        for (const child of children) {
+            analysisRoot.remove(child)
             disposeObjectTree(child)
         }
     }
@@ -807,6 +816,38 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         intersectionRoot.add(new THREE.Points(geometry, material))
     }
 
+    function addAnalysisPointMarker(point: Vec2, color: number, size = 10): void {
+        const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(point.x, point.y, 0)])
+        const material = new THREE.PointsMaterial({ color, size, sizeAttenuation: false })
+        analysisRoot.add(new THREE.Points(geometry, material))
+    }
+
+    function addAnalysisSegment(a: Vec2, b: Vec2, color: number, dashed = false): void {
+        const geometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(a.x, a.y, 0),
+            new THREE.Vector3(b.x, b.y, 0),
+        ])
+        const material = dashed
+            ? new THREE.LineDashedMaterial({ color, dashSize: 0.9, gapSize: 0.45, transparent: true, opacity: 0.8 })
+            : new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.88 })
+        const line = new THREE.Line(geometry, material)
+        if (dashed) line.computeLineDistances()
+        analysisRoot.add(line)
+    }
+
+    function addAnalysisCurve(curve: Curve2, color: number, opacity = 0.55): void {
+        try {
+            const line = buildDiscreteLine(curve, resolveDiscretizeOptions())
+            const material = line.material as THREE.LineBasicMaterial
+            material.color.setHex(color)
+            material.transparent = true
+            material.opacity = opacity
+            analysisRoot.add(line)
+        } catch (error) {
+            reportDiscretizeError(error, 'select', curve)
+        }
+    }
+
     function addOverlapSegment(line: Line2, info: CurveXInfo): void {
         if (!info.range1) return
         const p0 = line.pointAt(info.range1.start)
@@ -852,6 +893,119 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         rebuildEntities()
         statusHint.value = '线线随机求交样例已生成（5组）'
         completionMessage.value = summaries.join(' | ')
+    }
+
+    function evaluateProjectedPointForViz(curve: Curve2, param: number): Vec2 {
+        if (curve.isLine()) {
+            const dir = curve.end.subtracted(curve.start).normalize()
+            return curve.start.added(dir.scaled(param))
+        }
+        if (curve.isArc()) {
+            return new Circle2(curve.center, curve.radius).pointAt(param)
+        }
+        if (curve.isEllipseArc()) {
+            return new Ellipse2(curve.center, curve.rx, curve.ry, curve.rotation).pointAt(param)
+        }
+        return curve.pointAt(param)
+    }
+
+    function addSupportGeometryForGetParamAt(curve: Curve2, queryParams: number[]): void {
+        if (curve.isLine()) {
+            const minU = Math.min(curve.startParam(), ...queryParams)
+            const maxU = Math.max(curve.endParam(), ...queryParams)
+            const dir = curve.end.subtracted(curve.start).normalize()
+            const a = curve.start.added(dir.scaled(minU))
+            const b = curve.start.added(dir.scaled(maxU))
+            addAnalysisSegment(a, b, 0x94a3b8, true)
+            return
+        }
+        if (curve.isArc()) {
+            addAnalysisCurve(new Circle2(curve.center, curve.radius), 0x94a3b8, 0.35)
+            return
+        }
+        if (curve.isEllipseArc()) {
+            addAnalysisCurve(new Ellipse2(curve.center, curve.rx, curve.ry, curve.rotation), 0x94a3b8, 0.35)
+        }
+    }
+
+    function addGetParamAtCase(type: DrawTool, curve: Curve2, queryPoints: Vec2[], label: string): void {
+        addCurveEntity(type, curve, true)
+        const params = queryPoints.map((point) => curve.getParamAt(point))
+        addSupportGeometryForGetParamAt(curve, params)
+
+        for (let i = 0; i < queryPoints.length; i++) {
+            const query = queryPoints[i]
+            const projected = evaluateProjectedPointForViz(curve, params[i])
+            addAnalysisPointMarker(query, 0xea580c, 11)
+            addAnalysisPointMarker(projected, 0x2563eb, 10)
+            addAnalysisSegment(query, projected, 0x0f766e, true)
+        }
+
+        const paramSummary = params.map((u) => u.toFixed(3)).join(', ')
+        if (completionMessage.value.length > 0) {
+            completionMessage.value += ` | ${label}: ${paramSummary}`
+        } else {
+            completionMessage.value = `${label}: ${paramSummary}`
+        }
+    }
+
+    function runGetParamAtDemo(): void {
+        activeTool.value = 'select'
+        clearDraft()
+        clearScene()
+        clearIntersectionRenderObjects()
+        clearAnalysisRenderObjects()
+
+        const line = new Line2(new Vec2(-86, 22), new Vec2(-58, 22))
+        addGetParamAtCase('line', line, [
+            new Vec2(-72, 35),
+            new Vec2(-48, 28),
+            new Vec2(-98, 18),
+        ], 'Line')
+
+        const circle = new Circle2(new Vec2(-22, 24), 10)
+        addGetParamAtCase('circle', circle, [
+            new Vec2(-8, 34),
+            new Vec2(-22, 24),
+        ], 'Circle')
+
+        const arc = new Arc2(new Vec2(28, 24), 10, 0, Math.PI / 2, false)
+        addGetParamAtCase('arc', arc, [
+            new Vec2(42, 24),
+            new Vec2(18, 12),
+        ], 'Arc')
+
+        const ellipse = new Ellipse2(new Vec2(80, 24), 14, 7, Math.PI / 6)
+        addGetParamAtCase('ellipse', ellipse, [
+            new Vec2(98, 37),
+            new Vec2(80, 24),
+        ], 'Ellipse')
+
+        const ellipseArc = new EllipseArc2(new Vec2(-36, -28), 15, 8, Math.PI / 7, -0.2, 1.35, false)
+        addGetParamAtCase('ellipseArc', ellipseArc, [
+            new Vec2(-16, -16),
+            new Vec2(-54, -40),
+        ], 'EllipseArc')
+
+        const bspline = new BSpline2({
+            controlPoints: [
+                new Vec2(16, -40),
+                new Vec2(28, -18),
+                new Vec2(44, -52),
+                new Vec2(58, -26),
+                new Vec2(76, -36),
+            ],
+            degree: 3,
+            knots: [0, 1, 2],
+            multiplicities: [4, 1, 4],
+        })
+        addGetParamAtCase('bspline', bspline, [
+            new Vec2(36, -16),
+            new Vec2(60, -58),
+        ], 'BSpline')
+
+        rebuildEntities()
+        statusHint.value = 'getParamAt 演示已生成：橙点是查询点，蓝点是投影点，灰虚线为支撑体'
     }
     function pointToWorld(event: PointerEvent): Vec2 | null {
         if (!viewport) return null
@@ -1271,6 +1425,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         }
         clearBatchedRenderObjects()
         clearIntersectionRenderObjects()
+        clearAnalysisRenderObjects()
         linePositionCache = []
         pointPositionCache = []
         discreteCacheDirty = false
@@ -1289,6 +1444,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         viewport.scene.add(batchedRoot)
         viewport.scene.add(draftRoot)
         viewport.scene.add(intersectionRoot)
+        viewport.scene.add(analysisRoot)
 
         const canvasDom = viewport.renderer.domElement
         const onContextMenu = (event: MouseEvent) => {
@@ -1336,6 +1492,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
         clearScene()
         clearIntersectionRenderObjects()
+        clearAnalysisRenderObjects()
         viewport?.dispose()
         viewport = null
         perfMonitor = null
@@ -1379,5 +1536,6 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         endDrawingMode,
         generateRandomCurves,
         runRandomLineLineIntersectionCases,
+        runGetParamAtDemo,
     }
 }

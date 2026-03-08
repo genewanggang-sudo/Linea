@@ -107,6 +107,10 @@ class UnsupportedCurve extends Curve2 {
         return { point: p.clone(), param: 0, distance: 0 }
     }
 
+    public override getParamAt(p: Vec2): number {
+        return p.x
+    }
+
     public override boundingBox(): Box2 {
         return new Box2(new Vec2(0, 0), new Vec2(1, 1))
     }

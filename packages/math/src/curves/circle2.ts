@@ -106,6 +106,15 @@ export class Circle2 extends CircleCurve2 {
         }
     }
 
+    public override getParamAt(p: Vec2) {
+        const range = this._range as PeriodInterval
+        const v = p.subtracted(this._center)
+        if (v.lenSq() <= Precision.CURVE_NEWTON_EPS * Precision.CURVE_NEWTON_EPS) {
+            return range.start
+        }
+        return PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), range.period, range.start)
+    }
+
     public override boundingBox() {
         return new Box2(
             this._center.x - this._radius,

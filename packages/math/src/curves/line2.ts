@@ -146,6 +146,10 @@ export class Line2 extends Curve2 {
         }
     }
 
+    public override getParamAt(p: Vec2) {
+        return p.subtracted(this._start).dot(this._dir)
+    }
+
     public override boundingBox() {
         return Box2.fromPoints([this._start, this._end])
     }

@@ -128,6 +128,7 @@ function toggleIntersections(): void {
                   追加50条随机线
                 </el-button>
                 <el-button class="panel-btn" plain @click="viz.showOnlyPoints()">仅显示离散点</el-button>
+                <el-button class="panel-btn" plain @click="viz.runGetParamAtDemo()">getParamAt 演示</el-button>
                 <el-button class="panel-btn" plain @click="viz.clearBbox()">清空包围盒</el-button>
                 <el-button class="panel-btn" plain @click="viz.clearIntersections()">清空交点</el-button>
                 <el-button class="panel-btn" plain @click="viz.exportPairSnapshot()">导出Pair快照</el-button>

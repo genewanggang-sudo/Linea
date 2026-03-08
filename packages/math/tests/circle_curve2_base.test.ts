@@ -56,6 +56,14 @@ class MockCircleCurve2 extends CircleCurve2 {
         return { point, param, distance: point.distanceTo(p) }
     }
 
+    public override getParamAt(p: Vec2) {
+        const angle = this.angleOfPoint(p)
+        if (this._range instanceof PeriodInterval) {
+            return PeriodInterval.normalizeParam(angle, this._range.period, this._range.start)
+        }
+        return angle
+    }
+
     public override boundingBox() {
         return new Box2(
             this._center.x - this._radius,

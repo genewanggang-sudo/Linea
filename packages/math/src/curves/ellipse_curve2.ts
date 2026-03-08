@@ -296,6 +296,187 @@ export abstract class EllipseCurve2 extends Curve2 {
         return a - b
     }
 
+    protected solveProjectedParamOnSupport(
+        p: Vec2,
+        start: number,
+        end: number,
+        evalPoint: (u: number) => Vec2,
+        evalD1: (u: number) => Vec2,
+        evalD2: (u: number) => Vec2,
+        normalizeParam: (u: number) => number,
+        sampleCount = 128,
+    ) {
+        const span = end - start
+        MathError.assert(Number.isFinite(start) && Number.isFinite(end) && span > 0, 'EllipseCurve2.solveProjectedParamOnSupport: invalid range')
+
+        const sampleUs: number[] = []
+        const sampleFs: number[] = []
+        const sampleD2: number[] = []
+
+        let bestU = start
+        let bestDistSq = Number.POSITIVE_INFINITY
+        for (let i = 0; i <= sampleCount; i++) {
+            const u = i === sampleCount ? end : (start + (span * i) / sampleCount)
+            const eq = this.projectedEquation(u, p, evalPoint, evalD1, evalD2)
+            sampleUs.push(u)
+            sampleFs.push(eq.f)
+            sampleD2.push(eq.distanceSq)
+            if (
+                eq.distanceSq < bestDistSq - Precision.CURVE_LENGTH_EPS_SQ * 4 ||
+                (Math.abs(eq.distanceSq - bestDistSq) <= Precision.CURVE_LENGTH_EPS_SQ * 4 && this.compareParamForTieBreak(normalizeParam(u), normalizeParam(bestU)) < 0)
+            ) {
+                bestU = u
+                bestDistSq = eq.distanceSq
+            }
+        }
+
+        const windows: Array<[number, number]> = []
+        const step = span / sampleCount
+        for (let i = 0; i < sampleUs.length - 1; i++) {
+            const u0 = sampleUs[i]
+            const u1 = sampleUs[i + 1]
+            const f0 = sampleFs[i]
+            const f1 = sampleFs[i + 1]
+            if (Math.abs(f0) <= Precision.CURVE_NEWTON_EPS * 32) {
+                windows.push([Math.max(start, u0 - step), Math.min(end, u0 + step)])
+            }
+            if (Math.abs(f1) <= Precision.CURVE_NEWTON_EPS * 32 || f0 * f1 < 0) {
+                windows.push([u0, u1])
+            }
+        }
+        for (let i = 1; i < sampleUs.length - 1; i++) {
+            if (sampleD2[i] <= sampleD2[i - 1] && sampleD2[i] <= sampleD2[i + 1]) {
+                windows.push([Math.max(start, sampleUs[i] - step), Math.min(end, sampleUs[i] + step)])
+            }
+        }
+        windows.push([Math.max(start, bestU - step), Math.min(end, bestU + step)])
+
+        const merged = this.mergeProjectedWindows(windows, start, end)
+        const roots: number[] = []
+        for (const [lo, hi] of merged) {
+            const root = this.refineProjectedRoot(p, lo, hi, evalPoint, evalD1, evalD2)
+            if (root === undefined) continue
+            const normalized = normalizeParam(root)
+            if (roots.some((u) => Math.abs(normalizeParam(u) - normalized) <= Precision.CURVE_PARAM_EPS * 8)) continue
+            roots.push(root)
+        }
+
+        let picked = normalizeParam(bestU)
+        let pickedDistSq = bestDistSq
+        for (const root of roots) {
+            const normalized = normalizeParam(root)
+            const eq = this.projectedEquation(normalized, p, evalPoint, evalD1, evalD2)
+            if (
+                eq.distanceSq < pickedDistSq - Precision.CURVE_LENGTH_EPS_SQ * 4 ||
+                (Math.abs(eq.distanceSq - pickedDistSq) <= Precision.CURVE_LENGTH_EPS_SQ * 4 && this.compareParamForTieBreak(normalized, picked) < 0)
+            ) {
+                picked = normalized
+                pickedDistSq = eq.distanceSq
+            }
+        }
+        return picked
+    }
+
+    protected projectedEquation(
+        u: number,
+        p: Vec2,
+        evalPoint: (u: number) => Vec2,
+        evalD1: (u: number) => Vec2,
+        evalD2: (u: number) => Vec2,
+    ) {
+        const c = evalPoint(u)
+        const d1 = evalD1(u)
+        const d2 = evalD2(u)
+        const dx = c.x - p.x
+        const dy = c.y - p.y
+        return {
+            f: dx * d1.x + dy * d1.y,
+            fp: d1.dot(d1) + dx * d2.x + dy * d2.y,
+            distanceSq: dx * dx + dy * dy,
+        }
+    }
+
+    protected refineProjectedRoot(
+        p: Vec2,
+        lo0: number,
+        hi0: number,
+        evalPoint: (u: number) => Vec2,
+        evalD1: (u: number) => Vec2,
+        evalD2: (u: number) => Vec2,
+    ) {
+        let lo = Math.min(lo0, hi0)
+        let hi = Math.max(lo0, hi0)
+        if (hi - lo <= Precision.CURVE_PARAM_EPS * 4) return (lo + hi) * 0.5
+
+        let u = (lo + hi) * 0.5
+        let eqLo = this.projectedEquation(lo, p, evalPoint, evalD1, evalD2)
+        let eqHi = this.projectedEquation(hi, p, evalPoint, evalD1, evalD2)
+        let bestU = u
+        let bestDistSq = this.projectedEquation(u, p, evalPoint, evalD1, evalD2).distanceSq
+
+        for (let iter = 0; iter < Precision.CURVE_MAX_ITER; iter++) {
+            const eq = this.projectedEquation(u, p, evalPoint, evalD1, evalD2)
+            if (eq.distanceSq < bestDistSq) {
+                bestDistSq = eq.distanceSq
+                bestU = u
+            }
+            if (Math.abs(eq.f) <= Precision.CURVE_LENGTH_EPS) return u
+
+            let next = Number.NaN
+            if (Math.abs(eq.fp) > Precision.CURVE_NEWTON_EPS) {
+                next = u - eq.f / eq.fp
+            }
+            if (!Number.isFinite(next) || next <= lo || next >= hi) {
+                next = (lo + hi) * 0.5
+            }
+
+            if (eqLo.f * eq.f <= 0) {
+                hi = u
+                eqHi = eq
+            } else if (eq.f * eqHi.f <= 0) {
+                lo = u
+                eqLo = eq
+            } else {
+                if (next < u) {
+                    hi = u
+                    eqHi = eq
+                } else {
+                    lo = u
+                    eqLo = eq
+                }
+            }
+
+            if (hi - lo <= Precision.CURVE_PARAM_EPS * 4) {
+                const mid = (lo + hi) * 0.5
+                const eqMid = this.projectedEquation(mid, p, evalPoint, evalD1, evalD2)
+                return eqMid.distanceSq < bestDistSq ? mid : bestU
+            }
+            u = next
+        }
+
+        return bestU
+    }
+
+    private mergeProjectedWindows(windows: Array<[number, number]>, start: number, end: number) {
+        const sorted = windows
+            .map(([a, b]) => [Math.max(start, Math.min(a, b)), Math.min(end, Math.max(a, b))] as [number, number])
+            .filter(([a, b]) => b - a > Precision.CURVE_PARAM_EPS)
+            .sort((lhs, rhs) => lhs[0] - rhs[0] || lhs[1] - rhs[1])
+        if (sorted.length === 0) return []
+
+        const merged: Array<[number, number]> = [sorted[0]]
+        for (let i = 1; i < sorted.length; i++) {
+            const cur = sorted[i]
+            const prev = merged[merged.length - 1]
+            if (cur[0] <= prev[1] + Precision.CURVE_PARAM_EPS * 8) {
+                prev[1] = Math.max(prev[1], cur[1])
+            } else {
+                merged.push(cur)
+            }
+        }
+        return merged
+    }
+
     /**
      * 对当前椭圆应用仿射变换，并从变换后的形状提取规范参数
      * （center、rx、ry、rotation）。

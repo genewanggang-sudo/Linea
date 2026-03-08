@@ -40,6 +40,8 @@ describe('Circle2', () => {
         const c = new Circle2(new Vec2(0, 0), 2)
         const result = c.closestPoint(new Vec2(0, 0))
         expect(result.param).toBeCloseTo(c.startParam(), 12)
+        expect(c.getParamAt(new Vec2(0, 0))).toBeCloseTo(c.startParam(), 12)
+        expect(c.getParamAt(new Vec2(0, 3))).toBeCloseTo(Math.PI / 2, 12)
     })
 
     it('transform requires similarity and supports mirror', () => {

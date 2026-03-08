@@ -204,6 +204,14 @@ export class Arc2 extends CircleCurve2 {
         }
     }
 
+    public override getParamAt(p: Vec2) {
+        const v = p.subtracted(this._center)
+        if (v.lenSq() <= Precision.CURVE_NEWTON_EPS * Precision.CURVE_NEWTON_EPS) {
+            return this._range.start
+        }
+        return this.paramFromAngle(Math.atan2(v.y, v.x))
+    }
+
     public override boundingBox() {
         const points: Vec2[] = [
             this.pointAt(this._range.start),

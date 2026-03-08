@@ -60,6 +60,8 @@ describe('EllipseArc2', () => {
     it('strict range and dump/load', () => {
         const arc = new EllipseArc2(new Vec2(1, 2), 4, 2, 0.1, 0, 1.2, false)
         expect(() => arc.pointAt(arc.endParam() + 0.5)).toThrow('Interval.assertContains: parameter out of range')
+        expect(arc.getParamAt(new Vec2(-10, 2))).toBeGreaterThan(arc.endParam())
+        expect(arc.getParamAt(new Vec2(1, 2))).toBeCloseTo(arc.startParam(), 12)
 
         const restored = EllipseArc2.load(arc.dump())
         expect(restored.length()).toBeCloseTo(arc.length(), 10)

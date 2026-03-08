@@ -69,6 +69,25 @@ export class Ellipse2 extends EllipseCurve2 {
         return this.clone().transform(m)
     }
 
+    public override getParamAt(p: Vec2) {
+        const range = this._range as PeriodInterval
+        if (p.distanceToSq(this._center) <= Precision.CURVE_LENGTH_EPS_SQ) {
+            return range.start
+        }
+
+        const normalizeParam = (u: number) => PeriodInterval.normalizeParam(u, range.period, range.start)
+        const evalAngle = (u: number) => normalizeParam(u)
+        return this.solveProjectedParamOnSupport(
+            p,
+            range.start,
+            range.start + range.period,
+            (u) => this.pointAtAngle(evalAngle(u)),
+            (u) => this.derivativeFromAngle(evalAngle(u), 1, 1),
+            (u) => this.derivativeFromAngle(evalAngle(u), 2, 1),
+            normalizeParam,
+        )
+    }
+
     public override boundingBox() {
         const c = Math.cos(this._rotation)
         const s = Math.sin(this._rotation)

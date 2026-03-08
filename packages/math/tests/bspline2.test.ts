@@ -121,6 +121,8 @@ describe('BSpline2', () => {
         const c = new BSpline2({ controlPoints: cps, degree, knots, multiplicities })
         const cp = c.closestPoint(new Vec2(1.1, 2))
         expect(cp.point.y).toBeCloseTo(0, 6)
+        expect(c.getParamAt(new Vec2(1.1, 2))).toBeCloseTo(0.55, 2)
+        expect(c.getParamAt(new Vec2(1, 0))).toBeCloseTo(0.5, 2)
         expect(() => c.closestPoint(new Vec2(0, 0), 0)).toThrow('BSpline2.closestPoint: tol must be > 0')
 
         const rev = c.clone().reverse()
@@ -194,6 +196,10 @@ describe('BSpline2', () => {
         expect(() => nonlinear.paramAtLength(0.1)).toThrow('BSpline2.paramAtLength: failed to converge')
         expect(() => nonlinear.closestPoint(new Vec2(3, 0))).toThrow('BSpline2.closestPoint: failed to converge')
         Precision.CURVE_MAX_ITER = oldIter
+
+        const periodic = new BSpline2({ controlPoints: cps, degree, knots, multiplicities, isPeriodic: true })
+        expect(periodic.getParamAt(new Vec2(10, 0))).toBeGreaterThanOrEqual(periodic.startParam())
+        expect(periodic.getParamAt(new Vec2(10, 0))).toBeLessThanOrEqual(periodic.endParam())
 
         const invalidDegree = nonlinear as unknown as { _degree: number }
         invalidDegree._degree = 0
@@ -298,6 +304,5 @@ describe('BSpline2', () => {
         expect(reversed.boundingBox(true).equals(tightBox, 1e-6)).toBe(true)
     })
 })
-
 
 

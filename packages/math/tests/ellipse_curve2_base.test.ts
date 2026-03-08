@@ -48,6 +48,23 @@ class MockEllipseCurve2 extends EllipseCurve2 {
         return this.isEllipseStructValid()
     }
 
+    public override getParamAt(p: Vec2) {
+        const range = this._range instanceof PeriodInterval ? this._range : new PeriodInterval(this._range.start, this._range.start + Math.PI * 2, Math.PI * 2)
+        const normalizeParam = (u: number) => PeriodInterval.normalizeParam(u, range.period, range.start)
+        if (p.distanceToSq(this._center) <= Precision.CURVE_LENGTH_EPS_SQ) {
+            return range.start
+        }
+        return this.solveProjectedParamOnSupport(
+            p,
+            range.start,
+            range.start + range.period,
+            (u) => this.pointAtAngle(this._sign === 1 ? normalizeParam(u) : -normalizeParam(u)),
+            (u) => this.derivativeFromAngle(this._sign === 1 ? normalizeParam(u) : -normalizeParam(u), 1, this._sign),
+            (u) => this.derivativeFromAngle(this._sign === 1 ? normalizeParam(u) : -normalizeParam(u), 2, this._sign),
+            normalizeParam,
+        )
+    }
+
     public override clone(): this {
         return new MockEllipseCurve2(
             this._center,

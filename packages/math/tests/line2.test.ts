@@ -35,6 +35,8 @@ describe('Line2', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(0, 8))
         expect(line.lengthAtParam(3)).toBeCloseTo(3, 12)
         expect(line.paramAtLength(7)).toBeCloseTo(7, 12)
+        expect(line.getParamAt(new Vec2(0, 10))).toBeCloseTo(10, 12)
+        expect(line.getParamAt(new Vec2(0, -2))).toBeCloseTo(-2, 12)
         expect(line.paramAtLength(-1e-10)).toBeCloseTo(0, 12)
         expect(line.paramAtLength(8 + 1e-10)).toBeCloseTo(8, 12)
         expect(() => line.paramAtLength(1, 0)).toThrow('Line2.paramAtLength: tol must be > 0')

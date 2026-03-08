@@ -79,6 +79,10 @@ class MockCurve2 extends Curve2 {
         return { point, param: p.x, distance: Math.abs(p.y) }
     }
 
+    public override getParamAt(p: Vec2) {
+        return p.x
+    }
+
     public override boundingBox() {
         return new Box2(new Vec2(0, 0), new Vec2(1, 0))
     }

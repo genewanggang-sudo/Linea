@@ -403,6 +403,33 @@ export class BSpline2 extends Curve2 {
         return { point, param, distance: point.distanceTo(p) }
     }
 
+    public override getParamAt(p: Vec2) {
+        const candidates: number[] = []
+        const seeds = this.buildProjectedParamSeedIntervals(p)
+        for (const [lo, hi] of seeds) {
+            const root = this.refineProjectedParamRoot(p, lo, hi)
+            if (root === undefined) continue
+            const normalized = this.normalizeProjectedParamResult(root)
+            if (candidates.some((u) => Math.abs(this.normalizeProjectedParamResult(u) - normalized) <= Precision.CURVE_PARAM_EPS * 8)) continue
+            candidates.push(root)
+        }
+
+        let picked = this.normalizeProjectedParamResult(this.pickBestProjectedSampleParam(p))
+        let pickedEq = this.projectedEquation(picked, p)
+        for (const candidate of candidates) {
+            const normalized = this.normalizeProjectedParamResult(candidate)
+            const eq = this.projectedEquation(normalized, p)
+            if (
+                eq.distanceSq < pickedEq.distanceSq - Precision.CURVE_LENGTH_EPS_SQ * 4 ||
+                (Math.abs(eq.distanceSq - pickedEq.distanceSq) <= Precision.CURVE_LENGTH_EPS_SQ * 4 && this.compareProjectedParam(normalized, picked) < 0)
+            ) {
+                picked = normalized
+                pickedEq = eq
+            }
+        }
+        return picked
+    }
+
     /**
      * 计算包围盒：快速控制盒或基于极值根的紧包围盒。
      */
@@ -839,6 +866,160 @@ export class BSpline2 extends Curve2 {
     private componentDerivative(axis: Axis2D, u: number, order: 1 | 2) {
         const d = this.derivativeAt(this.clampParamForBBox(u), order)
         return axis === Axis2D.X ? d.x : d.y
+    }
+
+    private projectedEquation(u: number, p: Vec2) {
+        const ds = this.derivatives(u, 2)
+        const c = ds[0]
+        const d1 = ds[1]
+        const d2 = ds[2]
+        const dx = c.x - p.x
+        const dy = c.y - p.y
+        return {
+            f: dx * d1.x + dy * d1.y,
+            fp: d1.dot(d1) + dx * d2.x + dy * d2.y,
+            distanceSq: dx * dx + dy * dy,
+        }
+    }
+
+    private buildProjectedParamSeedIntervals(p: Vec2) {
+        const range = this._range
+        const boundaries = [range.start, ...this.getContinuityBreakParams(Precision.CURVE_PARAM_EPS), range.end]
+        const windows: Array<[number, number]> = []
+        const steps = this.bboxRootSampleCount()
+        let bestU = range.start
+        let bestDistSq = Number.POSITIVE_INFINITY
+        let bestStep = Math.max(range.length() / Math.max(steps, 1), Precision.CURVE_PARAM_EPS * 8)
+
+        for (let i = 0; i < boundaries.length - 1; i++) {
+            const u0 = boundaries[i]
+            const u1 = boundaries[i + 1]
+            if (u1 - u0 <= Precision.CURVE_PARAM_EPS) continue
+            const du = (u1 - u0) / steps
+            const samples: Array<{ u: number; f: number; distanceSq: number }> = []
+            for (let j = 0; j <= steps; j++) {
+                const u = j === steps ? u1 : (u0 + du * j)
+                const eq = this.projectedEquation(u, p)
+                samples.push({ u, f: eq.f, distanceSq: eq.distanceSq })
+                if (
+                    eq.distanceSq < bestDistSq - Precision.CURVE_LENGTH_EPS_SQ * 4 ||
+                    (Math.abs(eq.distanceSq - bestDistSq) <= Precision.CURVE_LENGTH_EPS_SQ * 4 && this.compareProjectedParam(u, bestU) < 0)
+                ) {
+                    bestU = u
+                    bestDistSq = eq.distanceSq
+                    bestStep = du
+                }
+            }
+
+            for (let j = 0; j < samples.length - 1; j++) {
+                const cur = samples[j]
+                const next = samples[j + 1]
+                if (Math.abs(cur.f) <= Precision.CURVE_NEWTON_EPS * 32) {
+                    windows.push([Math.max(u0, cur.u - du), Math.min(u1, cur.u + du)])
+                }
+                if (Math.abs(next.f) <= Precision.CURVE_NEWTON_EPS * 32 || cur.f * next.f < 0) {
+                    windows.push([cur.u, next.u])
+                }
+            }
+
+            for (let j = 1; j < samples.length - 1; j++) {
+                if (samples[j].distanceSq <= samples[j - 1].distanceSq && samples[j].distanceSq <= samples[j + 1].distanceSq) {
+                    windows.push([Math.max(u0, samples[j].u - du), Math.min(u1, samples[j].u + du)])
+                }
+            }
+        }
+
+        windows.push([Math.max(range.start, bestU - bestStep), Math.min(range.end, bestU + bestStep)])
+        return this.mergeBrackets(windows, range.start, range.end)
+    }
+
+    private refineProjectedParamRoot(p: Vec2, lo0: number, hi0: number) {
+        let lo = this.clampProjectedParam(Math.min(lo0, hi0))
+        let hi = this.clampProjectedParam(Math.max(lo0, hi0))
+        if (hi - lo <= Precision.CURVE_PARAM_EPS * 4) return (lo + hi) * 0.5
+
+        let eqLo = this.projectedEquation(lo, p)
+        let eqHi = this.projectedEquation(hi, p)
+        let u = (lo + hi) * 0.5
+        let bestU = u
+        let bestDistSq = this.projectedEquation(u, p).distanceSq
+
+        for (let iter = 0; iter < Precision.CURVE_MAX_ITER; iter++) {
+            const eq = this.projectedEquation(u, p)
+            if (eq.distanceSq < bestDistSq) {
+                bestDistSq = eq.distanceSq
+                bestU = u
+            }
+            if (Math.abs(eq.f) <= Precision.CURVE_LENGTH_EPS) return u
+
+            let next = Number.NaN
+            if (Math.abs(eq.fp) > Precision.CURVE_NEWTON_EPS) {
+                next = u - eq.f / eq.fp
+            }
+            if (!Number.isFinite(next) || next <= lo || next >= hi) {
+                next = (lo + hi) * 0.5
+            }
+
+            if (eqLo.f * eq.f <= 0) {
+                hi = u
+                eqHi = eq
+            } else if (eq.f * eqHi.f <= 0) {
+                lo = u
+                eqLo = eq
+            } else {
+                if (next < u) {
+                    hi = u
+                    eqHi = eq
+                } else {
+                    lo = u
+                    eqLo = eq
+                }
+            }
+
+            if (hi - lo <= Precision.CURVE_PARAM_EPS * 4) {
+                const mid = (lo + hi) * 0.5
+                const eqMid = this.projectedEquation(mid, p)
+                return eqMid.distanceSq < bestDistSq ? mid : bestU
+            }
+            u = next
+        }
+        return bestU
+    }
+
+    private pickBestProjectedSampleParam(p: Vec2) {
+        const range = this._range
+        const steps = Math.max(32, this.bboxRootSampleCount() * Math.max(2, this.getContinuityBreakParams().length + 1))
+        let bestU = range.start
+        let bestDistSq = Number.POSITIVE_INFINITY
+        for (let i = 0; i <= steps; i++) {
+            const u = i === steps ? range.end : (range.start + (range.length() * i) / steps)
+            const eq = this.projectedEquation(u, p)
+            if (
+                eq.distanceSq < bestDistSq - Precision.CURVE_LENGTH_EPS_SQ * 4 ||
+                (Math.abs(eq.distanceSq - bestDistSq) <= Precision.CURVE_LENGTH_EPS_SQ * 4 && this.compareProjectedParam(u, bestU) < 0)
+            ) {
+                bestU = u
+                bestDistSq = eq.distanceSq
+            }
+        }
+        return bestU
+    }
+
+    private clampProjectedParam(u: number) {
+        if (u <= this._range.start) return this._range.start
+        if (u >= this._range.end) return this._range.end
+        return u
+    }
+
+    private normalizeProjectedParamResult(u: number) {
+        return this._isPeriodic ? this.normalizePeriodicParam(u) : this.clampProjectedParam(u)
+    }
+
+    private compareProjectedParam(a: number, b: number) {
+        if (this._isPeriodic) {
+            return this.normalizePeriodicParam(a) - this.normalizePeriodicParam(b)
+        }
+        return a - b
     }
 
     /**

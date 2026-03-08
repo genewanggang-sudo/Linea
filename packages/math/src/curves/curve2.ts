@@ -156,6 +156,13 @@ export abstract class Curve2 extends GeomBase {
     public abstract closestPoint(p: Vec2, tol?: number): IClosestPointResult
 
     /**
+     * 获取给定点投影到当前曲线后的代表参数。
+     * - 点可以不在曲线上。
+     * - 周期曲线返回主参数域内代表值。
+     */
+    public abstract getParamAt(p: Vec2): number
+
+    /**
      * 计算包围盒。
      * @param accurate 是否使用高精度计算。
      * - `accurate !== true`：优先快速保守盒（用于高频场景）

@@ -119,6 +119,28 @@ export class EllipseArc2 extends EllipseCurve2 {
         return this.clone().transform(m)
     }
 
+    public override getParamAt(p: Vec2) {
+        const range = this._range as PeriodInterval
+        if (p.distanceToSq(this._center) <= Precision.CURVE_LENGTH_EPS_SQ) {
+            return range.start
+        }
+
+        const normalizeParam = (u: number) => PeriodInterval.normalizeParam(u, range.period, range.start)
+        const evalAngle = (u: number) => {
+            const uu = normalizeParam(u)
+            return this._clockwise ? (2 * range.start - uu) : uu
+        }
+        return this.solveProjectedParamOnSupport(
+            p,
+            range.start,
+            range.start + range.period,
+            (u) => this.pointAtAngle(evalAngle(u)),
+            (u) => this.derivativeFromAngle(evalAngle(u), 1, this._clockwise ? -1 : 1),
+            (u) => this.derivativeFromAngle(evalAngle(u), 2, this._clockwise ? -1 : 1),
+            normalizeParam,
+        )
+    }
+
     public override isValid(eps = Precision.CURVE_LENGTH_EPS) {
         return this.isEllipseStructValid(eps) && this._range.length() >= 0 && this._range.length() <= MathConst.PI2 + Precision.CURVE_PARAM_EPS
     }
