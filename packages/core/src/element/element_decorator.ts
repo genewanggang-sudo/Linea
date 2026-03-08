@@ -1,7 +1,6 @@
 ﻿import { Document } from '../document/document';
 import { EN_ModelViewChanged } from '../types/type_define';
-import { Element } from './element';
-import { EN_VIEW_CACHE_PROPS, IElement, IElementCtor } from './i_element';
+import { IElement, IElementCtor } from './i_element';
 
 export const RegisterElement = (ctorStr: string) => {
     return function <T extends IElement>(Ctor: IElementCtor<T>) {

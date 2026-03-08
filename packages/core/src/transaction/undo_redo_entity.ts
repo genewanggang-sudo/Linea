@@ -1,5 +1,4 @@
 import { IDocument } from '../document/i_document';
-import { Element } from '../element/element';
 import { IElement, IModifiedProps } from '../element/i_element';
 import { DebugUtil } from '../toolkit/debug_util';
 import { EN_ModelViewChanged } from '../types/type_define';
