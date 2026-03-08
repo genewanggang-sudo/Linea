@@ -1,4 +1,6 @@
-﻿import { Document, Element, RegisterElement, Request, registerRequest, requestMgr } from '@ccpc/core'
+import { Document, Element, RegisterElement, Request, registerRequest, requestMgr } from '@ccpc/core'
+import { GRep } from '../../../packages/core/src/grep/grep'
+import type { IRender } from '../../../packages/core/src/render/i_render'
 
 const lines: string[] = []
 
@@ -14,6 +16,32 @@ class FlowElement extends Element {
     public y = 0
 }
 
+class VisibleGRep extends GRep {
+    public override isEmpty(): boolean {
+        return false
+    }
+}
+
+class FakeRender implements IRender {
+    public readonly calls: string[] = []
+
+    public updateView(): void {
+        this.calls.push('updateView')
+    }
+
+    public addGRep(grep: GRep): void {
+        this.calls.push(`add:${grep.elementId.asInt()}`)
+    }
+
+    public removeGRep(eId: number): void {
+        this.calls.push(`remove:${eId}`)
+    }
+
+    public clear(): void {
+        this.calls.length = 0
+    }
+}
+
 @registerRequest('create-flow-element')
 class CreateFlowElementReq extends Request {
     public execute(): FlowElement {
@@ -21,6 +49,7 @@ class CreateFlowElementReq extends Request {
         e.name = 'flow-1'
         e.x = 1
         e.y = 2
+        e.C_GRep = new VisibleGRep()
         return e
     }
 }
@@ -36,6 +65,30 @@ class MoveFlowElementReq extends Request {
         e.x += this.dx
         e.y += this.dy
         return e
+    }
+}
+
+@registerRequest('set-flow-element-visible')
+class SetFlowElementVisibleReq extends Request {
+    constructor(private readonly id: number, private readonly visible: boolean) {
+        super()
+    }
+
+    public execute(): FlowElement {
+        const e = this._doc.getElementByIdEnsure<FlowElement>(this.id)
+        e.visible = this.visible
+        return e
+    }
+}
+
+@registerRequest('delete-flow-element')
+class DeleteFlowElementReq extends Request {
+    constructor(private readonly id: number) {
+        super()
+    }
+
+    public execute(): boolean {
+        return this._doc.deleteElementsById(this.id)
     }
 }
 
@@ -69,8 +122,19 @@ function expectEqual(actual: unknown, expected: unknown, title: string): void {
     log(`[PASS] ${title}`)
 }
 
-function runScenarioCreateUndoRedo(): void {
+function expectArrayEqual(actual: string[], expected: string[], title: string): void {
+    expectEqual(JSON.stringify(actual), JSON.stringify(expected), title)
+}
+
+function createDocWithRender(): { doc: Document, render: FakeRender } {
     const doc = new Document()
+    const render = new FakeRender()
+    doc.modelView.iRender = render
+    return { doc, render }
+}
+
+function runScenarioCreateUndoRedo(): void {
+    const { doc } = createDocWithRender()
 
     const createReq = requestMgr.createReq(CreateFlowElementReq)
     const created = requestMgr.executeReq(createReq, true)
@@ -90,7 +154,7 @@ function runScenarioCreateUndoRedo(): void {
 }
 
 function runScenarioCancelRequest(): void {
-    const doc = new Document()
+    const { doc } = createDocWithRender()
 
     const createReq = requestMgr.createReq(CreateFlowElementReq)
     const created = requestMgr.executeReq(createReq, true)
@@ -105,7 +169,7 @@ function runScenarioCancelRequest(): void {
 }
 
 function runScenarioSessionCommitAndUndo(): void {
-    const doc = new Document()
+    const { doc } = createDocWithRender()
 
     const createReq = requestMgr.createReq(CreateFlowElementReq)
     const created = requestMgr.executeReq(createReq, true)
@@ -134,7 +198,7 @@ function runScenarioSessionCommitAndUndo(): void {
 }
 
 function runScenarioSessionAbort(): void {
-    const doc = new Document()
+    const { doc } = createDocWithRender()
 
     const createReq = requestMgr.createReq(CreateFlowElementReq)
     const created = requestMgr.executeReq(createReq, true)
@@ -151,12 +215,64 @@ function runScenarioSessionAbort(): void {
     expectEqual(afterAbort.y, 2, 'session abort rollback y')
 }
 
+function runScenarioViewCreateUpdateDelete(): void {
+    const { doc, render } = createDocWithRender()
+
+    const createReq = requestMgr.createReq(CreateFlowElementReq)
+    const created = requestMgr.executeReq(createReq, true)
+
+    doc.updateView(false)
+    expectArrayEqual(
+        render.calls,
+        [`remove:${created.id.asInt()}`, `add:${created.id.asInt()}`, 'updateView'],
+        'create triggers render refresh',
+    )
+
+    render.clear()
+    const moveReq = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 10, 5)
+    requestMgr.executeReq(moveReq, true)
+    doc.updateView(false)
+    expectArrayEqual(render.calls, [], 'move x y does not trigger view refresh')
+
+    render.clear()
+    const hideReq = requestMgr.createReq(SetFlowElementVisibleReq, created.id.asInt(), false)
+    requestMgr.executeReq(hideReq, true)
+    doc.updateView(false)
+    expectArrayEqual(
+        render.calls,
+        [`remove:${created.id.asInt()}`, 'updateView'],
+        'visible false removes grep from render',
+    )
+
+    const undoVisibleOk = doc.transactionMgr.undo()
+    expectEqual(undoVisibleOk, true, 'undo visible change success')
+    render.clear()
+    doc.updateView(false)
+    expectArrayEqual(
+        render.calls,
+        [`remove:${created.id.asInt()}`, `add:${created.id.asInt()}`, 'updateView'],
+        'undo visible change adds grep back',
+    )
+
+    render.clear()
+    const deleteReq = requestMgr.createReq(DeleteFlowElementReq, created.id.asInt())
+    const deleteOk = requestMgr.executeReq(deleteReq, true)
+    expectEqual(deleteOk, true, 'delete element success')
+    doc.updateView(false)
+    expectArrayEqual(
+        render.calls,
+        [`remove:${created.id.asInt()}`, 'updateView'],
+        'delete removes grep from render',
+    )
+}
+
 function runFlow(): void {
     log('=== Core Flow Verify ===')
     runScenarioCreateUndoRedo()
     runScenarioCancelRequest()
     runScenarioSessionCommitAndUndo()
     runScenarioSessionAbort()
+    runScenarioViewCreateUpdateDelete()
     log('ALL_PASS')
 }
 

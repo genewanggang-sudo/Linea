@@ -40,5 +40,5 @@ export interface IDocument {
      */
     cacheForViewElementChanged(evtType: EN_ModelViewChanged, elements: Array<IElement>): void
 
-    updateView(rebuild: boolean): boolean
+    updateView(rebuild?: boolean): boolean
 }

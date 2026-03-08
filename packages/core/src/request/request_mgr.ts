@@ -59,11 +59,13 @@ export class RequestMgr {
 
     public commitSession(): void {
         this._transGroup?.assimilate()
+        this._doc.updateView();
         this._transGroup = undefined
     }
 
     public abortSession(): void {
         this._transGroup?.rollBack()
+        this._doc.updateView();
         this._transGroup = undefined
     }
 
@@ -83,10 +85,14 @@ export class RequestMgr {
 
     public executeReq<T extends IRequest, R = ReturnType<T['execute']>>(req: T, commit = true): R {
         const result = req.execute()
-        if (!commit || !req.canTransact()) return result as R
+        if (!commit || !req.canTransact()) {
+            this._doc.updateView();
+            return result as R
+        }
         DebugUtil.assert(this._transaction, '请先创建一个 request', 'wg', '2026-03-05')
         this._transaction?.commit()
-        // TODO: 视图刷新 + 事件处理
+        this._doc.updateView();
+        // TODO 时间分发
         this._transaction = undefined
 
         return result as R
@@ -94,6 +100,7 @@ export class RequestMgr {
 
     public cancelReq(): void {
         this._transaction?.rollBack()
+        this._doc.updateView();
         this._transaction = undefined
     }
 }
