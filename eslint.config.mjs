@@ -32,6 +32,9 @@ export default [
             '@stylistic/no-multi-spaces': 'error',
             '@stylistic/space-infix-ops': 'error',
             '@stylistic/space-in-parens': ['error', 'never'],
+            '@typescript-eslint/no-unused-vars': ['error', {
+                argsIgnorePattern: '^_',
+            }],
             '@typescript-eslint/explicit-member-accessibility': [
                 'error',
                 { accessibility: 'explicit', overrides: { constructors: 'no-public' } },

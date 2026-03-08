@@ -108,4 +108,9 @@ export class Document implements IDocument {
     public cacheForViewElementChanged(evtType: EN_ModelViewChanged, elements: Array<IElement>): void {
         this.modelView.cacheForView.cacheElementChanged(evtType, elements)
     }
+
+    public updateView(_rebuild: boolean = false) {
+        this.modelView.updateView()
+        return true
+    }
 }

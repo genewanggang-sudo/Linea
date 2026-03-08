@@ -22,8 +22,8 @@ export class ModelView {
         this._doc = doc
     }
 
+    // // TODO 立即刷新
     public updateView() {
-        // TODO 立即刷新
         if (!this.cacheForView.isChange()) return
 
         this._renderDirty = false

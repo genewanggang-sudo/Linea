@@ -39,4 +39,6 @@ export interface IDocument {
      * 缓存模型层视图变化
      */
     cacheForViewElementChanged(evtType: EN_ModelViewChanged, elements: Array<IElement>): void
+
+    updateView(rebuild: boolean): boolean
 }
