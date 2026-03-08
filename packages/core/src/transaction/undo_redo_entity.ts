@@ -1,6 +1,8 @@
 import { IDocument } from '../document/i_document';
+import { Element } from '../element/element';
 import { IElement, IModifiedProps } from '../element/i_element';
 import { DebugUtil } from '../toolkit/debug_util';
+import { EN_ModelViewChanged } from '../types/type_define';
 
 /**
  * 记录一次undo/redo的Element变化
@@ -66,8 +68,8 @@ export class UndoRedoEntity {
 
         this._added.forEach(ele => ele.commit());
 
-        // TODO 事件分发和 关联更新 更新视图等  暂时注释
-        // this._updateViewCache();
+        this._updateViewCache();
+        // TODO 事件通知
         return true;
     }
 
@@ -276,22 +278,21 @@ export class UndoRedoEntity {
         return result;
     }
 
-    // TODO 暂时注释
     private _updateViewCache() {
-        // const changedElements: Set<Element> = new Set();
-        // for (const [id, values] of this._modifiedProperties) {
-        //     const element = this._doc.getElementByIdEnsure(id);
+        const changedElements: Set<IElement> = new Set();
+        for (const [id, values] of this._modifiedProperties) {
+            const element = this._doc.getElementByIdEnsure(id);
 
-        //     if (values.find(({ propertyName }) => {
-        //         return element?.propNameChangeShouldCacheToView(propertyName);
-        //     })) {
-        //         changedElements.add(element);
-        //     }
-        // }
+            if (values.find(({ propertyName }) => {
+                return element?.propShouldCacheToView(propertyName);
+            })) {
+                changedElements.add(element);
+            }
+        }
 
-        // // 刷新视图
-        // this._doc.cacheElementChanged(EN_ModelViewChanged.ELEMENT_CREATE, [...this._added]);
-        // this._doc.cacheElementChanged(EN_ModelViewChanged.ELEMENT_UPDATE, [...changedElements]);
-        // this._doc.cacheElementChanged(EN_ModelViewChanged.ELEMENT_DELETE, [...this._deleted]);
+        // 刷新视图
+        this._doc.cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_CREATE, [...this._added]);
+        this._doc.cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_UPDATE, [...changedElements]);
+        this._doc.cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_DELETE, [...this._deleted]);
     }
 }

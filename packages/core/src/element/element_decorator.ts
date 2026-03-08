@@ -1,5 +1,7 @@
 ﻿import { Document } from '../document/document';
-import { IElement, IElementCtor } from './i_element';
+import { EN_ModelViewChanged } from '../types/type_define';
+import { Element } from './element';
+import { EN_VIEW_CACHE_PROPS, IElement, IElementCtor } from './i_element';
 
 export const RegisterElement = (ctorStr: string) => {
     return function <T extends IElement>(Ctor: IElementCtor<T>) {
@@ -9,12 +11,15 @@ export const RegisterElement = (ctorStr: string) => {
         Document.canCreate = true
         const tmpEle = new Ctor();
         Document.canCreate = false;
+
         const props = Object.keys(tmpEle).filter(key => !key.startsWith('_'))
+
         props.forEach(propName => {
             Object.defineProperty(Ctor.prototype, propName, {
                 set(this: T, value: unknown) {
                     const doc = this.getDoc();
                     const ele = doc?.getElementById(this.id);
+
                     if (ele) {
                         if (!ele.isTemporary()) {
                             doc.checkIfCanModifyDoc();
@@ -23,11 +28,16 @@ export const RegisterElement = (ctorStr: string) => {
                         } else {
                             this.db[propName] = value;
                         }
-                        // TODO 视图更新
+
+                        if (ele.propShouldCacheToView(propName)) {
+                            doc.cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_UPDATE, [ele])
+                        }
+
                     } else {
                         this.db[propName] = value;
                     }
                 },
+
                 get(this: T) {
                     if (this.cache[propName] !== undefined) {
                         return this.cache[propName]

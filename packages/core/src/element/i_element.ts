@@ -32,6 +32,9 @@ export interface IElement {
     dontSave(): boolean
 
     dontShowView(): boolean
+
+    propShouldCacheToView(propName: string): boolean
+
 }
 
 export type T_SerializedId = {
@@ -50,3 +53,8 @@ export type IModifiedProps = {
     oldValue: unknown;
     newValue: unknown;
 }
+
+export const EN_VIEW_CACHE_PROPS = {
+    C_GREP: 'C_GRep',
+    VISIBLE: 'visible',
+} as const;

@@ -1,5 +1,5 @@
 import { ElementId } from './element_id'
-import type { IElement, IModifiedProps, T_SerializedId } from './i_element'
+import { EN_VIEW_CACHE_PROPS, type IElement, type IModifiedProps, type T_SerializedId } from './i_element'
 import type { IDocument } from '../document/i_document'
 import { DebugUtil } from '../toolkit/debug_util';
 import { Document } from '../document/document';
@@ -119,6 +119,19 @@ export class Element implements IElement {
     }
 
     public dontShowView() {
+        return false
+    }
+
+    /**
+     * 属性变化是否应该缓存到视图
+     */
+    public propShouldCacheToView(propName: string) {
+        if (
+            propName === EN_VIEW_CACHE_PROPS.C_GREP ||
+            propName === EN_VIEW_CACHE_PROPS.VISIBLE
+        ) {
+            if (!this.dontShowView()) return true
+        }
         return false
     }
 }

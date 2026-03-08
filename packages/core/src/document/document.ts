@@ -7,6 +7,8 @@ import { TransactionMgr } from '../transaction/transaction_mgr'
 import { DebugUtil } from '../toolkit/debug_util'
 import { IConstructor } from '../types/type_guard'
 import { requestMgr } from '../request/request_mgr'
+import { EN_ModelViewChanged } from '../types/type_define'
+import { ModelView } from '../model_view/model_view'
 
 export class Document implements IDocument {
 
@@ -21,11 +23,15 @@ export class Document implements IDocument {
 
     public readonly requestMgr = requestMgr
 
+    public readonly modelView: ModelView
+
     constructor() {
         this.elementMgr = new ElementMgr()
         this.transactionMgr = new TransactionMgr()
         this.transactionMgr.init(this)
         this.requestMgr.init(this)
+        // TODO 需要测试会不会报错
+        this.modelView = new ModelView(this);
     }
 
     public create<T extends IElement>(ctor: IConstructor<T>): T {
@@ -58,7 +64,20 @@ export class Document implements IDocument {
     }
 
     public deleteElementsById(...eIds: Array<number | ElementId>) {
+        const elementsToDelete = this.getElementsByIds(eIds);
+        if (!elementsToDelete.length) return false;
 
+        if (elementsToDelete.some(_ => !_.isTemporary())) {
+            this.checkIfCanModifyDoc()
+            this.transactionMgr.getCurrentUndoRedoEntity().onElementsDeleted(elementsToDelete)
+        }
+
+        elementsToDelete.forEach(_ => {
+            this.elementMgr.delete(_.id.asInt())
+        })
+
+        this.cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_DELETE, elementsToDelete)
+        return true
     }
 
     public getElementById<T extends IElement>(id: ElementId | number): T | undefined {
@@ -73,7 +92,20 @@ export class Document implements IDocument {
         return ele as T;
     }
 
+    public getElementsByIds(eleIds: Array<ElementId | number>) {
+        const result: IElement[] = []
+        eleIds.forEach(eId => {
+            const ele = this.getElementById(eId)
+            if (ele) result.push(ele)
+        })
+        return result
+    }
+
     public checkIfCanModifyDoc(): void {
         DebugUtil.assert(this.transactionMgr.getCurrentTransaction(), '事务外不可修改文档', 'wg', '2025-11-18');
+    }
+
+    public cacheForViewElementChanged(evtType: EN_ModelViewChanged, elements: Array<IElement>): void {
+        this.modelView.cacheForView.cacheElementChanged(evtType, elements)
     }
 }
