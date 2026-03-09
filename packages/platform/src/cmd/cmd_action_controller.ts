@@ -1,5 +1,6 @@
 import { DefaultController, IKeyboardEvent, IMouseEvent } from '@ccpc/canvas'
 import { IDocument } from '@ccpc/core'
+import { ActionResult } from './action_result'
 
 export type ICmdStatus<T = unknown> = {
     promise: Promise<T | undefined>,
@@ -21,7 +22,7 @@ export class CmdActionController<T = unknown> extends DefaultController {
     /**
      * 启动的action
      */
-    public action?: CmdActionController
+    public action?: CmdActionController<unknown>
 
     /**
      * !!仅由CmdMgr调用
@@ -67,9 +68,12 @@ export class CmdActionController<T = unknown> extends DefaultController {
         this.onDestroy()
     }
 
-    // TODO 完善runAction方法
-    public async runAction() {
-
+    public async runAction<T>(action: CmdActionController<ActionResult<T>>) {
+        this.action = action as CmdActionController<unknown>;
+        const actionPromise = action.initStatus().promise
+        await Promise.all([actionPromise, action.execute()])
+        delete this.action
+        return actionPromise
     }
 
     public onKeyDown(evt: IKeyboardEvent): boolean {
