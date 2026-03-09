@@ -132,7 +132,7 @@ describe('EllipseCurve2 base', () => {
         expect(e.ry).toBe(2)
         expect(e.rotation).toBeCloseTo(0.1, 12)
 
-        expect(e.pointAt(0).distanceTo(new Vec2(1 + 4 * Math.cos(0.1), 2 + 4 * Math.sin(0.1)))).toBeLessThan(1e-9)
+        expect(e.getPtAt(0).distanceTo(new Vec2(1 + 4 * Math.cos(0.1), 2 + 4 * Math.sin(0.1)))).toBeLessThan(1e-9)
         expect(e.getTangentAt(0).len()).toBeGreaterThan(0)
         expect(e.getDerivatives(0.3, 4).length).toBe(5)
         expect(() => e.getDerivatives(0.3, -1)).toThrow('EllipseCurve2.getDerivatives: n must be a non-negative integer')

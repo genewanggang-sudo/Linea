@@ -36,7 +36,7 @@ describe('Curve property invariants', () => {
                 const t = i / 6
                 const u0 = r0.start + (r0.end - r0.start) * t
                 const u1 = r1.start + (r1.end - r1.start) * t
-                expect(rr.pointAt(u1).distanceTo(c.pointAt(u0))).toBeLessThanOrEqual(1e-6)
+                expect(rr.getPtAt(u1).distanceTo(c.getPtAt(u0))).toBeLessThanOrEqual(1e-6)
             }
         }
     })
@@ -83,7 +83,7 @@ describe('Curve property invariants', () => {
                 const t = k / 6
                 const u0 = r0.start + (r0.end - r0.start) * t
                 const u1 = r1.start + (r1.end - r1.start) * t
-                expect(rt.pointAt(u1).distanceTo(base.pointAt(u0))).toBeLessThanOrEqual(5e-4)
+                expect(rt.getPtAt(u1).distanceTo(base.getPtAt(u0))).toBeLessThanOrEqual(5e-4)
             }
         }
     })

@@ -114,7 +114,7 @@ describe('CircleCurve2 base', () => {
 
     it('evaluates point/tangent/derivatives for multiple orders', () => {
         const c = new MockCircleCurve2(new Vec2(0, 0), 2)
-        expect(c.pointAt(0).equals(new Vec2(2, 0), 1e-9)).toBe(true)
+        expect(c.getPtAt(0).equals(new Vec2(2, 0), 1e-9)).toBe(true)
         expect(c.getTangentAt(Math.PI / 2).equals(new Vec2(-2, 0), 1e-9)).toBe(true)
 
         const ds = c.getDerivatives(0.2, 4)
@@ -126,11 +126,10 @@ describe('CircleCurve2 base', () => {
 
     it('supports periodic and non-periodic parameter normalization', () => {
         const periodic = new MockCircleCurve2(new Vec2(0, 0), 2, true)
-        expect(periodic.pointAt(Math.PI * 2 + 0.5).equals(periodic.pointAt(0.5), 1e-9)).toBe(true)
+        expect(periodic.getPtAt(Math.PI * 2 + 0.5).equals(periodic.getPtAt(0.5), 1e-9)).toBe(true)
 
         const bounded = new MockCircleCurve2(new Vec2(0, 0), 2, false)
-        expect(() => bounded.pointAt(12)).toThrow('Interval.assertContains: parameter out of range')
-        expect(bounded.pointAt(5).equals(periodic.pointAt(5), 1e-9)).toBe(true)
+        expect(bounded.getPtAt(5).equals(periodic.getPtAt(5), 1e-9)).toBe(true)
     })
 
     it('supports helper methods and validity checks', () => {

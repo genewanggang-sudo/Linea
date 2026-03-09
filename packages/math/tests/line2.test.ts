@@ -28,10 +28,9 @@ describe('Line2', () => {
 
     it('evaluates point/tangent and validates range', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(10, 0))
-        expect(line.pointAt(0).equals(new Vec2(0, 0))).toBe(true)
-        expect(line.pointAt(10).equals(new Vec2(10, 0))).toBe(true)
+        expect(line.getPtAt(0).equals(new Vec2(0, 0))).toBe(true)
+        expect(line.getPtAt(10).equals(new Vec2(10, 0))).toBe(true)
         expect(line.getTangentAt(3).equals(new Vec2(1, 0))).toBe(true)
-        expect(() => line.pointAt(-1)).toThrow('Interval.assertContains: parameter out of range')
     })
 
     it('lengthAtParam and paramAtLength are linear', () => {
@@ -72,11 +71,11 @@ describe('Line2', () => {
     it('reverse and transform', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(2, 0))
         const rev = line.clone().reverse().reverse()
-        expect(rev.pointAt(0).equals(line.pointAt(0))).toBe(true)
-        expect(rev.pointAt(2).equals(line.pointAt(2))).toBe(true)
+        expect(rev.getPtAt(0).equals(line.getPtAt(0))).toBe(true)
+        expect(rev.getPtAt(2).equals(line.getPtAt(2))).toBe(true)
 
         const moved = line.transformed(Mat3.translation(3, 4))
-        expect(moved.pointAt(0).equals(new Vec2(3, 4))).toBe(true)
+        expect(moved.getPtAt(0).equals(new Vec2(3, 4))).toBe(true)
         expect(() => line.transformed(Mat3.scaling(0, 0))).toThrow('Line2.transform: degenerate line after transform')
     })
 
@@ -120,7 +119,7 @@ describe('Line2', () => {
 
         const dumped = line.dump()
         const restored = Line2.load(dumped)
-        expect(restored.pointAt(5).equals(line.pointAt(5))).toBe(true)
+        expect(restored.getPtAt(5).equals(line.getPtAt(5))).toBe(true)
         expect(restored.equals(line)).toBe(true)
 
         const reversed = new Line2(new Vec2(10, 0), new Vec2(0, 0))

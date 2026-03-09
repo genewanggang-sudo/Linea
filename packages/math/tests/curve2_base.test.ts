@@ -32,7 +32,7 @@ class MockCurve2 extends Curve2 {
     }
 
     public override getDerivatives(u: number, n: number) {
-        const ret = [this.pointAt(u)]
+        const ret = [this.getPtAt(u)]
         for (let i = 1; i <= n; i++) {
             ret.push(new Vec2(i, 0))
         }
@@ -235,23 +235,23 @@ describe('Curve2 base methods', () => {
         const r = c.reversed()
 
         expect(r).not.toBe(c)
-        expect(c.pointAt(0).equals(new Vec2(0, 0))).toBe(true)
-        expect(r.pointAt(0).equals(c.pointAt(1))).toBe(true)
-        expect(r.reversed().pointAt(0).equals(c.pointAt(0))).toBe(true)
+        expect(c.getPtAt(0).equals(new Vec2(0, 0))).toBe(true)
+        expect(r.getPtAt(0).equals(c.getPtAt(1))).toBe(true)
+        expect(r.reversed().getPtAt(0).equals(c.getPtAt(0))).toBe(true)
     })
 
     it('translate rotate and scale delegate to transform', () => {
         const c = new MockCurve2()
 
         const moved = c.clone().translate({ x: 2, y: 3 })
-        expect(moved.pointAt(0).equals(new Vec2(2, 3))).toBe(true)
+        expect(moved.getPtAt(0).equals(new Vec2(2, 3))).toBe(true)
 
         const rotated = c.clone().rotate(Math.PI / 2)
-        expect(rotated.pointAt(1).equals(new Vec2(0, 1), 1e-12)).toBe(true)
+        expect(rotated.getPtAt(1).equals(new Vec2(0, 1), 1e-12)).toBe(true)
 
         const scaled = c.clone().scale(2, { x: 1, y: 0 })
-        expect(scaled.pointAt(0).equals(new Vec2(-1, 0), 1e-12)).toBe(true)
-        expect(scaled.pointAt(1).equals(new Vec2(1, 0), 1e-12)).toBe(true)
+        expect(scaled.getPtAt(0).equals(new Vec2(-1, 0), 1e-12)).toBe(true)
+        expect(scaled.getPtAt(1).equals(new Vec2(1, 0), 1e-12)).toBe(true)
     })
 
     it('closestParam and distanceToPoint derive from closestPoint', () => {

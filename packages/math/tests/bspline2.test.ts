@@ -17,9 +17,9 @@ describe('BSpline2', () => {
     it('constructs from expanded knots and evaluates curve', () => {
         const c = new BSpline2({ controlPoints: cps, degree, knots, multiplicities })
         expect(c.getRange().equals(new Interval(0, 1))).toBe(true)
-        expect(c.pointAt(0).equals(new Vec2(0, 0), 1e-9)).toBe(true)
-        expect(c.pointAt(1).equals(new Vec2(2, 0), 1e-9)).toBe(true)
-        expect(c.pointAt(0.5).equals(new Vec2(1, 0), 1e-9)).toBe(true)
+        expect(c.getPtAt(0).equals(new Vec2(0, 0), 1e-9)).toBe(true)
+        expect(c.getPtAt(1).equals(new Vec2(2, 0), 1e-9)).toBe(true)
+        expect(c.getPtAt(0.5).equals(new Vec2(1, 0), 1e-9)).toBe(true)
     })
 
     it('supports compact knot input and mismatch checks', () => {
@@ -29,7 +29,7 @@ describe('BSpline2', () => {
             knots: [0, 1],
             multiplicities: [3, 3],
         })
-        expect(c.pointAt(0.5).equals(new Vec2(1, 0), 1e-9)).toBe(true)
+        expect(c.getPtAt(0.5).equals(new Vec2(1, 0), 1e-9)).toBe(true)
 
         expect(() => new BSpline2({
             controlPoints: cps,
@@ -55,9 +55,9 @@ describe('BSpline2', () => {
         expect(periodic.isPeriodic).toBe(true)
         expect(periodic.isClosed()).toBe(true)
         expect(periodic.getDomain().equals(new PeriodInterval(0, 1, 1))).toBe(true)
-        expect(periodic.pointAt(0.2).equals(periodic.pointAt(1.2), 1e-9)).toBe(true)
+        expect(periodic.getPtAt(0.2).equals(periodic.getPtAt(1.2), 1e-9)).toBe(true)
         expect(periodic.getTangentAt(0.2).equals(periodic.getTangentAt(1.2), 1e-9)).toBe(true)
-        expect(periodic.pointAt(1).equals(periodic.pointAt(0), 1e-9)).toBe(true)
+        expect(periodic.getPtAt(1).equals(periodic.getPtAt(0), 1e-9)).toBe(true)
         expect(periodic.split(1.2)).toEqual([])
         expect(() => periodic.getLength(new Interval(0, 1.2))).toThrow('Interval.assertContainsRange: range out of bounds')
         expect(() => periodic.trim(new Interval(0, 1.2))).toThrow('Interval.assertContainsRange: range out of bounds')
@@ -102,8 +102,8 @@ describe('BSpline2', () => {
 
         const s = c.split(0.5)
         expect(s.length).toBe(2)
-        expect(s[0].pointAt(s[0].getEndParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
-        expect(s[1].pointAt(s[1].getStartParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[0].getPtAt(s[0].getEndParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[1].getPtAt(s[1].getStartParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
         expect(c.split(0)).toEqual([])
 
         const t = c.trim(new Interval(0.25, 0.75))
@@ -135,15 +135,15 @@ describe('BSpline2', () => {
         expect(() => c.closestPoint(new Vec2(0, 0), 0)).toThrow('BSpline2.closestPoint: tol must be > 0')
 
         const rev = c.clone().reverse()
-        expect(rev.pointAt(rev.getStartParam()).equals(c.pointAt(c.getEndParam()), 1e-6)).toBe(true)
+        expect(rev.getPtAt(rev.getStartParam()).equals(c.getPtAt(c.getEndParam()), 1e-6)).toBe(true)
 
         const moved = c.transformed(Mat3.translation(1, 2))
-        expect(moved.pointAt(0).equals(new Vec2(1, 2), 1e-6)).toBe(true)
+        expect(moved.getPtAt(0).equals(new Vec2(1, 2), 1e-6)).toBe(true)
         expect(() => c.transform(new Mat3(1, 0, Number.POSITIVE_INFINITY, 0, 1, 0, 0, 0, 1))).toThrow('BSpline2: control point must be finite')
         expect(c.getBBox().isFinite()).toBe(true)
 
         const restored = BSpline2.load(c.dump())
-        expect(restored.pointAt(0.3).equals(c.pointAt(0.3), 1e-6)).toBe(true)
+        expect(restored.getPtAt(0.3).equals(c.getPtAt(0.3), 1e-6)).toBe(true)
         expect(restored.equals(c)).toBe(true)
         const changed = new BSpline2({ controlPoints: cps, degree, knots, multiplicities, weights: [1, 2, 1] })
         expect(c.equals(changed)).toBe(false)
@@ -186,7 +186,7 @@ describe('BSpline2', () => {
             knots: [0, 1, 2, 3], multiplicities: [4, 1, 1, 4],
         })
 
-        const p = nonlinear.pointAt(1.7)
+        const p = nonlinear.getPtAt(1.7)
         expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true)
         expect(nonlinear.getLength()).toBeGreaterThan(0)
         const depthLimited = (nonlinear as unknown as { integrateLength: (u0: number, u1: number, depth: number) => number })
@@ -301,8 +301,8 @@ describe('BSpline2', () => {
         for (const p of samples) {
             expect(tightBox.containsPoint(p)).toBe(true)
         }
-        expect(tightBox.containsPoint(c.pointAt(c.getStartParam()))).toBe(true)
-        expect(tightBox.containsPoint(c.pointAt(c.getEndParam()))).toBe(true)
+        expect(tightBox.containsPoint(c.getPtAt(c.getStartParam()))).toBe(true)
+        expect(tightBox.containsPoint(c.getPtAt(c.getEndParam()))).toBe(true)
 
         const fastArea = fastBox.width() * fastBox.height()
         const tightArea = tightBox.width() * tightBox.height()

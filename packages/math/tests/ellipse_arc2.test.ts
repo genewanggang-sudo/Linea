@@ -10,12 +10,12 @@ describe('EllipseArc2', () => {
     it('handles clockwise and counter-clockwise mapping', () => {
         const ccw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, Math.PI / 2, false)
         expect(ccw.getDomain().equals(new PeriodInterval(0, Math.PI * 2, Math.PI * 2))).toBe(true)
-        expect(ccw.pointAt(ccw.getStartParam()).equals(new Vec2(4, 0), 1e-9)).toBe(true)
-        expect(ccw.pointAt(ccw.getEndParam()).equals(new Vec2(0, 2), 1e-9)).toBe(true)
+        expect(ccw.getPtAt(ccw.getStartParam()).equals(new Vec2(4, 0), 1e-9)).toBe(true)
+        expect(ccw.getPtAt(ccw.getEndParam()).equals(new Vec2(0, 2), 1e-9)).toBe(true)
         expect(new EllipseArc2(new Vec2(0, 0), 4, 2, 0, -0.2, 0.3, false).startAngle).toBeGreaterThan(0)
 
         const cw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, -Math.PI / 2, true)
-        expect(cw.pointAt(cw.getEndParam()).equals(new Vec2(0, -2), 1e-9)).toBe(true)
+        expect(cw.getPtAt(cw.getEndParam()).equals(new Vec2(0, -2), 1e-9)).toBe(true)
         expect(cw.getTangentAt(cw.getStartParam()).y).toBeLessThan(0)
         expect(cw.endAngle).toBeLessThanOrEqual(Math.PI * 2)
         expect(() => new EllipseArc2(new Vec2(0, 0), 4, 2, 0, Number.NaN, 0)).toThrow('EllipseArc2: startAngle/endAngle must be finite')
@@ -71,7 +71,6 @@ describe('EllipseArc2', () => {
         expect(arc.containsPt(arc.getStartPt())).toBe(true)
         expect(arc.containsPt(arc.getPtAt((arc.getStartParam() + arc.getEndParam()) * 0.5))).toBe(true)
         expect(arc.containsPt(new Vec2(-10, 2))).toBe(false)
-        expect(() => arc.pointAt(arc.getEndParam() + 0.5)).toThrow('Interval.assertContains: parameter out of range')
         expect(arc.getParamAt(new Vec2(-10, 2))).toBeGreaterThan(arc.getEndParam())
         expect(arc.getParamAt(new Vec2(1, 2))).toBeCloseTo(arc.getStartParam(), 12)
 

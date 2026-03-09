@@ -11,8 +11,8 @@ describe('Ellipse2', () => {
     it('evaluates points and basic properties', () => {
         const e = new Ellipse2(new Vec2(0, 0), 4, 2, 0)
         expect(e.getDomain().equals(new PeriodInterval(0, Math.PI * 2, Math.PI * 2))).toBe(true)
-        expect(e.pointAt(0).equals(new Vec2(4, 0), 1e-9)).toBe(true)
-        expect(e.pointAt(Math.PI / 2).equals(new Vec2(0, 2), 1e-9)).toBe(true)
+        expect(e.getPtAt(0).equals(new Vec2(4, 0), 1e-9)).toBe(true)
+        expect(e.getPtAt(Math.PI / 2).equals(new Vec2(0, 2), 1e-9)).toBe(true)
         expect(e.getLength()).toBeGreaterThan(0)
         expect(e.curvatureAt(0)).toBeGreaterThan(0)
     })
@@ -59,7 +59,7 @@ describe('Ellipse2', () => {
     it('dump/load round-trip', () => {
         const e = new Ellipse2(new Vec2(1, 2), 4, 2, 0.3)
         const restored = Ellipse2.load(e.dump())
-        expect(restored.pointAt(Math.PI / 3).equals(e.pointAt(Math.PI / 3), 1e-6)).toBe(true)
+        expect(restored.getPtAt(Math.PI / 3).equals(e.getPtAt(Math.PI / 3), 1e-6)).toBe(true)
         expect(restored.equals(e)).toBe(true)
         expect(e.equals(new Ellipse2(new Vec2(1, 2), 4, 2, 0.31))).toBe(false)
         const normalized = (e as unknown as { angleToParam: (theta: number) => number }).angleToParam(Math.PI * 3)

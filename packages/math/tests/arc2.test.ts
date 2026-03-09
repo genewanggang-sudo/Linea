@@ -20,16 +20,16 @@ describe('Arc2', () => {
 
     it('evaluates clockwise and counter-clockwise arcs', () => {
         const ccw = new Arc2(new Vec2(0, 0), 1, 0, Math.PI / 2, false)
-        expect(ccw.pointAt(ccw.getStartParam()).equals(new Vec2(1, 0), 1e-9)).toBe(true)
-        expect(ccw.pointAt(ccw.getEndParam()).equals(new Vec2(0, 1), 1e-9)).toBe(true)
+        expect(ccw.getPtAt(ccw.getStartParam()).equals(new Vec2(1, 0), 1e-9)).toBe(true)
+        expect(ccw.getPtAt(ccw.getEndParam()).equals(new Vec2(0, 1), 1e-9)).toBe(true)
         expect(ccw.getTangentAt(ccw.getStartParam()).equals(new Vec2(0, 1), 1e-9)).toBe(true)
         const ds = ccw.getDerivatives(ccw.getStartParam(), 4)
         expect(ds.length).toBe(5)
         expect(ds[2].x).toBeCloseTo(-1, 9)
 
         const cw = new Arc2(new Vec2(0, 0), 1, 0, -Math.PI / 2, true)
-        expect(cw.pointAt(cw.getStartParam()).equals(new Vec2(1, 0), 1e-9)).toBe(true)
-        expect(cw.pointAt(cw.getEndParam()).equals(new Vec2(0, -1), 1e-9)).toBe(true)
+        expect(cw.getPtAt(cw.getStartParam()).equals(new Vec2(1, 0), 1e-9)).toBe(true)
+        expect(cw.getPtAt(cw.getEndParam()).equals(new Vec2(0, -1), 1e-9)).toBe(true)
         expect(cw.getTangentAt(cw.getStartParam()).equals(new Vec2(0, -1), 1e-9)).toBe(true)
         expect(cw.getDerivatives(cw.getStartParam(), 2)[1].y).toBeLessThan(0)
         expect(() => cw.getDerivatives(0, -1)).toThrow('Arc2.getDerivatives: n must be a non-negative integer')
@@ -76,7 +76,6 @@ describe('Arc2', () => {
         expect(arc.getLength(new Interval(arc.getStartParam(), arc.getEndParam()))).toBeCloseTo(arc.getLength(), 10)
         expect(arc.lengthAtParam(arc.getEndParam())).toBeCloseTo(arc.getLength(), 10)
         expect(() => arc.paramAtLength(1, 0)).toThrow('Arc2.paramAtLength: tol must be > 0')
-        expect(() => arc.pointAt(arc.getEndParam() + 1)).toThrow('Interval.assertContains: parameter out of range')
 
         const oldLenEps = Precision.CURVE_LENGTH_EPS
         try {

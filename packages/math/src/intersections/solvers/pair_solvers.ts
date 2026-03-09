@@ -409,7 +409,7 @@ function probeImplicitInterval(
     u1: number,
     baseSampleCount: number,
     valueTol: number,
-) : ImplicitIntervalProbe {
+): ImplicitIntervalProbe {
     const probes = 24
     let signChanges = 0
     let nearZeroCount = 0
@@ -540,8 +540,8 @@ function isolateRootsByDenseSampling(
     paramTol: number,
 ) {
     const samples = 2048
-    const us: number[] = new Array(samples + 1)
-    const fs: number[] = new Array(samples + 1)
+    const us: number[] = new Array<number>(samples + 1)
+    const fs: number[] = new Array<number>(samples + 1)
     for (let i = 0; i <= samples; i++) {
         const t = i / samples
         const u = u0 + (u1 - u0) * t
@@ -745,8 +745,8 @@ function refineCurvePairNewton(c1: Curve2, c2: Curve2, u1Seed: number, u2Seed: n
 
         const bx = -diff.x
         const by = -diff.y
-        let du = (bx * (-t2.y) - by * (-t2.x)) / det
-        let dv = (t1.x * by - t1.y * bx) / det
+        const du = (bx * (-t2.y) - by * (-t2.x)) / det
+        const dv = (t1.x * by - t1.y * bx) / det
         if (!Number.isFinite(du) || !Number.isFinite(dv)) break
 
         const nextU1 = r1.clamp(u1 + du)
