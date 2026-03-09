@@ -17,6 +17,11 @@
         "dist",
         "README.md"
     ],
+    "dependencies": {
+        "@ccpc/canvas": "workspace:*",
+        "@ccpc/core": "workspace:*",
+        "@ccpc/math": "workspace:*"
+    },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "build": "tsc -p tsconfig.json",
