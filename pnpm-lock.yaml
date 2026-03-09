@@ -106,7 +106,17 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@24.10.9)
 
-  packages/platform: {}
+  packages/platform:
+    dependencies:
+      '@ccpc/canvas':
+        specifier: workspace:*
+        version: link:../canvas
+      '@ccpc/core':
+        specifier: workspace:*
+        version: link:../core
+      '@ccpc/math':
+        specifier: workspace:*
+        version: link:../math
 
 packages:
 
