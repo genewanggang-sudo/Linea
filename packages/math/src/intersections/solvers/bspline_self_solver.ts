@@ -97,12 +97,12 @@ function buildUniformSegmentSamples(curve: BSpline2, segmentCount: number) {
     const range = curve.getRange()
     const n = Math.max(64, segmentCount)
     const ret: SegmentSample[] = []
-    let p0 = curve.pointAt(range.start)
+    let p0 = curve.getStartPt()
     let u0 = range.start
     for (let i = 1; i <= n; i++) {
         const t = i / n
         const u1 = range.start + (range.end - range.start) * t
-        const p1 = curve.pointAt(u1)
+        const p1 = curve.getPtAt(u1)
         ret.push({
             i: i - 1,
             u0,

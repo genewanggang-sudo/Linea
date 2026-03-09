@@ -89,13 +89,13 @@ function safeClosestPoint(curve: Curve2, point: Vec2, tol: number) {
 function sampleClosestPoint(curve: Curve2, point: Vec2, sampleCount: number) {
     const range = curve.getRange()
     let bestParam = range.start
-    let bestPoint = curve.pointAt(bestParam)
+    let bestPoint = curve.getPtAt(bestParam)
     let bestDist = bestPoint.distanceTo(point)
     const total = Math.max(8, sampleCount)
     for (let i = 1; i <= total; i++) {
         const t = i / total
         const u = range.start + (range.end - range.start) * t
-        const q = curve.pointAt(u)
+        const q = curve.getPtAt(u)
         const d = q.distanceTo(point)
         if (d < bestDist) {
             bestDist = d
@@ -107,7 +107,7 @@ function sampleClosestPoint(curve: Curve2, point: Vec2, sampleCount: number) {
     // Local Newton refinement around the best sampled parameter.
     let u = bestParam
     for (let i = 0; i < 12; i++) {
-        const p = curve.pointAt(u)
+        const p = curve.getPtAt(u)
         const d1 = curve.derivativeAt(u, 1)
         const d2 = curve.derivativeAt(u, 2)
         const cp = p.subtracted(point)
@@ -122,7 +122,7 @@ function sampleClosestPoint(curve: Curve2, point: Vec2, sampleCount: number) {
         u = next
     }
     bestParam = u
-    bestPoint = curve.pointAt(bestParam)
+    bestPoint = curve.getPtAt(bestParam)
     bestDist = bestPoint.distanceTo(point)
 
     return {
@@ -733,8 +733,8 @@ function refineCurvePairNewton(c1: Curve2, c2: Curve2, u1Seed: number, u2Seed: n
     let best = measurePair(c1, c2, u1, u2)
 
     for (let i = 0; i < 24; i++) {
-        const p1 = c1.pointAt(u1)
-        const p2 = c2.pointAt(u2)
+        const p1 = c1.getPtAt(u1)
+        const p2 = c2.getPtAt(u2)
         const diff = p1.subtracted(p2)
         if (diff.len() <= pointTol) return measurePair(c1, c2, u1, u2)
 
@@ -765,8 +765,8 @@ function refineCurvePairNewton(c1: Curve2, c2: Curve2, u1Seed: number, u2Seed: n
 }
 
 function measurePair(c1: Curve2, c2: Curve2, u1: number, u2: number): PairRefine {
-    const p1 = c1.pointAt(u1)
-    const p2 = c2.pointAt(u2)
+    const p1 = c1.getPtAt(u1)
+    const p2 = c2.getPtAt(u2)
     return {
         u1,
         u2,
@@ -791,14 +791,14 @@ function seedFromClosestPass(c1: BSpline2, c2: BSpline2, pointTol: number) {
     const samples = 80
     for (let i = 0; i <= samples; i++) {
         const u1 = r1.start + (r1.end - r1.start) * (i / samples)
-        const p1 = c1.pointAt(u1)
+        const p1 = c1.getPtAt(u1)
         const cp2 = safeClosestPoint(c2, p1, pointTol * 2)
         if (!cp2 || cp2.distance > pointTol * 2) continue
         push(u1, r2.clamp(cp2.param))
     }
     for (let i = 0; i <= samples; i++) {
         const u2 = r2.start + (r2.end - r2.start) * (i / samples)
-        const p2 = c2.pointAt(u2)
+        const p2 = c2.getPtAt(u2)
         const cp1 = safeClosestPoint(c1, p2, pointTol * 2)
         if (!cp1 || cp1.distance > pointTol * 2) continue
         push(r1.clamp(cp1.param), u2)
@@ -1063,7 +1063,7 @@ export class CircleCirclePairSolver implements ICurvePairIntersector {
         if (hit.kind === 'none') return []
 
         if (hit.kind === 'overlap') {
-            const p = circle1.pointAt(circle1.getStartParam())
+            const p = circle1.getStartPt()
             const overlap = createOverlapInfo(circle1, circle2, p, circle1.getRange(), circle2.getRange())
             return overlap ? [overlap] : []
         }
@@ -1082,9 +1082,9 @@ export class CircleArcPairSolver implements ICurvePairIntersector {
         const arc = assertArc(c2)
 
         if (isSameSupportCircle(circle, arc)) {
-            const p = arc.pointAt(arc.getStartParam())
-            const uStart = tryParamOnCurve(circle, arc.pointAt(arc.getStartParam()))
-            const uEnd = tryParamOnCurve(circle, arc.pointAt(arc.getEndParam()))
+            const p = arc.getStartPt()
+            const uStart = tryParamOnCurve(circle, arc.getStartPt())
+            const uEnd = tryParamOnCurve(circle, arc.getEndPt())
             const range1 = (uStart !== undefined && uEnd !== undefined)
                 ? new Interval(uStart, uEnd)
                 : undefined
@@ -1135,7 +1135,7 @@ export class ArcArcPairSolver implements ICurvePairIntersector {
             const sample2 = sampleRangeContains(arc2, arc1, 64)
             const sharedCount = Math.max(sample1.hit, sample2.hit)
             if (sharedCount >= 3) {
-                const p = sample1.representative ?? sample2.representative ?? arc1.pointAt(arc1.getStartParam())
+                const p = sample1.representative ?? sample2.representative ?? arc1.getStartPt()
                 const range1 = estimateOverlapRange(arc1, arc2, 128)
                 const range2 = estimateOverlapRange(arc2, arc1, 128)
                 const overlap = createOverlapInfo(arc1, arc2, p, range1, range2)
@@ -1144,10 +1144,10 @@ export class ArcArcPairSolver implements ICurvePairIntersector {
 
             const out: CurveXInfo[] = []
             const endpoints = [
-                arc1.pointAt(arc1.getStartParam()),
-                arc1.pointAt(arc1.getEndParam()),
-                arc2.pointAt(arc2.getStartParam()),
-                arc2.pointAt(arc2.getEndParam()),
+                arc1.getStartPt(),
+                arc1.getEndPt(),
+                arc2.getStartPt(),
+                arc2.getEndPt(),
             ]
             for (const p of endpoints) {
                 if (tryParamOnCurve(arc1, p) === undefined || tryParamOnCurve(arc2, p) === undefined) continue

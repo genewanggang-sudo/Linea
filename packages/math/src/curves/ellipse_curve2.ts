@@ -133,7 +133,7 @@ export abstract class EllipseCurve2 extends Curve2 {
             p,
             tol,
             96,
-            (u) => this.pointAt(u),
+            (u) => this.getPtAt(u),
             (u) => this.derivativeAt(u, 1),
             (u) => this.derivativeAt(u, 2),
             'EllipseCurve2.closestPoint: failed to converge',

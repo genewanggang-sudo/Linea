@@ -571,8 +571,8 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
 
         for (let i = 0; i < this.maxNewtonIter; i++) {
             polylineDiagnostics.newtonIterationsTotal++
-            const p1 = c1.pointAt(u1)
-            const p2 = c2.pointAt(u2)
+            const p1 = c1.getPtAt(u1)
+            const p2 = c2.getPtAt(u2)
             const diff = p1.subtracted(p2)
             if (diff.len() <= tol) return this.measure(c1, c2, u1, u2)
 
@@ -647,12 +647,12 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
 
         for (let i = 0; i < this.maxNewtonIter; i++) {
             polylineDiagnostics.projectionIterationsTotal++
-            const p1 = c1.pointAt(u1)
+            const p1 = c1.getPtAt(u1)
             const cp2 = this.safeClosestPoint(c2, p1, tol)
             if (!cp2) break
             const nextU2 = r2.clamp(cp2.param)
 
-            const p2 = c2.pointAt(nextU2)
+            const p2 = c2.getPtAt(nextU2)
             const cp1 = this.safeClosestPoint(c1, p2, tol)
             if (!cp1) break
             const nextU1 = r1.clamp(cp1.param)
@@ -688,7 +688,7 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         for (let i = 0; i <= baseSamples; i++) {
             const t = i / baseSamples
             const u1 = r1.start + (r1.end - r1.start) * t
-            const p1 = c1.pointAt(u1)
+            const p1 = c1.getPtAt(u1)
             const cp2 = this.safeClosestPoint(c2, p1, pointTol * 3)
             if (!cp2 || cp2.distance > pointTol * 2.5) continue
             this.addPointSeed(seeds, u1, r2.clamp(cp2.param), seedParamTol)
@@ -696,7 +696,7 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         for (let i = 0; i <= baseSamples; i++) {
             const t = i / baseSamples
             const u2 = r2.start + (r2.end - r2.start) * t
-            const p2 = c2.pointAt(u2)
+            const p2 = c2.getPtAt(u2)
             const cp1 = this.safeClosestPoint(c1, p2, pointTol * 3)
             if (!cp1 || cp1.distance > pointTol * 2.5) continue
             this.addPointSeed(seeds, r1.clamp(cp1.param), u2, seedParamTol)
@@ -717,8 +717,8 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
     }
 
     private measure(c1: Curve2, c2: Curve2, u1: number, u2: number): RefineResult {
-        const p1 = c1.pointAt(u1)
-        const p2 = c2.pointAt(u2)
+        const p1 = c1.getPtAt(u1)
+        const p2 = c2.getPtAt(u2)
         return {
             u1,
             u2,
@@ -783,13 +783,13 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
     private sampleClosestPoint(curve: Curve2, p: Vec2, sampleCount: number) {
         const range = curve.getRange()
         let bestParam = range.start
-        let bestPoint = curve.pointAt(bestParam)
+        let bestPoint = curve.getPtAt(bestParam)
         let bestDist = bestPoint.distanceTo(p)
         const total = Math.max(8, sampleCount)
         for (let i = 1; i <= total; i++) {
             const t = i / total
             const u = range.start + (range.end - range.start) * t
-            const q = curve.pointAt(u)
+            const q = curve.getPtAt(u)
             const d = q.distanceTo(p)
             if (d < bestDist) {
                 bestDist = d
@@ -801,7 +801,7 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
         // Local Newton refinement around sampled best parameter.
         let u = bestParam
         for (let i = 0; i < 12; i++) {
-            const cp = curve.pointAt(u).subtracted(p)
+            const cp = curve.getPtAt(u).subtracted(p)
             const d1 = curve.derivativeAt(u, 1)
             const d2 = curve.derivativeAt(u, 2)
             const f = cp.dot(d1)
@@ -815,7 +815,7 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
             u = next
         }
         bestParam = u
-        bestPoint = curve.pointAt(bestParam)
+        bestPoint = curve.getPtAt(bestParam)
         bestDist = bestPoint.distanceTo(p)
 
         return {

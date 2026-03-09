@@ -15,7 +15,7 @@ export function sampleCurveByParam(curve: Curve2, segmentCount: number): CurveSa
     for (let i = 0; i <= total; i++) {
         const t = i / total
         const u = range.start + (range.end - range.start) * t
-        samples.push({ u, p: curve.pointAt(u) })
+        samples.push({ u, p: curve.getPtAt(u) })
     }
     return collapseDuplicateSamplePoints(samples)
 }
@@ -30,7 +30,7 @@ export type AdaptiveSampleOptions = {
 export function sampleCurveAdaptive(curve: Curve2, targetSegmentCount: number, options: AdaptiveSampleOptions = {}): CurveSample[] {
     const range = curve.getRange()
     if (range.length() <= Precision.CURVE_PARAM_EPS) {
-        return [{ u: range.start, p: curve.pointAt(range.start) }]
+        return [{ u: range.start, p: curve.getPtAt(range.start) }]
     }
 
     const bbox = curve.getBBox()
@@ -49,8 +49,8 @@ export function sampleCurveAdaptive(curve: Curve2, targetSegmentCount: number, o
         const u0 = cutParams[i]
         const u1 = cutParams[i + 1]
         if (u1 - u0 <= Precision.CURVE_PARAM_EPS) continue
-        const p0 = curve.pointAt(u0)
-        const p1 = curve.pointAt(u1)
+        const p0 = curve.getPtAt(u0)
+        const p1 = curve.getPtAt(u1)
         subdivideAdaptive(
             curve,
             u0,
@@ -68,7 +68,7 @@ export function sampleCurveAdaptive(curve: Curve2, targetSegmentCount: number, o
 
     // Ensure terminal endpoint is present.
     const end = cutParams[cutParams.length - 1]
-    samples.push({ u: end, p: curve.pointAt(end) })
+    samples.push({ u: end, p: curve.getPtAt(end) })
 
     return collapseDuplicateSamplePoints(samples)
 }
@@ -122,7 +122,7 @@ function subdivideAdaptive(
         out.push({ u: u0, p: p0 })
         return
     }
-    const pm = curve.pointAt(um)
+    const pm = curve.getPtAt(um)
     subdivideAdaptive(curve, u0, p0, um, pm, depth + 1, maxDepth, chordErrorTol, tangentAngleTol, maxSamples, out)
     subdivideAdaptive(curve, um, pm, u1, p1, depth + 1, maxDepth, chordErrorTol, tangentAngleTol, maxSamples, out)
 }
@@ -146,7 +146,7 @@ function shouldSplit(
     if (chordLen <= Precision.CURVE_LENGTH_EPS) return true
 
     const um = 0.5 * (u0 + u1)
-    const pm = curve.pointAt(um)
+    const pm = curve.getPtAt(um)
     const midError = pointToLineDistance(pm, p0, p1, chordLen)
     if (midError > chordErrorTol) return true
 

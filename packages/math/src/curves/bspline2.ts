@@ -368,7 +368,7 @@ export class BSpline2 extends Curve2 {
             p,
             tol,
             96,
-            (u) => this.pointAt(u),
+            (u) => this.getPtAt(u),
             (u) => this.derivativeAt(u, 1),
             (u) => this.derivativeAt(u, 2),
             'BSpline2.closestPoint: failed to converge',
@@ -378,7 +378,7 @@ export class BSpline2 extends Curve2 {
         )
         if (!this._isPeriodic) return result
         const param = this.normalizePeriodicParam(result.param)
-        const point = this.pointAt(param)
+        const point = this.getPtAt(param)
         return { point, param, distance: point.distanceTo(p) }
     }
 
@@ -886,7 +886,7 @@ export class BSpline2 extends Curve2 {
             for (let i = 1; i < samplesPerSpan; i++) {
                 const t = i / samplesPerSpan
                 const u = u0 + (u1 - u0) * t
-                const p = this.pointAt(u)
+                const p = this.getPtAt(u)
                 if (!expanded.containsPoint(p)) {
                     expanded = expanded.expandByPoint(p)
                 }
@@ -1420,6 +1420,6 @@ export class BSpline2 extends Curve2 {
     private endpointsAreNear(eps = Precision.CURVE_LENGTH_EPS) {
         const start = this._range.start
         const end = this._range.end
-        return this.pointAt(start).distanceTo(this.pointAt(end)) <= eps
+        return this.getPtAt(start).distanceTo(this.getPtAt(end)) <= eps
     }
 }

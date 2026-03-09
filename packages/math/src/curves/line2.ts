@@ -69,7 +69,7 @@ export class Line2 extends Curve2 {
 
     public override getDerivatives(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'Line2.getDerivatives: n must be a non-negative integer')
-        const ret: Vec2[] = [this.pointAt(u)]
+        const ret: Vec2[] = [this.getPtAt(u)]
         for (let i = 1; i <= n; i++) {
             ret.push(i === 1 ? this._dir.clone() : Vec2.zero())
         }
