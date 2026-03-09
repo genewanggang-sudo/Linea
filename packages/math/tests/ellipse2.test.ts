@@ -11,7 +11,7 @@ describe('Ellipse2', () => {
         const e = new Ellipse2(new Vec2(0, 0), 4, 2, 0)
         expect(e.pointAt(0).equals(new Vec2(4, 0), 1e-9)).toBe(true)
         expect(e.pointAt(Math.PI / 2).equals(new Vec2(0, 2), 1e-9)).toBe(true)
-        expect(e.length()).toBeGreaterThan(0)
+        expect(e.getLength()).toBeGreaterThan(0)
         expect(e.curvatureAt(0)).toBeGreaterThan(0)
     })
 
@@ -35,7 +35,7 @@ describe('Ellipse2', () => {
         expect(e.getParamAt(new Vec2(10, 0))).toBeCloseTo(0, 3)
         expect(e.getParamAt(new Vec2(0, 0))).toBeCloseTo(e.startParam(), 12)
 
-        const half = e.length() * 0.5
+        const half = e.getLength() * 0.5
         const u = e.paramAtLength(half)
         expect(u).toBeGreaterThanOrEqual(e.startParam())
         expect(u).toBeLessThanOrEqual(e.endParam())

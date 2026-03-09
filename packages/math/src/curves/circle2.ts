@@ -31,7 +31,7 @@ export class Circle2 extends CircleCurve2 {
         this.setRange(new PeriodInterval(0, MathConst.PI2, MathConst.PI2))
     }
 
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         if (!range) return MathConst.PI2 * this._radius
         this._range.assertContainsRange(range)
         return range.length() * this._radius
@@ -44,7 +44,7 @@ export class Circle2 extends CircleCurve2 {
     }
 
     public override paramAtLength(s: number, tol = Precision.CURVE_LENGTH_EPS) {
-        const total = this.length()
+        const total = this.getLength()
         MathError.assert(Number.isFinite(tol) && tol > 0, 'Circle2.paramAtLength: tol must be > 0')
         MathError.assert(s >= -tol && s <= total + tol, `Circle2.paramAtLength: s out of range [0, ${total}]`)
 
@@ -58,7 +58,7 @@ export class Circle2 extends CircleCurve2 {
         if (parts.length === 0) return []
         return parts
             .map((seg) => new Arc2(this._center, this._radius, seg.start, seg.end, false))
-            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+            .filter((arc) => arc.getLength() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {

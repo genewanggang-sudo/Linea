@@ -140,7 +140,7 @@ describe('EllipseCurve2 base', () => {
 
     it('supports length and inverse length mapping', () => {
         const e = new MockEllipseCurve2(new Vec2(0, 0), 4, 2, 0)
-        const total = e.length()
+        const total = e.getLength()
         expect(total).toBeGreaterThan(0)
         expect(e.lengthAtParam(e.startParam())).toBeCloseTo(0, 8)
 
@@ -152,9 +152,9 @@ describe('EllipseCurve2 base', () => {
         expect(e.paramAtLength(total, 1e-8)).toBeCloseTo(e.endParam(), 12)
 
         expect(() => e.paramAtLength(1, 0)).toThrow('EllipseCurve2.paramAtLength: tol must be > 0')
-        expect(e.length(new Interval(-1, 0))).toBeGreaterThan(0)
+        expect(e.getLength(new Interval(-1, 0))).toBeGreaterThan(0)
         const nonPeriodic = new MockEllipseCurve2(new Vec2(0, 0), 4, 2, 0, 1, false)
-        expect(() => nonPeriodic.length(new Interval(-1, 0))).toThrow('Interval.assertContainsRange: range out of bounds')
+        expect(() => nonPeriodic.getLength(new Interval(-1, 0))).toThrow('Interval.assertContainsRange: range out of bounds')
         expect(nonPeriodic.normalizeParamForEvalForTest(2)).toBe(2)
         expect(e.integrateLengthForTest(1, 0)).toBe(0)
         expect(e.integrateLengthForTest(0, 1, Precision.CURVE_INTEGRAL_MAX_DEPTH)).toBeGreaterThan(0)

@@ -67,7 +67,7 @@ export class EllipseArc2 extends EllipseCurve2 {
                 this.paramToAngleChecked(seg.end),
                 this._clockwise,
             ))
-            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+            .filter((arc) => arc.getLength() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {
@@ -77,7 +77,7 @@ export class EllipseArc2 extends EllipseCurve2 {
         const start = this.paramToAngleChecked(range.start)
         const end = this.paramToAngleChecked(range.end)
         const arc = new EllipseArc2(this._center, this._rx, this._ry, this._rotation, start, end, this._clockwise)
-        return arc.length() <= Precision.CURVE_LENGTH_EPS ? [] : [arc]
+        return arc.getLength() <= Precision.CURVE_LENGTH_EPS ? [] : [arc]
     }
 
     public override reverse() {

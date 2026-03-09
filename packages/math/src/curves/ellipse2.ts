@@ -39,7 +39,7 @@ export class Ellipse2 extends EllipseCurve2 {
 
         return parts
             .map((seg) => new EllipseArc2(this._center, this._rx, this._ry, this._rotation, seg.start, seg.end, false))
-            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+            .filter((arc) => arc.getLength() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {

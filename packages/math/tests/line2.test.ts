@@ -9,8 +9,8 @@ describe('Line2', () => {
     it('constructs with length-based parameter range', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(3, 4))
         expect(line.getRange().equals(new Interval(0, 5))).toBe(true)
-        expect(line.length()).toBeCloseTo(5, 12)
-        expect(line.length(new Interval(1, 3))).toBeCloseTo(2, 12)
+        expect(line.getLength()).toBeCloseTo(5, 12)
+        expect(line.getLength(new Interval(1, 3))).toBeCloseTo(2, 12)
         const s = line.start
         const e = line.end
         s.x = 100
@@ -50,12 +50,12 @@ describe('Line2', () => {
 
         const s = line.split(3)
         expect(s.length).toBe(2)
-        expect(s[0].length()).toBeCloseTo(3, 12)
-        expect(s[1].length()).toBeCloseTo(7, 12)
+        expect(s[0].getLength()).toBeCloseTo(3, 12)
+        expect(s[1].getLength()).toBeCloseTo(7, 12)
 
         const t = line.trim(new Interval(2, 8))
         expect(t.length).toBe(1)
-        expect(t[0].length()).toBeCloseTo(6, 12)
+        expect(t[0].getLength()).toBeCloseTo(6, 12)
         expect(() => line.trim(new Interval(-1, 2))).toThrow('Interval.assertContainsRange: range out of bounds')
     })
 

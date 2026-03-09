@@ -114,7 +114,7 @@ export class DiscretizeEngine {
         const sweep = range.length()
         if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
 
-        const totalLen = curve.length()
+        const totalLen = curve.getLength()
         const radius = curve.radius
         MathError.assert(
             Number.isFinite(radius) && radius > 0,

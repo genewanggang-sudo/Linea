@@ -10,10 +10,10 @@ import { Precision } from '../src/utils/precision'
 describe('Arc2', () => {
     it('supports empty and full-span semantics', () => {
         const empty = new Arc2(new Vec2(0, 0), 2, 0, 0, false)
-        expect(empty.length()).toBeCloseTo(0, 12)
+        expect(empty.getLength()).toBeCloseTo(0, 12)
 
         const full = new Arc2(new Vec2(0, 0), 2, 0, Math.PI * 2, false)
-        expect(full.length()).toBeCloseTo(4 * Math.PI, 10)
+        expect(full.getLength()).toBeCloseTo(4 * Math.PI, 10)
         expect(() => new Arc2(new Vec2(0, 0), 1, Number.NaN, 0)).toThrow('Arc2: startAngle/endAngle must be finite')
     })
 
@@ -42,7 +42,7 @@ describe('Arc2', () => {
         const mid = (arc.startParam() + arc.endParam()) * 0.5
         const parts = arc.split(mid)
         expect(parts.length).toBe(2)
-        expect(parts[0].length() + parts[1].length()).toBeCloseTo(arc.length(), 9)
+        expect(parts[0].getLength() + parts[1].getLength()).toBeCloseTo(arc.getLength(), 9)
 
         const trimmed = arc.trim(new Interval(arc.startParam(), mid))
         expect(trimmed.length).toBe(1)
@@ -52,7 +52,7 @@ describe('Arc2', () => {
 
         const reversed = arc.clone().reverse()
         expect(reversed.clockwise).toBe(true)
-        expect(reversed.length()).toBeCloseTo(arc.length(), 12)
+        expect(reversed.getLength()).toBeCloseTo(arc.getLength(), 12)
     })
 
     it('closestPoint and strict range behavior', () => {
@@ -65,8 +65,8 @@ describe('Arc2', () => {
         const nearCenter = arc.closestPoint(new Vec2(0, 0))
         expect(nearCenter.param).toBeCloseTo(arc.startParam(), 9)
         expect(arc.getParamAt(new Vec2(0, 0))).toBeCloseTo(arc.startParam(), 12)
-        expect(arc.length(new Interval(arc.startParam(), arc.endParam()))).toBeCloseTo(arc.length(), 10)
-        expect(arc.lengthAtParam(arc.endParam())).toBeCloseTo(arc.length(), 10)
+        expect(arc.getLength(new Interval(arc.startParam(), arc.endParam()))).toBeCloseTo(arc.getLength(), 10)
+        expect(arc.lengthAtParam(arc.endParam())).toBeCloseTo(arc.getLength(), 10)
         expect(() => arc.paramAtLength(1, 0)).toThrow('Arc2.paramAtLength: tol must be > 0')
         expect(() => arc.pointAt(arc.endParam() + 1)).toThrow('Interval.assertContains: parameter out of range')
 
@@ -118,7 +118,7 @@ describe('Arc2', () => {
         const arc = new Arc2(new Vec2(1, 2), 3, 0.2, 1.3, true)
         const restored = Arc2.load(arc.dump())
         expect(restored.clockwise).toBe(true)
-        expect(restored.length()).toBeCloseTo(arc.length(), 10)
+        expect(restored.getLength()).toBeCloseTo(arc.getLength(), 10)
         expect(restored.equals(arc)).toBe(true)
         expect(arc.equals(new Arc2(new Vec2(1, 2), 3, 0.2, 1.3, false))).toBe(false)
         const box = arc.boundingBox()

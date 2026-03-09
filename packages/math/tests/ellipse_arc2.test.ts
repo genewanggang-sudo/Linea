@@ -34,7 +34,7 @@ describe('EllipseArc2', () => {
 
         const rev = arc.clone().reverse()
         expect(rev.clockwise).toBe(true)
-        expect(rev.length()).toBeCloseTo(arc.length(), 10)
+        expect(rev.getLength()).toBeCloseTo(arc.getLength(), 10)
     })
 
     it('transform updates orientation on mirror', () => {
@@ -64,7 +64,7 @@ describe('EllipseArc2', () => {
         expect(arc.getParamAt(new Vec2(1, 2))).toBeCloseTo(arc.startParam(), 12)
 
         const restored = EllipseArc2.load(arc.dump())
-        expect(restored.length()).toBeCloseTo(arc.length(), 10)
+        expect(restored.getLength()).toBeCloseTo(arc.getLength(), 10)
         expect(restored.equals(arc)).toBe(true)
         expect(arc.equals(new EllipseArc2(new Vec2(1, 2), 4, 2, 0.1, 0, 1.2, true))).toBe(false)
         const ccw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, Math.PI / 2, false)

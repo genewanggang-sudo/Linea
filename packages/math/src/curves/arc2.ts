@@ -73,7 +73,7 @@ export class Arc2 extends CircleCurve2 {
         return 1 / this._radius
     }
 
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         if (!range) return this._range.length() * this._radius
         this._range.assertContainsRange(range)
         return range.length() * this._radius
@@ -85,7 +85,7 @@ export class Arc2 extends CircleCurve2 {
     }
 
     public override paramAtLength(s: number, tol = Precision.CURVE_LENGTH_EPS) {
-        const total = this.length()
+        const total = this.getLength()
         MathError.assert(Number.isFinite(tol) && tol > 0, 'Arc2.paramAtLength: tol must be > 0')
         MathError.assert(s >= -tol && s <= total + tol, `Arc2.paramAtLength: s out of range [0, ${total}]`)
         const clamped = Math.min(total, Math.max(0, s))
@@ -104,7 +104,7 @@ export class Arc2 extends CircleCurve2 {
                 this.angleAtParamChecked(seg.end),
                 this._clockwise,
             ))
-            .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
+            .filter((arc) => arc.getLength() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {
@@ -114,7 +114,7 @@ export class Arc2 extends CircleCurve2 {
         const s = this.angleAtParamChecked(range.start)
         const e = this.angleAtParamChecked(range.end)
         const arc = new Arc2(this._center, this._radius, s, e, this._clockwise)
-        return arc.length() <= Precision.CURVE_LENGTH_EPS ? [] : [arc]
+        return arc.getLength() <= Precision.CURVE_LENGTH_EPS ? [] : [arc]
     }
 
     public override reverse() {
@@ -153,7 +153,7 @@ export class Arc2 extends CircleCurve2 {
         this._radius = nextRadius
         this.resetAngles(startAngle, endAngle, nextClockwise)
 
-        MathError.assert(this.length() > Precision.CURVE_LENGTH_EPS || Math.abs(oldSweep) <= Precision.CURVE_PARAM_EPS, 'Arc2.transform: invalid transformed arc')
+        MathError.assert(this.getLength() > Precision.CURVE_LENGTH_EPS || Math.abs(oldSweep) <= Precision.CURVE_PARAM_EPS, 'Arc2.transform: invalid transformed arc')
         return this
     }
 

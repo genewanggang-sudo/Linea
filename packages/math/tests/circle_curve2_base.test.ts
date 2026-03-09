@@ -15,7 +15,7 @@ class MockCircleCurve2 extends CircleCurve2 {
         this.setRange(periodic ? new PeriodInterval(0, Math.PI * 2, Math.PI * 2) : new Interval(0, 10))
     }
 
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         if (!range) return this._range.length() * this._radius
         this._range.assertContainsRange(range)
         return range.length() * this._radius

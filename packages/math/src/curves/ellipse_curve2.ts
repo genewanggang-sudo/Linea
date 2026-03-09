@@ -84,7 +84,7 @@ export abstract class EllipseCurve2 extends Curve2 {
         return Math.abs(d1.cross(d2)) / denom
     }
 
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         if (!range) {
             return this.integrateLength(this._range.start, this._range.end)
         }
@@ -100,7 +100,7 @@ export abstract class EllipseCurve2 extends Curve2 {
     public override paramAtLength(s: number, tol = Precision.CURVE_LENGTH_EPS) {
         MathError.assert(Number.isFinite(tol) && tol > 0, 'EllipseCurve2.paramAtLength: tol must be > 0')
 
-        const total = this.length()
+        const total = this.getLength()
         const start = this._range.start
         const end = this._range.end
 

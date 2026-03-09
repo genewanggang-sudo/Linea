@@ -77,7 +77,7 @@ export class Line2 extends Curve2 {
         return 0
     }
 
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         if (!range) return this._len
         this._range.assertContainsRange(range)
         return range.length()
@@ -101,7 +101,7 @@ export class Line2 extends Curve2 {
         const left = new Line2(this._start, p)
         const right = new Line2(p, this._end)
 
-        return [left, right].filter((seg) => seg.length() > Precision.CURVE_LENGTH_EPS)
+        return [left, right].filter((seg) => seg.getLength() > Precision.CURVE_LENGTH_EPS)
     }
 
     public override trim(range: Interval) {

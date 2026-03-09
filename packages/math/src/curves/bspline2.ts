@@ -205,7 +205,7 @@ export class BSpline2 extends Curve2 {
     /**
      * 计算全区间或子区间内的弧长。
      */
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         if (!range) {
             return this.integrateLength(this._range.start, this._range.end)
         }
@@ -228,7 +228,7 @@ export class BSpline2 extends Curve2 {
     public override paramAtLength(s: number, tol = Precision.CURVE_LENGTH_EPS) {
         MathError.assert(Number.isFinite(tol) && tol > 0, 'BSpline2.paramAtLength: tol must be > 0')
 
-        const total = this.length()
+        const total = this.getLength()
         const start = this._range.start
         const end = this._range.end
 
@@ -286,7 +286,7 @@ export class BSpline2 extends Curve2 {
         const left = BSpline2.fromHomogeneous(leftPw, p, leftKnots)
         const right = BSpline2.fromHomogeneous(rightPw, p, rightKnots)
 
-        return [left, right].filter((c) => c.length() > Precision.CURVE_LENGTH_EPS)
+        return [left, right].filter((c) => c.getLength() > Precision.CURVE_LENGTH_EPS)
     }
 
     /**
@@ -313,7 +313,7 @@ export class BSpline2 extends Curve2 {
             cur = s[s.length - 1]
         }
 
-        return cur.length() > Precision.CURVE_LENGTH_EPS ? [cur] : []
+        return cur.getLength() > Precision.CURVE_LENGTH_EPS ? [cur] : []
     }
 
     /**

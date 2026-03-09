@@ -11,9 +11,9 @@ describe('Circle2', () => {
         const c = new Circle2(new Vec2(1, 2), 3)
         expect(c.getRange().length()).toBeCloseTo(Math.PI * 2, 12)
         expect(c.pointAt(0).equals(new Vec2(4, 2), 1e-12)).toBe(true)
-        expect(c.length()).toBeCloseTo(6 * Math.PI, 12)
+        expect(c.getLength()).toBeCloseTo(6 * Math.PI, 12)
         expect(c.curvatureAt(1.2)).toBeCloseTo(1 / 3, 12)
-        expect(c.length(new Interval(0, Math.PI))).toBeCloseTo(3 * Math.PI, 12)
+        expect(c.getLength(new Interval(0, Math.PI))).toBeCloseTo(3 * Math.PI, 12)
         expect(c.lengthAtParam(Math.PI)).toBeCloseTo(3 * Math.PI, 12)
         expect(c.pointAt(Math.PI * 4 + Math.PI / 3).equals(c.pointAt(Math.PI / 3), 1e-9)).toBe(true)
     })
@@ -31,7 +31,7 @@ describe('Circle2', () => {
         const trimmed = c.trim(new Interval(0, Math.PI / 2))
         expect(trimmed.length).toBe(1)
         expect(trimmed[0] instanceof Arc2).toBe(true)
-        expect(trimmed[0].length()).toBeCloseTo(Math.PI, 12)
+        expect(trimmed[0].getLength()).toBeCloseTo(Math.PI, 12)
         expect(c.trim(new Interval(1, 1))).toEqual([])
         expect(c.trim(new Interval(0, 5e-10))).toEqual([])
     })
@@ -47,14 +47,14 @@ describe('Circle2', () => {
     it('transform requires similarity and supports mirror', () => {
         const c = new Circle2(new Vec2(0, 0), 2)
         const moved = c.transformed(Mat3.translation(3, 4).scale(2, 2))
-        expect(moved.length()).toBeCloseTo(c.length() * 2, 10)
+        expect(moved.getLength()).toBeCloseTo(c.getLength() * 2, 10)
 
         const mirror = c.transformed(Mat3.scaling(-1, 1))
-        expect(mirror.length()).toBeCloseTo(c.length(), 12)
+        expect(mirror.getLength()).toBeCloseTo(c.getLength(), 12)
         expect(c.reverse()).toBe(c)
         expect(() => c.paramAtLength(1, 0)).toThrow('Circle2.paramAtLength: tol must be > 0')
         expect(c.paramAtLength(-1e-10)).toBeCloseTo(0, 12)
-        expect(c.paramAtLength(c.length() + 1e-10)).toBeCloseTo(Math.PI * 2, 12)
+        expect(c.paramAtLength(c.getLength() + 1e-10)).toBeCloseTo(Math.PI * 2, 12)
 
         const shear = new Mat3(
             1, 1, 0,

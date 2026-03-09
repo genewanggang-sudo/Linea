@@ -53,6 +53,30 @@ export abstract class Curve2 extends GeomBase {
     }
 
     /**
+     * 获取曲线起点。
+     * @returns 参数域起点对应的二维点。
+     */
+    public getStartPt(): Vec2 {
+        return this.getPtAt(this.startParam())
+    }
+
+    /**
+     * 获取曲线终点。
+     * @returns 参数域终点对应的二维点。
+     */
+    public getEndPt(): Vec2 {
+        return this.getPtAt(this.endParam())
+    }
+
+    /**
+     * 获取曲线中点。
+     * @returns 参数域中点对应的二维点。
+     */
+    public getMidPt(): Vec2 {
+        return this.getPtAt(this._range.mid())
+    }
+
+    /**
      * 判断参数是否落在当前曲线参数域内。
      * @param u 待判断参数。
      * @param eps 区间边界比较容差。
@@ -103,7 +127,7 @@ export abstract class Curve2 extends GeomBase {
      * @param range 可选子参数域；不传表示整段曲线。
      * @returns 指定参数范围内的弧长。
      */
-    public abstract length(range?: Interval): number
+    public abstract getLength(range?: Interval): number
 
     /**
      * 计算从参数域起点到 `u` 的弧长。
@@ -139,6 +163,14 @@ export abstract class Curve2 extends GeomBase {
      * @returns 当前实例。
      */
     public abstract reverse(): this
+
+    /**
+     * 反转曲线方向（返回新对象）。
+     * @returns 反转后的新曲线对象。
+     */
+    public reversed(): this {
+        return this.clone().reverse()
+    }
 
     /**
      * 应用仿射变换（就地）。
@@ -188,7 +220,7 @@ export abstract class Curve2 extends GeomBase {
      * 默认规则：参数域过小或曲线长度过小。
      */
     public isDegenerate(): boolean {
-        return this._range.length() <= Precision.CURVE_PARAM_EPS || this.length() <= Precision.CURVE_LENGTH_EPS
+        return this._range.length() <= Precision.CURVE_PARAM_EPS || this.getLength() <= Precision.CURVE_LENGTH_EPS
     }
 
     /**

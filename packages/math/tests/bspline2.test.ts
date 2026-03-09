@@ -57,7 +57,7 @@ describe('BSpline2', () => {
         expect(periodic.tangentAt(0.2).equals(periodic.tangentAt(1.2), 1e-9)).toBe(true)
         expect(periodic.pointAt(1).equals(periodic.pointAt(0), 1e-9)).toBe(true)
         expect(periodic.split(1.2)).toEqual([])
-        expect(() => periodic.length(new Interval(0, 1.2))).toThrow('Interval.assertContainsRange: range out of bounds')
+        expect(() => periodic.getLength(new Interval(0, 1.2))).toThrow('Interval.assertContainsRange: range out of bounds')
         expect(() => periodic.trim(new Interval(0, 1.2))).toThrow('Interval.assertContainsRange: range out of bounds')
 
         expect(() => new BSpline2({
@@ -79,14 +79,14 @@ describe('BSpline2', () => {
         expect(c.curvatureAt(0.5)).toBeCloseTo(0, 12)
     })
 
-    it('length/paramAtLength/split/trim', () => {
+    it('getLength/paramAtLength/split/trim', () => {
         const c = new BSpline2({ controlPoints: cps, degree, knots, multiplicities })
-        expect(c.length()).toBeCloseTo(2, 6)
-        expect(c.length(new Interval(0.25, 0.5))).toBeCloseTo(0.5, 5)
+        expect(c.getLength()).toBeCloseTo(2, 6)
+        expect(c.getLength(new Interval(0.25, 0.5))).toBeCloseTo(0.5, 5)
         expect(c.lengthAtParam(0.5)).toBeCloseTo(1, 6)
         expect(c.paramAtLength(1)).toBeCloseTo(0.5, 6)
         expect(c.paramAtLength(0, 1e-8)).toBeCloseTo(0, 10)
-        expect(c.paramAtLength(c.length(), 1e-8)).toBeCloseTo(1, 10)
+        expect(c.paramAtLength(c.getLength(), 1e-8)).toBeCloseTo(1, 10)
         expect(() => c.paramAtLength(1, 0)).toThrow('BSpline2.paramAtLength: tol must be > 0')
 
         const nonlinear = new BSpline2({
@@ -95,7 +95,7 @@ describe('BSpline2', () => {
             knots: [0, 1, 2], multiplicities: [3, 1, 3],
         })
         // 非线性曲线确保 paramAtLength 不会在首轮直接命中，覆盖 slope 回调路径。
-        expect(nonlinear.paramAtLength(nonlinear.length() * 0.37)).toBeGreaterThan(0)
+        expect(nonlinear.paramAtLength(nonlinear.getLength() * 0.37)).toBeGreaterThan(0)
 
         const s = c.split(0.5)
         expect(s.length).toBe(2)
@@ -179,7 +179,7 @@ describe('BSpline2', () => {
 
         const p = nonlinear.pointAt(1.7)
         expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true)
-        expect(nonlinear.length()).toBeGreaterThan(0)
+        expect(nonlinear.getLength()).toBeGreaterThan(0)
         const depthLimited = (nonlinear as unknown as { integrateLength: (u0: number, u1: number, depth: number) => number })
             .integrateLength(0, 1, Precision.CURVE_INTEGRAL_MAX_DEPTH)
         expect(depthLimited).toBeGreaterThan(0)

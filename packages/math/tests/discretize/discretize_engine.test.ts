@@ -51,6 +51,10 @@ class UnsupportedCurve extends Curve2 {
         return new Vec2(u, u * u)
     }
 
+    public override getPtAt(u: number): Vec2 {
+        return new Vec2(u, u * u)
+    }
+
     public override tangentAt(u: number): Vec2 {
         return new Vec2(1, 2 * u)
     }
@@ -66,7 +70,7 @@ class UnsupportedCurve extends Curve2 {
         return 0
     }
 
-    public override length(range?: Interval): number {
+    public override getLength(range?: Interval): number {
         void range
         return 1
     }

@@ -10,17 +10,19 @@ import { Precision } from '../src/utils/precision'
 import type { IDB } from '../src/serialize/dump_types'
 
 class MockCurve2 extends Curve2 {
+    private _reversed = false
+
     constructor() {
         super()
         this.setRange(new Interval(0, 1))
     }
 
     public override pointAt(u: number) {
-        return new Vec2(u, 0)
+        return new Vec2(this._reversed ? 1 - u : u, 0)
     }
 
     public override getPtAt(u: number) {
-        return new Vec2(u, 0)
+        return new Vec2(this._reversed ? 1 - u : u, 0)
     }
 
     public override tangentAt(u: number) {
@@ -41,7 +43,7 @@ class MockCurve2 extends Curve2 {
         return 0
     }
 
-    public override length(range?: Interval) {
+    public override getLength(range?: Interval) {
         void range
         return 1
     }
@@ -65,6 +67,7 @@ class MockCurve2 extends Curve2 {
     }
 
     public override reverse() {
+        this._reversed = !this._reversed
         return this
     }
 
@@ -96,7 +99,9 @@ class MockCurve2 extends Curve2 {
     }
 
     public override clone() {
-        return new MockCurve2()
+        const cloned = new MockCurve2()
+        cloned._reversed = this._reversed
+        return cloned
     }
 
     public override dump(): IDB {
@@ -170,10 +175,38 @@ describe('Curve2 base methods', () => {
         expect(c.containsParam(1 + Precision.CURVE_PARAM_EPS * 0.5)).toBe(true)
     })
 
+    it('getStartPt and getEndPt derive from getPtAt', () => {
+        const c = new MockCurve2()
+        expect(c.getStartPt().equals(new Vec2(0, 0))).toBe(true)
+        expect(c.getEndPt().equals(new Vec2(1, 0))).toBe(true)
+
+        const r = c.reversed()
+        expect(r.getStartPt().equals(new Vec2(1, 0))).toBe(true)
+        expect(r.getEndPt().equals(new Vec2(0, 0))).toBe(true)
+    })
+
+    it('getMidPt derives from getPtAt and interval mid', () => {
+        const c = new MockCurve2()
+        expect(c.getMidPt().equals(new Vec2(0.5, 0))).toBe(true)
+
+        const r = c.reversed()
+        expect(r.getMidPt().equals(new Vec2(0.5, 0))).toBe(true)
+    })
+
     it('derivativeAt derives from derivatives', () => {
         const c = new MockCurve2()
         const d2 = c.derivativeAt(0.3, 2)
         expect(d2.equals(new Vec2(2, 0))).toBe(true)
+    })
+
+    it('reversed returns a reversed clone without mutating the source', () => {
+        const c = new MockCurve2()
+        const r = c.reversed()
+
+        expect(r).not.toBe(c)
+        expect(c.pointAt(0).equals(new Vec2(0, 0))).toBe(true)
+        expect(r.pointAt(0).equals(c.pointAt(1))).toBe(true)
+        expect(r.reversed().pointAt(0).equals(c.pointAt(0))).toBe(true)
     })
 
     it('closestParam and distanceToPoint derive from closestPoint', () => {
