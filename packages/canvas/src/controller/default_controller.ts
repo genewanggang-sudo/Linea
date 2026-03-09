@@ -53,74 +53,74 @@ export class DefaultController implements IMouseController, IKeyboardController 
         }
     }
 
-    public onMouseEnter(_event: IMouseEvent): boolean {
+    public onMouseEnter(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onMouseMove(_event: IMouseEvent): boolean {
+    public onMouseMove(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onLButtonDown(_event: IMouseEvent): boolean {
+    public onLButtonDown(_evt: IMouseEvent): boolean {
         return false;
     }
-    public onLButtonUp(_event: IMouseEvent): boolean {
-        return false;
-    }
-
-    public onRClick(_event: IMouseEvent): boolean {
+    public onLButtonUp(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onRButtonDown(_event: IMouseEvent): boolean {
+    public onRClick(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onRButtonUp(_event: IMouseEvent): boolean {
+    public onRButtonDown(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onMButtonDown(_event: IMouseEvent): boolean {
+    public onRButtonUp(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onMButtonUp(_event: IMouseEvent): boolean {
+    public onMButtonDown(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onWheelForward(_event: IMouseEvent): boolean {
+    public onMButtonUp(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onWheelBackward(_event: IMouseEvent): boolean {
+    public onWheelForward(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onClick(_event: IMouseEvent): boolean {
+    public onWheelBackward(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onSglClick(_event: IMouseEvent): boolean {
+    public onClick(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onDblClick(_event: IMouseEvent): boolean {
+    public onSglClick(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onMouseLeave(_event: IMouseEvent): boolean {
+    public onDblClick(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onKeyDown(_event: IKeyboardEvent): boolean {
+    public onMouseLeave(_evt: IMouseEvent): boolean {
         return false;
     }
 
-    public onKeyUp(_event: IKeyboardEvent): boolean {
+    public onKeyDown(_evt: IKeyboardEvent): boolean {
         return false;
     }
 
-    public onKeyPress(_event: IKeyboardEvent): boolean {
+    public onKeyUp(_evt: IKeyboardEvent): boolean {
+        return false;
+    }
+
+    public onKeyPress(_evt: IKeyboardEvent): boolean {
         return false;
     }
 }
