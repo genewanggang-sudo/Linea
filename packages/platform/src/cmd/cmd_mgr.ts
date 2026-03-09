@@ -32,8 +32,8 @@ export class CmdMgr implements IProcessEvent {
     /**
      * 发起一个命令
      */
-    public async sendCmd(cmdId: string, ...cmdParams: unknown[]): Promise<boolean> {
-        const Ctor = this._clsMgr.getClsEnsure(cmdId);
+    public async sendCmd<C extends Cmd>(Ctor: IConstructor<C>, ...cmdParams: Parameters<C['execute']>): Promise<boolean> {
+        this._clsMgr.getClsNameEnsure(Ctor);
         // 上一个命令没结束,必须等待
         while (this._busy) {
             this.resetAllActions();
