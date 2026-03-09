@@ -39,17 +39,17 @@ export abstract class Curve2 extends GeomBase {
 
     /**
      * 获取曲线理论参数定义域。
-     * @returns 理论定义域副本；默认与当前参数区间一致。
+     * @returns 理论定义域副本；默认返回无界区间。
      */
     public getDomain(): Interval {
-        return this.getRange()
+        return Interval.infinite()
     }
 
     /**
      * 获取参数域起点。
      * @returns 参数域起点。
      */
-    public startParam(): number {
+    public getStartParam(): number {
         return this._range.start
     }
 
@@ -57,7 +57,7 @@ export abstract class Curve2 extends GeomBase {
      * 获取参数域终点。
      * @returns 参数域终点。
      */
-    public endParam(): number {
+    public getEndParam(): number {
         return this._range.end
     }
 
@@ -66,7 +66,7 @@ export abstract class Curve2 extends GeomBase {
      * @returns 参数域起点对应的二维点。
      */
     public getStartPt(): Vec2 {
-        return this.getPtAt(this.startParam())
+        return this.getPtAt(this.getStartParam())
     }
 
     /**
@@ -74,7 +74,7 @@ export abstract class Curve2 extends GeomBase {
      * @returns 参数域终点对应的二维点。
      */
     public getEndPt(): Vec2 {
-        return this.getPtAt(this.endParam())
+        return this.getPtAt(this.getEndParam())
     }
 
     /**
@@ -96,6 +96,49 @@ export abstract class Curve2 extends GeomBase {
     }
 
     /**
+     * 判断点投影回曲线后的参数是否落在当前曲线参数域内。
+     * @param point 待检测点。
+     * @param tolerance 参数区间边界容差。
+     * @returns 投影参数落在当前曲线参数域内返回 `true`。
+     */
+    public containsProjectedPt(point: IVec2 | Vec2, tolerance = Precision.CURVE_PARAM_EPS): boolean {
+        const p = point instanceof Vec2 ? point : new Vec2(point)
+        return this.containsParam(this.getParamAt(p), tolerance)
+    }
+
+    /**
+     * 获取点按参数反查链映射回曲线后的代表点。
+     * @param point 待投影点。
+     * @returns `getParamAt(point)` 对应参数下的曲线点。
+     */
+    public getProjectedPtBy(point: IVec2 | Vec2): Vec2 {
+        const p = point instanceof Vec2 ? point : new Vec2(point)
+        return this.getPtAt(this.getParamAt(p))
+    }
+
+    /**
+     * 判断点是否落在当前曲线段上。
+     * @param point 待检测点。
+     * @param tolerance 几何距离容差。
+     * @returns 点在当前曲线段上返回 `true`。
+     */
+    public containsPt(point: IVec2 | Vec2, tolerance = Precision.CURVE_LENGTH_EPS): boolean {
+        const p = point instanceof Vec2 ? point : new Vec2(point)
+        const tolSq = tolerance * tolerance
+
+        if (this.getStartPt().distanceToSq(p) <= tolSq || this.getEndPt().distanceToSq(p) <= tolSq) {
+            return true
+        }
+
+        const u = this.getParamAt(p)
+        if (!this.containsParam(u)) {
+            return false
+        }
+
+        return this.getPtAt(u).distanceToSq(p) <= tolSq
+    }
+
+    /**
      * 原生参数取点。
      * @param u 曲线参数。
      * @returns 参数对应的二维点。
@@ -114,7 +157,7 @@ export abstract class Curve2 extends GeomBase {
      * @param u 曲线参数。
      * @returns 参数处切向量。
      */
-    public abstract tangentAt(u: number): Vec2
+    public abstract getTangentAt(u: number): Vec2
 
     /**
      * 计算导数序列 `[d0, d1, ...]`。
@@ -122,7 +165,7 @@ export abstract class Curve2 extends GeomBase {
      * @param n 最大导数阶数。
      * @returns 从 0 阶到 n 阶的导数数组。
      */
-    public abstract derivatives(u: number, n: number): Vec2[]
+    public abstract getDerivatives(u: number, n: number): Vec2[]
 
     /**
      * 计算参数处曲率。
@@ -306,14 +349,14 @@ export abstract class Curve2 extends GeomBase {
     public abstract clone(): this
 
     /**
-     * 获取第 `n` 阶导数（默认由 `derivatives` 派生）。
+     * 获取第 `n` 阶导数（默认由 `getDerivatives` 派生）。
      * @param u 曲线参数。
      * @param n 导数阶数，要求为非负整数。
      * @returns 第 `n` 阶导数向量。
      */
     public derivativeAt(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'Curve2.derivativeAt: n must be a non-negative integer')
-        const ds = this.derivatives(u, n)
+        const ds = this.getDerivatives(u, n)
         MathError.assert(ds.length > n, 'Curve2.derivativeAt: derivative order is not available')
         return ds[n]
     }

@@ -115,13 +115,13 @@ describe('CircleCurve2 base', () => {
     it('evaluates point/tangent/derivatives for multiple orders', () => {
         const c = new MockCircleCurve2(new Vec2(0, 0), 2)
         expect(c.pointAt(0).equals(new Vec2(2, 0), 1e-9)).toBe(true)
-        expect(c.tangentAt(Math.PI / 2).equals(new Vec2(-2, 0), 1e-9)).toBe(true)
+        expect(c.getTangentAt(Math.PI / 2).equals(new Vec2(-2, 0), 1e-9)).toBe(true)
 
-        const ds = c.derivatives(0.2, 4)
+        const ds = c.getDerivatives(0.2, 4)
         expect(ds.length).toBe(5)
         expect(ds[1].len()).toBeCloseTo(2, 9)
         expect(ds[4].len()).toBeCloseTo(2, 9)
-        expect(() => c.derivatives(0.1, -1)).toThrow('CircleCurve2.derivatives: n must be a non-negative integer')
+        expect(() => c.getDerivatives(0.1, -1)).toThrow('CircleCurve2.getDerivatives: n must be a non-negative integer')
     })
 
     it('supports periodic and non-periodic parameter normalization', () => {

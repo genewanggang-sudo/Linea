@@ -35,12 +35,12 @@ describe('Ellipse2', () => {
         const cp = e.closestPoint(new Vec2(10, 0))
         expect(new Vec2(cp.point).equals(new Vec2(4, 0), 1e-6)).toBe(true)
         expect(e.getParamAt(new Vec2(10, 0))).toBeCloseTo(0, 3)
-        expect(e.getParamAt(new Vec2(0, 0))).toBeCloseTo(e.startParam(), 12)
+        expect(e.getParamAt(new Vec2(0, 0))).toBeCloseTo(e.getStartParam(), 12)
 
         const half = e.getLength() * 0.5
         const u = e.paramAtLength(half)
-        expect(u).toBeGreaterThanOrEqual(e.startParam())
-        expect(u).toBeLessThanOrEqual(e.endParam())
+        expect(u).toBeGreaterThanOrEqual(e.getStartParam())
+        expect(u).toBeLessThanOrEqual(e.getEndParam())
     })
 
     it('supports generic affine transform', () => {

@@ -96,7 +96,7 @@ describe('Curve property invariants', () => {
             const p = new Vec2(rng.nextRange(-2, 10), rng.nextRange(-4, 4))
             const cp = c.closestPoint(p, 1e-5)
             const d = new Vec2(cp.point).subtracted(p)
-            const t = c.tangentAt(cp.param)
+            const t = c.getTangentAt(cp.param)
             expect(Math.abs(d.dot(t))).toBeLessThanOrEqual(2e-2 + Precision.CURVE_LENGTH_EPS)
         }
     })

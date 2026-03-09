@@ -55,13 +55,13 @@ class UnsupportedCurve extends Curve2 {
         return new Vec2(u, u * u)
     }
 
-    public override tangentAt(u: number): Vec2 {
+    public override getTangentAt(u: number): Vec2 {
         return new Vec2(1, 2 * u)
     }
 
-    public override derivatives(u: number, n: number): Vec2[] {
+    public override getDerivatives(u: number, n: number): Vec2[] {
         const ret: Vec2[] = [this.pointAt(u)]
-        for (let i = 1; i <= n; i++) ret.push(i === 1 ? this.tangentAt(u) : Vec2.zero())
+        for (let i = 1; i <= n; i++) ret.push(i === 1 ? this.getTangentAt(u) : Vec2.zero())
         return ret
     }
 
@@ -162,22 +162,22 @@ describe('DiscretizeEngine', () => {
 
         const linePts = DiscretizeEngine.discretize(line)
         expect(linePts.length).toBe(2)
-        expect(linePts[0].equals(line.pointAt(line.startParam()), 1e-12)).toBe(true)
-        expect(linePts[1].equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
+        expect(linePts[0].equals(line.pointAt(line.getStartParam()), 1e-12)).toBe(true)
+        expect(linePts[1].equals(line.pointAt(line.getEndParam()), 1e-12)).toBe(true)
 
         const circlePts = DiscretizeEngine.discretize(circle, DiscretizeOptions.low)
         expect(circlePts.length).toBeGreaterThan(3)
         expect(circlePts[0].distanceTo(circlePts[circlePts.length - 1])).toBeGreaterThan(1e-8)
 
         const arcPts = DiscretizeEngine.discretize(arc, DiscretizeOptions.low)
-        expect(arcPts[0].equals(arc.pointAt(arc.startParam()), 1e-12)).toBe(true)
-        expect(arcPts[arcPts.length - 1].equals(arc.pointAt(arc.endParam()), 1e-12)).toBe(true)
+        expect(arcPts[0].equals(arc.pointAt(arc.getStartParam()), 1e-12)).toBe(true)
+        expect(arcPts[arcPts.length - 1].equals(arc.pointAt(arc.getEndParam()), 1e-12)).toBe(true)
 
         const tightEllipse = DiscretizeEngine.discretize(ellipse, new DiscretizeOptions(1e-12, 1e-12, 1e-3))
         expect(tightEllipse.length).toBeGreaterThan(2)
 
         const eaPts = DiscretizeEngine.discretize(ellipseArc, DiscretizeOptions.low)
-        expect(eaPts[eaPts.length - 1].equals(ellipseArc.pointAt(ellipseArc.endParam()), 1e-12)).toBe(true)
+        expect(eaPts[eaPts.length - 1].equals(ellipseArc.pointAt(ellipseArc.getEndParam()), 1e-12)).toBe(true)
 
         const bPts = DiscretizeEngine.discretize(bspline, DiscretizeOptions.low)
         expect(bPts.length).toBeGreaterThan(1)
@@ -218,7 +218,7 @@ describe('DiscretizeEngine', () => {
             isDegenerate: () => true,
             getRange: () => new Interval(4, 5),
             pointAt: (u: number) => new Vec2(u, 1),
-            tangentAt: (u: number) => {
+            getTangentAt: (u: number) => {
                 void u
                 return new Vec2(1, 0)
             },
@@ -258,14 +258,14 @@ describe('DiscretizeEngine', () => {
 
         const line = new Line2(new Vec2(0, 0), new Vec2(1, 0))
         const openRes = engine.postprocessResult(line, [{ u: 0.4, p: new Vec2(9, 9) }], opts)
-        expect(openRes[openRes.length - 1].p.equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
+        expect(openRes[openRes.length - 1].p.equals(line.pointAt(line.getEndParam()), 1e-12)).toBe(true)
 
         const emptyRawRes = engine.postprocessResult(line, [], opts)
         expect(emptyRawRes.length).toBe(1)
-        expect(emptyRawRes[0].p.equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
+        expect(emptyRawRes[0].p.equals(line.pointAt(line.getEndParam()), 1e-12)).toBe(true)
 
         const circle = new Circle2(new Vec2(0, 0), 1)
-        const s = circle.startParam()
+        const s = circle.getStartParam()
         const p = circle.pointAt(s)
         const middle = circle.pointAt(s + Math.PI / 2)
         const nearHead = p.added(new Vec2(1e-8, 0))
@@ -282,7 +282,7 @@ describe('DiscretizeEngine', () => {
             engine.deduplicateAdjacent = () => []
             const pushed = engine.postprocessResult(line, [{ u: 0.3, p: new Vec2(1, 1) }], opts)
             expect(pushed.length).toBe(1)
-            expect(pushed[0].p.equals(line.pointAt(line.endParam()), 1e-12)).toBe(true)
+            expect(pushed[0].p.equals(line.pointAt(line.getEndParam()), 1e-12)).toBe(true)
         } finally {
             engine.deduplicateAdjacent = oldDedup
         }
@@ -295,7 +295,7 @@ describe('DiscretizeEngine', () => {
             pointAt: (u: number) => {
                 return new Vec2(u * 1e8, 0)
             },
-            tangentAt: (u: number) => (u === 0 ? new Vec2(1, 0) : new Vec2(0, 1)),
+            getTangentAt: (u: number) => (u === 0 ? new Vec2(1, 0) : new Vec2(0, 1)),
         } as unknown as Curve2
         expect(() => engine.refineAdaptiveSegments(
             blockedCurve,
@@ -305,7 +305,7 @@ describe('DiscretizeEngine', () => {
 
         const nonConvCurve = {
             pointAt: (u: number) => new Vec2(u * 1e9, 0),
-            tangentAt: (u: number) => (u === 0 ? new Vec2(1, 0) : new Vec2(0, 1)),
+            getTangentAt: (u: number) => (u === 0 ? new Vec2(1, 0) : new Vec2(0, 1)),
         } as unknown as Curve2
         expect(() => engine.refineAdaptiveSegments(
             nonConvCurve,
@@ -321,7 +321,7 @@ describe('DiscretizeEngine', () => {
         const noSplit = engine.evaluateAdaptiveSegment(
             {
                 pointAt: (u: number) => new Vec2(u, 0),
-                tangentAt: (u: number) => {
+                getTangentAt: (u: number) => {
                     void u
                     return new Vec2(1, 0)
                 },
@@ -334,7 +334,7 @@ describe('DiscretizeEngine', () => {
         expect(engine.distancePointToSegment(new Vec2(1, 1), new Vec2(0, 0), new Vec2(0, 0))).toBeCloseTo(Math.sqrt(2), 12)
         expect(engine.tangentTurnAbs(
             {
-                tangentAt: (u: number) => {
+                getTangentAt: (u: number) => {
                     void u
                     return Vec2.zero()
                 },

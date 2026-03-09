@@ -26,12 +26,12 @@ class MockCurve2 extends Curve2 {
         return this._transform.transformedPoint(new Vec2(this._reversed ? 1 - u : u, 0))
     }
 
-    public override tangentAt(u: number) {
+    public override getTangentAt(u: number) {
         void u
         return this._transform.transformedVector(new Vec2(1, 0))
     }
 
-    public override derivatives(u: number, n: number) {
+    public override getDerivatives(u: number, n: number) {
         const ret = [this.pointAt(u)]
         for (let i = 1; i <= n; i++) {
             ret.push(new Vec2(i, 0))
@@ -161,10 +161,11 @@ describe('Curve2 base methods', () => {
         expect(current.equals(new Interval(0, 1))).toBe(true)
     })
 
-    it('getDomain defaults to range and returns defensive copy', () => {
+    it('getDomain defaults to an infinite interval and returns defensive copy', () => {
         const c = new MockCurve2()
         const d = c.getDomain()
-        expect(d.equals(new Interval(0, 1))).toBe(true)
+        expect(d.start).toBe(Number.NEGATIVE_INFINITY)
+        expect(d.end).toBe(Number.POSITIVE_INFINITY)
         expect(d).not.toBe(c.getRange())
     })
 
@@ -182,6 +183,27 @@ describe('Curve2 base methods', () => {
         expect(c.containsParam(1)).toBe(true)
         expect(c.containsParam(-1)).toBe(false)
         expect(c.containsParam(1 + Precision.CURVE_PARAM_EPS * 0.5)).toBe(true)
+    })
+
+    it('containsProjectedPt derives from getParamAt and containsParam', () => {
+        const c = new MockCurve2()
+        expect(c.containsProjectedPt(new Vec2(0.5, 3))).toBe(true)
+        expect(c.containsProjectedPt(new Vec2(-1, 0))).toBe(false)
+        expect(c.containsProjectedPt(new Vec2(1 + Precision.CURVE_PARAM_EPS * 0.5, 0))).toBe(true)
+    })
+
+    it('getProjectedPtBy derives from getParamAt and getPtAt', () => {
+        const c = new MockCurve2()
+        expect(c.getProjectedPtBy(new Vec2(0.4, 3)).equals(new Vec2(0.4, 0))).toBe(true)
+    })
+
+    it('containsPt checks point inclusion on current curve segment', () => {
+        const c = new MockCurve2()
+        expect(c.containsPt(new Vec2(0.5, 0))).toBe(true)
+        expect(c.containsPt(new Vec2(0.5, 10))).toBe(false)
+        expect(c.containsPt(new Vec2(0, 0))).toBe(true)
+        expect(c.containsPt(new Vec2(1, 0))).toBe(true)
+        expect(c.containsPt(new Vec2(1 + Precision.CURVE_LENGTH_EPS * 0.5, 0))).toBe(true)
     })
 
     it('getStartPt and getEndPt derive from getPtAt', () => {
@@ -202,7 +224,7 @@ describe('Curve2 base methods', () => {
         expect(r.getMidPt().equals(new Vec2(0.5, 0))).toBe(true)
     })
 
-    it('derivativeAt derives from derivatives', () => {
+    it('derivativeAt derives from getDerivatives', () => {
         const c = new MockCurve2()
         const d2 = c.derivativeAt(0.3, 2)
         expect(d2.equals(new Vec2(2, 0))).toBe(true)

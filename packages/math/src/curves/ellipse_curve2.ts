@@ -54,13 +54,13 @@ export abstract class EllipseCurve2 extends Curve2 {
         return this.pointAtAngle(this.paramToAngleUnchecked(u))
     }
 
-    public override tangentAt(u: number) {
+    public override getTangentAt(u: number) {
         const uu = this.normalizeParamForEval(u)
         return this.derivativeFromAngle(this.paramToAngleUnchecked(uu), 1, this.angleDerivativeSign())
     }
 
-    public override derivatives(u: number, n: number) {
-        MathError.assert(Number.isInteger(n) && n >= 0, 'EllipseCurve2.derivatives: n must be a non-negative integer')
+    public override getDerivatives(u: number, n: number) {
+        MathError.assert(Number.isInteger(n) && n >= 0, 'EllipseCurve2.getDerivatives: n must be a non-negative integer')
         const uu = this.normalizeParamForEval(u)
         const theta = this.paramToAngleUnchecked(uu)
         const sign = this.angleDerivativeSign()
@@ -120,7 +120,7 @@ export abstract class EllipseCurve2 extends Curve2 {
             end,
             tol,
             (u) => this.integrateLength(start, u),
-            (u) => this.tangentAt(u).len(),
+            (u) => this.getTangentAt(u).len(),
             'EllipseCurve2.paramAtLength: failed to converge',
             start + (target / total) * (end - start),
         )
@@ -255,7 +255,7 @@ export abstract class EllipseCurve2 extends Curve2 {
     protected integrateLength(u0: number, u1: number, depth = 0): number {
         if (u1 < u0) return 0
 
-        const f = (u: number) => this.tangentAt(u).len()
+        const f = (u: number) => this.getTangentAt(u).len()
         const whole = this.gaussLegendre5(f, u0, u1)
 
         if (depth >= Precision.CURVE_INTEGRAL_MAX_DEPTH) {

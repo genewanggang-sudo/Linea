@@ -133,23 +133,23 @@ describe('EllipseCurve2 base', () => {
         expect(e.rotation).toBeCloseTo(0.1, 12)
 
         expect(e.pointAt(0).distanceTo(new Vec2(1 + 4 * Math.cos(0.1), 2 + 4 * Math.sin(0.1)))).toBeLessThan(1e-9)
-        expect(e.tangentAt(0).len()).toBeGreaterThan(0)
-        expect(e.derivatives(0.3, 4).length).toBe(5)
-        expect(() => e.derivatives(0.3, -1)).toThrow('EllipseCurve2.derivatives: n must be a non-negative integer')
+        expect(e.getTangentAt(0).len()).toBeGreaterThan(0)
+        expect(e.getDerivatives(0.3, 4).length).toBe(5)
+        expect(() => e.getDerivatives(0.3, -1)).toThrow('EllipseCurve2.getDerivatives: n must be a non-negative integer')
     })
 
     it('supports length and inverse length mapping', () => {
         const e = new MockEllipseCurve2(new Vec2(0, 0), 4, 2, 0)
         const total = e.getLength()
         expect(total).toBeGreaterThan(0)
-        expect(e.lengthAtParam(e.startParam())).toBeCloseTo(0, 8)
+        expect(e.lengthAtParam(e.getStartParam())).toBeCloseTo(0, 8)
 
         const u = e.paramAtLength(total * 0.3)
-        expect(u).toBeGreaterThanOrEqual(e.startParam())
-        expect(u).toBeLessThanOrEqual(e.endParam())
+        expect(u).toBeGreaterThanOrEqual(e.getStartParam())
+        expect(u).toBeLessThanOrEqual(e.getEndParam())
 
-        expect(e.paramAtLength(0, 1e-8)).toBeCloseTo(e.startParam(), 12)
-        expect(e.paramAtLength(total, 1e-8)).toBeCloseTo(e.endParam(), 12)
+        expect(e.paramAtLength(0, 1e-8)).toBeCloseTo(e.getStartParam(), 12)
+        expect(e.paramAtLength(total, 1e-8)).toBeCloseTo(e.getEndParam(), 12)
 
         expect(() => e.paramAtLength(1, 0)).toThrow('EllipseCurve2.paramAtLength: tol must be > 0')
         expect(e.getLength(new Interval(-1, 0))).toBeGreaterThan(0)
@@ -173,7 +173,7 @@ describe('EllipseCurve2 base', () => {
 
     it('supports transform helper functions and sign branch', () => {
         const mirrored = new MockEllipseCurve2(new Vec2(0, 0), 4, 2, 0, -1)
-        expect(mirrored.derivatives(0.2, 1)[1].len()).toBeGreaterThan(0)
+        expect(mirrored.getDerivatives(0.2, 1)[1].len()).toBeGreaterThan(0)
         const signPos = mirrored.derivativeFromAngleForTest(0.3, 1, 1)
         const signNeg = mirrored.derivativeFromAngleForTest(0.3, 1, -1)
         expect(signPos.dot(signNeg)).toBeLessThan(0)

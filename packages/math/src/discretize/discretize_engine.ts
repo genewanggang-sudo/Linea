@@ -420,8 +420,8 @@ export class DiscretizeEngine {
     }
 
     private static tangentTurnAbs(curve: Curve2, u0: number, u1: number) {
-        const t0 = curve.tangentAt(u0)
-        const t1 = curve.tangentAt(u1)
+        const t0 = curve.getTangentAt(u0)
+        const t1 = curve.getTangentAt(u1)
         if (Math.min(t0.lenSq(), t1.lenSq()) <= Precision.CURVE_NEWTON_EPS) {
             return 0
         }

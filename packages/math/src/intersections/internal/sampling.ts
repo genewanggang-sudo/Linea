@@ -150,8 +150,8 @@ function shouldSplit(
     const midError = pointToLineDistance(pm, p0, p1, chordLen)
     if (midError > chordErrorTol) return true
 
-    const t0 = curve.tangentAt(u0)
-    const t1 = curve.tangentAt(u1)
+    const t0 = curve.getTangentAt(u0)
+    const t1 = curve.getTangentAt(u1)
     if (t0.len() <= Precision.CURVE_NEWTON_EPS || t1.len() <= Precision.CURVE_NEWTON_EPS) return true
 
     const a0 = vectorAngle(t0, chord)

@@ -335,8 +335,8 @@ function isTrivialDiagonalPair(curve: Curve2, u1: number, u2: number, diagonalPa
     const du = Math.abs(u1 - u2)
     if (du > diagonalParamTol) return false
 
-    const t1 = curve.tangentAt(u1)
-    const t2 = curve.tangentAt(u2)
+    const t1 = curve.getTangentAt(u1)
+    const t2 = curve.getTangentAt(u2)
     const l1 = t1.len()
     const l2 = t2.len()
     if (l1 <= Precision.CURVE_NEWTON_EPS || l2 <= Precision.CURVE_NEWTON_EPS) return true

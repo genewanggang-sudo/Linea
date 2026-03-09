@@ -280,15 +280,15 @@ function maxTangentNorm(curve: Curve2, x: Interval) {
     const samples = sampleInterval3(x)
     let ret = Precision.CURVE_NEWTON_EPS
     for (const u of samples) {
-        const n = curve.tangentAt(u).len()
+        const n = curve.getTangentAt(u).len()
         if (Number.isFinite(n)) ret = Math.max(ret, n)
     }
     return ret
 }
 
 function isNearDegenerate(c1: Curve2, c2: Curve2, u1: number, u2: number) {
-    const t1 = c1.tangentAt(u1)
-    const t2 = c2.tangentAt(u2)
+    const t1 = c1.getTangentAt(u1)
+    const t2 = c2.getTangentAt(u2)
     const n1 = t1.len()
     const n2 = t2.len()
     if (n1 <= Precision.CURVE_NEWTON_EPS || n2 <= Precision.CURVE_NEWTON_EPS) return true

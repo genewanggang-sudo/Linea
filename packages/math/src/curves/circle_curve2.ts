@@ -40,13 +40,13 @@ export abstract class CircleCurve2 extends Curve2 {
         return this.pointAtAngle(u)
     }
 
-    public override tangentAt(u: number) {
+    public override getTangentAt(u: number) {
         const uu = this.normalizeParamForEval(u)
         return this.derivativeAtAngle(uu, 1, 1)
     }
 
-    public override derivatives(u: number, n: number) {
-        MathError.assert(Number.isInteger(n) && n >= 0, 'CircleCurve2.derivatives: n must be a non-negative integer')
+    public override getDerivatives(u: number, n: number) {
+        MathError.assert(Number.isInteger(n) && n >= 0, 'CircleCurve2.getDerivatives: n must be a non-negative integer')
         const uu = this.normalizeParamForEval(u)
 
         const ret: Vec2[] = [this.pointAtAngle(uu)]

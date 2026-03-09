@@ -4,6 +4,7 @@ import { Line2 } from '../src/curves/line2'
 import { Interval } from '../src/curves/interval'
 import { Mat3 } from '../src/core/mat3'
 import { Vec2 } from '../src/core/vec2'
+import { Precision } from '../src/utils/precision'
 
 describe('Line2', () => {
     it('constructs with length-based parameter range', () => {
@@ -29,7 +30,7 @@ describe('Line2', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(10, 0))
         expect(line.pointAt(0).equals(new Vec2(0, 0))).toBe(true)
         expect(line.pointAt(10).equals(new Vec2(10, 0))).toBe(true)
-        expect(line.tangentAt(3).equals(new Vec2(1, 0))).toBe(true)
+        expect(line.getTangentAt(3).equals(new Vec2(1, 0))).toBe(true)
         expect(() => line.pointAt(-1)).toThrow('Interval.assertContains: parameter out of range')
     })
 
@@ -39,6 +40,13 @@ describe('Line2', () => {
         expect(line.paramAtLength(7)).toBeCloseTo(7, 12)
         expect(line.getParamAt(new Vec2(0, 10))).toBeCloseTo(10, 12)
         expect(line.getParamAt(new Vec2(0, -2))).toBeCloseTo(-2, 12)
+        expect(line.containsProjectedPt(new Vec2(0, 3))).toBe(true)
+        expect(line.containsProjectedPt(new Vec2(0, 10))).toBe(false)
+        expect(line.getProjectedPtBy(new Vec2(0, 3)).equals(new Vec2(0, 3), 1e-12)).toBe(true)
+        expect(line.getProjectedPtBy(new Vec2(0, 10)).equals(new Vec2(0, 10), 1e-12)).toBe(true)
+        expect(line.containsPt(new Vec2(0, 3))).toBe(true)
+        expect(line.containsPt(new Vec2(Precision.CURVE_LENGTH_EPS * 0.5, 3))).toBe(true)
+        expect(line.containsPt(new Vec2(0, 10))).toBe(false)
         expect(line.paramAtLength(-1e-10)).toBeCloseTo(0, 12)
         expect(line.paramAtLength(8 + 1e-10)).toBeCloseTo(8, 12)
         expect(() => line.paramAtLength(1, 0)).toThrow('Line2.paramAtLength: tol must be > 0')
@@ -74,11 +82,11 @@ describe('Line2', () => {
 
     it('covers derivatives/curvature/isValid and trim edge cases', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(5, 0))
-        const ds = line.derivatives(2, 3)
+        const ds = line.getDerivatives(2, 3)
         expect(ds.length).toBe(4)
         expect(ds[2].equals(Vec2.zero(), 1e-12)).toBe(true)
         expect(ds[3].equals(Vec2.zero(), 1e-12)).toBe(true)
-        expect(() => line.derivatives(2, -1)).toThrow('Line2.derivatives: n must be a non-negative integer')
+        expect(() => line.getDerivatives(2, -1)).toThrow('Line2.getDerivatives: n must be a non-negative integer')
         expect(line.curvatureAt(2)).toBe(0)
 
         expect(line.trim(new Interval(2, 2))).toEqual([])

@@ -184,15 +184,15 @@ export class BSpline2 extends Curve2 {
     /**
      * 计算参数 u 处的一阶导数（切向量）。
      */
-    public override tangentAt(u: number) {
+    public override getTangentAt(u: number) {
         return this.derivativeAt(u, 1)
     }
 
     /**
      * 使用有理 B 样条公式计算 0 阶到 n 阶导数。
      */
-    public override derivatives(u: number, n: number) {
-        MathError.assert(Number.isInteger(n) && n >= 0, 'BSpline2.derivatives: n must be a non-negative integer')
+    public override getDerivatives(u: number, n: number) {
+        MathError.assert(Number.isInteger(n) && n >= 0, 'BSpline2.getDerivatives: n must be a non-negative integer')
         const uu = this.normalizeParamForEval(u)
         return this.evalDerivativesOnDomain(uu, n)
     }
@@ -253,7 +253,7 @@ export class BSpline2 extends Curve2 {
             end,
             tol,
             (u) => this.integrateLength(start, u),
-            (u) => this.tangentAt(u).len(),
+            (u) => this.getTangentAt(u).len(),
             'BSpline2.paramAtLength: failed to converge',
             start + (target / total) * (end - start),
         )
@@ -614,7 +614,7 @@ export class BSpline2 extends Curve2 {
         const du = Math.min(n, p)
         const ckw = this.homogeneousDerivativesAt(u, du)
 
-        MathError.assert(Math.abs(ckw[0].w) > Precision.CURVE_NEWTON_EPS, 'BSpline2.derivatives: rational weight is degenerate')
+        MathError.assert(Math.abs(ckw[0].w) > Precision.CURVE_NEWTON_EPS, 'BSpline2.getDerivatives: rational weight is degenerate')
 
         const ret: Vec2[] = []
         for (let k = 0; k <= du; k++) {
@@ -666,7 +666,7 @@ export class BSpline2 extends Curve2 {
      */
     private integrateLength(u0: number, u1: number, depth = 0): number {
         if (u1 < u0) return 0
-        const f = (u: number) => this.tangentAt(u).len()
+        const f = (u: number) => this.getTangentAt(u).len()
 
         const whole = this.gaussLegendre5(f, u0, u1)
         if (depth >= Precision.CURVE_INTEGRAL_MAX_DEPTH) {
@@ -904,7 +904,7 @@ export class BSpline2 extends Curve2 {
     }
 
     private projectedEquation(u: number, p: Vec2) {
-        const ds = this.derivatives(u, 2)
+        const ds = this.getDerivatives(u, 2)
         const c = ds[0]
         const d1 = ds[1]
         const d2 = ds[2]

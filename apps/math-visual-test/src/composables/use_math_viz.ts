@@ -911,8 +911,8 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function addSupportGeometryForGetParamAt(curve: Curve2, queryParams: number[]): void {
         if (curve.isLine()) {
-            const minU = Math.min(curve.startParam(), ...queryParams)
-            const maxU = Math.max(curve.endParam(), ...queryParams)
+            const minU = Math.min(curve.getStartParam(), ...queryParams)
+            const maxU = Math.max(curve.getEndParam(), ...queryParams)
             const dir = curve.end.subtracted(curve.start).normalize()
             const a = curve.start.added(dir.scaled(minU))
             const b = curve.start.added(dir.scaled(maxU))
@@ -1041,13 +1041,13 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         addGetPtAtCase('circle', circle, [0, Math.PI / 2, Math.PI * 2 + Math.PI / 3], 'Circle')
 
         const arc = new Arc2(new Vec2(28, 24), 10, 0, Math.PI / 2, true)
-        addGetPtAtCase('arc', arc, [arc.startParam(), arc.endParam(), arc.endParam() + Math.PI / 2], 'Arc')
+        addGetPtAtCase('arc', arc, [arc.getStartParam(), arc.getEndParam(), arc.getEndParam() + Math.PI / 2], 'Arc')
 
         const ellipse = new Ellipse2(new Vec2(80, 24), 14, 7, Math.PI / 6)
         addGetPtAtCase('ellipse', ellipse, [0, Math.PI / 4, Math.PI * 2 + 0.8], 'Ellipse')
 
         const ellipseArc = new EllipseArc2(new Vec2(-36, -28), 15, 8, Math.PI / 7, -0.2, 1.35, false)
-        addGetPtAtCase('ellipseArc', ellipseArc, [ellipseArc.startParam(), ellipseArc.endParam(), ellipseArc.endParam() + 0.9], 'EllipseArc')
+        addGetPtAtCase('ellipseArc', ellipseArc, [ellipseArc.getStartParam(), ellipseArc.getEndParam(), ellipseArc.getEndParam() + 0.9], 'EllipseArc')
 
         const bspline = new BSpline2({
             controlPoints: [
@@ -1061,7 +1061,7 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
             knots: [0, 1, 2],
             multiplicities: [4, 1, 4],
         })
-        addGetPtAtCase('bspline', bspline, [bspline.startParam() - 0.45, bspline.startParam() + 0.5, bspline.endParam() + 0.55], 'BSpline')
+        addGetPtAtCase('bspline', bspline, [bspline.getStartParam() - 0.45, bspline.getStartParam() + 0.5, bspline.getEndParam() + 0.55], 'BSpline')
 
         rebuildEntities()
         statusHint.value = 'getPtAt 演示已生成：蓝点是参数域内取点，红点是越界参数取点，灰虚线为支撑体'

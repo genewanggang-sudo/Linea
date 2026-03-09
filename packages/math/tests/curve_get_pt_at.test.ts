@@ -29,8 +29,8 @@ describe('Curve2.getPtAt', () => {
         expect(circle.getPtAt(MathConstLike.PI2 + Math.PI / 2).equals(new Vec2(1, 3), 1e-9)).toBe(true)
 
         const arc = new Arc2(new Vec2(0, 0), 2, 0, Math.PI / 2, true)
-        expect(arc.getPtAt(arc.startParam()).equals(arc.pointAt(arc.startParam()), 1e-9)).toBe(true)
-        const p = arc.getPtAt(arc.endParam() + Math.PI / 2)
+        expect(arc.getPtAt(arc.getStartParam()).equals(arc.pointAt(arc.getStartParam()), 1e-9)).toBe(true)
+        const p = arc.getPtAt(arc.getEndParam() + Math.PI / 2)
         expect(p.equals(new Vec2(2, 0), 1e-9)).toBe(true)
     })
 
@@ -40,8 +40,8 @@ describe('Curve2.getPtAt', () => {
         expect(ellipse.getPtAt(u).equals(ellipse.pointAt(u), 1e-9)).toBe(true)
 
         const arc = new EllipseArc2(new Vec2(0, 0), 3, 2, Math.PI / 8, 0, Math.PI / 2, true)
-        expect(arc.getPtAt(arc.startParam()).equals(arc.pointAt(arc.startParam()), 1e-9)).toBe(true)
-        const out = arc.getPtAt(arc.endParam() + Math.PI / 3)
+        expect(arc.getPtAt(arc.getStartParam()).equals(arc.pointAt(arc.getStartParam()), 1e-9)).toBe(true)
+        const out = arc.getPtAt(arc.getEndParam() + Math.PI / 3)
         expect(Number.isFinite(out.x) && Number.isFinite(out.y)).toBe(true)
     })
 
@@ -73,8 +73,8 @@ describe('Curve2.getPtAt', () => {
             knots: [0, 1, 2],
             multiplicities: [3, 1, 3],
         })
-        const start = curve.startParam()
-        const end = curve.endParam()
+        const start = curve.getStartParam()
+        const end = curve.getEndParam()
         const left = curve.getPtAt(start - 1e-4)
         const right = curve.getPtAt(end + 1e-4)
         expect(Number.isFinite(left.x) && Number.isFinite(left.y)).toBe(true)

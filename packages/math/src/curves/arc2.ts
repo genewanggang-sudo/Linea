@@ -54,14 +54,14 @@ export class Arc2 extends CircleCurve2 {
         return this.pointAtAngle(this.angleAtParamUnchecked(u))
     }
 
-    public override tangentAt(u: number) {
+    public override getTangentAt(u: number) {
         const theta = this.angleAtParamChecked(u)
         const sign = this._clockwise ? -1 : 1
         return this.derivativeAtAngle(theta, 1, sign)
     }
 
-    public override derivatives(u: number, n: number) {
-        MathError.assert(Number.isInteger(n) && n >= 0, 'Arc2.derivatives: n must be a non-negative integer')
+    public override getDerivatives(u: number, n: number) {
+        MathError.assert(Number.isInteger(n) && n >= 0, 'Arc2.getDerivatives: n must be a non-negative integer')
         const theta = this.angleAtParamChecked(u)
         const sign = this._clockwise ? -1 : 1
 

@@ -56,7 +56,7 @@ describe('BSpline2', () => {
         expect(periodic.isClosed()).toBe(true)
         expect(periodic.getDomain().equals(new PeriodInterval(0, 1, 1))).toBe(true)
         expect(periodic.pointAt(0.2).equals(periodic.pointAt(1.2), 1e-9)).toBe(true)
-        expect(periodic.tangentAt(0.2).equals(periodic.tangentAt(1.2), 1e-9)).toBe(true)
+        expect(periodic.getTangentAt(0.2).equals(periodic.getTangentAt(1.2), 1e-9)).toBe(true)
         expect(periodic.pointAt(1).equals(periodic.pointAt(0), 1e-9)).toBe(true)
         expect(periodic.split(1.2)).toEqual([])
         expect(() => periodic.getLength(new Interval(0, 1.2))).toThrow('Interval.assertContainsRange: range out of bounds')
@@ -74,7 +74,7 @@ describe('BSpline2', () => {
     it('derivatives contract and high-order zeros', () => {
         const c = new BSpline2({ controlPoints: cps, degree, knots, multiplicities })
         expect(c.getDomain().equals(c.getRange())).toBe(true)
-        const d = c.derivatives(0.5, 5)
+        const d = c.getDerivatives(0.5, 5)
         expect(d.length).toBe(6)
         expect(d[3].equals(Vec2.zero(), 1e-12)).toBe(true)
         expect(d[4].equals(Vec2.zero(), 1e-12)).toBe(true)
@@ -102,16 +102,16 @@ describe('BSpline2', () => {
 
         const s = c.split(0.5)
         expect(s.length).toBe(2)
-        expect(s[0].pointAt(s[0].endParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
-        expect(s[1].pointAt(s[1].startParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[0].pointAt(s[0].getEndParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[1].pointAt(s[1].getStartParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
         expect(c.split(0)).toEqual([])
 
         const t = c.trim(new Interval(0.25, 0.75))
         expect(t.length).toBe(1)
-        expect(t[0].startParam()).toBeGreaterThanOrEqual(0.25 - 1e-9)
+        expect(t[0].getStartParam()).toBeGreaterThanOrEqual(0.25 - 1e-9)
         expect(c.trim(new Interval(0.2, 0.2))).toEqual([])
-        expect(c.trim(new Interval(c.startParam(), 0.8)).length).toBe(1)
-        expect(c.trim(new Interval(0.2, c.endParam())).length).toBe(1)
+        expect(c.trim(new Interval(c.getStartParam(), 0.8)).length).toBe(1)
+        expect(c.trim(new Interval(0.2, c.getEndParam())).length).toBe(1)
         const tiny = new BSpline2({
             controlPoints: [new Vec2(0, 0), new Vec2(5e-13, 0), new Vec2(1e-12, 0)],
             degree: 2,
@@ -126,10 +126,16 @@ describe('BSpline2', () => {
         expect(cp.point.y).toBeCloseTo(0, 6)
         expect(c.getParamAt(new Vec2(1.1, 2))).toBeCloseTo(0.55, 2)
         expect(c.getParamAt(new Vec2(1, 0))).toBeCloseTo(0.5, 2)
+        expect(c.containsProjectedPt(new Vec2(1, 0))).toBe(true)
+        expect(c.containsProjectedPt(new Vec2(-10, 0))).toBe(true)
+        expect(c.getProjectedPtBy(c.getPtAt(0.5)).equals(c.getPtAt(0.5), 1e-9)).toBe(true)
+        expect(c.getProjectedPtBy(new Vec2(1.1, 2)).equals(c.getPtAt(c.getParamAt(new Vec2(1.1, 2))), 1e-9)).toBe(true)
+        expect(c.containsPt(c.getPtAt(0.5))).toBe(true)
+        expect(c.containsPt(new Vec2(-10, 10))).toBe(false)
         expect(() => c.closestPoint(new Vec2(0, 0), 0)).toThrow('BSpline2.closestPoint: tol must be > 0')
 
         const rev = c.clone().reverse()
-        expect(rev.pointAt(rev.startParam()).equals(c.pointAt(c.endParam()), 1e-6)).toBe(true)
+        expect(rev.pointAt(rev.getStartParam()).equals(c.pointAt(c.getEndParam()), 1e-6)).toBe(true)
 
         const moved = c.transformed(Mat3.translation(1, 2))
         expect(moved.pointAt(0).equals(new Vec2(1, 2), 1e-6)).toBe(true)
@@ -201,8 +207,8 @@ describe('BSpline2', () => {
         Precision.CURVE_MAX_ITER = oldIter
 
         const periodic = new BSpline2({ controlPoints: cps, degree, knots, multiplicities, isPeriodic: true })
-        expect(periodic.getParamAt(new Vec2(10, 0))).toBeGreaterThanOrEqual(periodic.startParam())
-        expect(periodic.getParamAt(new Vec2(10, 0))).toBeLessThanOrEqual(periodic.endParam())
+        expect(periodic.getParamAt(new Vec2(10, 0))).toBeGreaterThanOrEqual(periodic.getStartParam())
+        expect(periodic.getParamAt(new Vec2(10, 0))).toBeLessThanOrEqual(periodic.getEndParam())
 
         const invalidDegree = nonlinear as unknown as { _degree: number }
         invalidDegree._degree = 0
@@ -295,8 +301,8 @@ describe('BSpline2', () => {
         for (const p of samples) {
             expect(tightBox.containsPoint(p)).toBe(true)
         }
-        expect(tightBox.containsPoint(c.pointAt(c.startParam()))).toBe(true)
-        expect(tightBox.containsPoint(c.pointAt(c.endParam()))).toBe(true)
+        expect(tightBox.containsPoint(c.pointAt(c.getStartParam()))).toBe(true)
+        expect(tightBox.containsPoint(c.pointAt(c.getEndParam()))).toBe(true)
 
         const fastArea = fastBox.width() * fastBox.height()
         const tightArea = tightBox.width() * tightBox.height()

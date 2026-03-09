@@ -576,8 +576,8 @@ export class PolylinePairIntersector implements ICurvePairIntersector {
             const diff = p1.subtracted(p2)
             if (diff.len() <= tol) return this.measure(c1, c2, u1, u2)
 
-            const t1 = c1.tangentAt(u1)
-            const t2 = c2.tangentAt(u2)
+            const t1 = c1.getTangentAt(u1)
+            const t2 = c2.getTangentAt(u2)
             const det = t1.cross(t2)
             if (Math.abs(det) <= Precision.CURVE_NEWTON_EPS) {
                 break

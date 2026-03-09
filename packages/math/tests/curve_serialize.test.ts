@@ -32,9 +32,9 @@ describe('Curve serialize round-trip', () => {
 
         expect(restoredLine.pointAt(2).equals(line.pointAt(2), 1e-9)).toBe(true)
         expect(restoredCircle.pointAt(0.4).equals(circle.pointAt(0.4), 1e-9)).toBe(true)
-        expect(restoredArc.pointAt(restoredArc.startParam()).equals(arc.pointAt(arc.startParam()), 1e-9)).toBe(true)
+        expect(restoredArc.pointAt(restoredArc.getStartParam()).equals(arc.pointAt(arc.getStartParam()), 1e-9)).toBe(true)
         expect(restoredEllipse.pointAt(0.8).equals(ellipse.pointAt(0.8), 1e-6)).toBe(true)
-        expect(restoredEllipseArc.pointAt(restoredEllipseArc.endParam()).equals(ellipseArc.pointAt(ellipseArc.endParam()), 1e-6)).toBe(true)
+        expect(restoredEllipseArc.pointAt(restoredEllipseArc.getEndParam()).equals(ellipseArc.pointAt(ellipseArc.getEndParam()), 1e-6)).toBe(true)
         expect(restoredBSpline.pointAt(0.3).equals(bspline.pointAt(0.3), 1e-6)).toBe(true)
     })
 })
