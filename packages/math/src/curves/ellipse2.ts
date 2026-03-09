@@ -149,7 +149,7 @@ export class Ellipse2 extends EllipseCurve2 {
         )
     }
 
-    protected override paramToAngle(u: number) {
+    protected override paramToAngleUnchecked(u: number) {
         const range = this._range as PeriodInterval
         return PeriodInterval.normalizeParam(u, range.period, range.start)
     }

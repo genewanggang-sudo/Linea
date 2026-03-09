@@ -50,7 +50,12 @@ export class Line2 extends Curve2 {
 
     public override pointAt(u: number) {
         const uu = this.snapParam(u)
-        return this._start.added(this._dir.scaled(uu))
+        return this.evalPointAt(uu)
+    }
+
+    public override getPtAt(u: number) {
+        MathError.assert(Number.isFinite(u), 'Line2.getPtAt: u must be finite')
+        return this.evalPointAt(u)
     }
 
     public override tangentAt(u: number) {
@@ -206,6 +211,10 @@ export class Line2 extends Curve2 {
             return Precision.equal(u, this._range.start, Precision.CURVE_PARAM_EPS) ? this._range.start : this._range.end
         }
         return u
+    }
+
+    private evalPointAt(u: number) {
+        return this._start.added(this._dir.scaled(u))
     }
 
     /**

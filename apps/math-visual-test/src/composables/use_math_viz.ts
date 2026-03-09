@@ -949,6 +949,25 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         }
     }
 
+    function addGetPtAtCase(type: DrawTool, curve: Curve2, params: number[], label: string): void {
+        addCurveEntity(type, curve, true)
+        addSupportGeometryForGetParamAt(curve, params)
+
+        const values = params.map((u) => curve.getPtAt(u))
+        for (let i = 0; i < params.length; i++) {
+            const u = params[i]
+            const point = values[i]
+            addAnalysisPointMarker(point, curve.containsParam(u) ? 0x2563eb : 0xdc2626, 10)
+        }
+
+        const paramSummary = params.map((u) => u.toFixed(3)).join(', ')
+        if (completionMessage.value.length > 0) {
+            completionMessage.value += ` | ${label}: ${paramSummary}`
+        } else {
+            completionMessage.value = `${label}: ${paramSummary}`
+        }
+    }
+
     function runGetParamAtDemo(): void {
         activeTool.value = 'select'
         clearDraft()
@@ -1006,6 +1025,46 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
         rebuildEntities()
         statusHint.value = 'getParamAt 演示已生成：橙点是查询点，蓝点是投影点，灰虚线为支撑体'
+    }
+
+    function runGetPtAtDemo(): void {
+        activeTool.value = 'select'
+        clearDraft()
+        clearScene()
+        clearIntersectionRenderObjects()
+        clearAnalysisRenderObjects()
+
+        const line = new Line2(new Vec2(-86, 22), new Vec2(-58, 22))
+        addGetPtAtCase('line', line, [-10, 0, 14, 36], 'Line')
+
+        const circle = new Circle2(new Vec2(-22, 24), 10)
+        addGetPtAtCase('circle', circle, [0, Math.PI / 2, Math.PI * 2 + Math.PI / 3], 'Circle')
+
+        const arc = new Arc2(new Vec2(28, 24), 10, 0, Math.PI / 2, true)
+        addGetPtAtCase('arc', arc, [arc.startParam(), arc.endParam(), arc.endParam() + Math.PI / 2], 'Arc')
+
+        const ellipse = new Ellipse2(new Vec2(80, 24), 14, 7, Math.PI / 6)
+        addGetPtAtCase('ellipse', ellipse, [0, Math.PI / 4, Math.PI * 2 + 0.8], 'Ellipse')
+
+        const ellipseArc = new EllipseArc2(new Vec2(-36, -28), 15, 8, Math.PI / 7, -0.2, 1.35, false)
+        addGetPtAtCase('ellipseArc', ellipseArc, [ellipseArc.startParam(), ellipseArc.endParam(), ellipseArc.endParam() + 0.9], 'EllipseArc')
+
+        const bspline = new BSpline2({
+            controlPoints: [
+                new Vec2(16, -40),
+                new Vec2(28, -18),
+                new Vec2(44, -52),
+                new Vec2(58, -26),
+                new Vec2(76, -36),
+            ],
+            degree: 3,
+            knots: [0, 1, 2],
+            multiplicities: [4, 1, 4],
+        })
+        addGetPtAtCase('bspline', bspline, [bspline.startParam() - 0.45, bspline.startParam() + 0.5, bspline.endParam() + 0.55], 'BSpline')
+
+        rebuildEntities()
+        statusHint.value = 'getPtAt 演示已生成：蓝点是参数域内取点，红点是越界参数取点，灰虚线为支撑体'
     }
     function pointToWorld(event: PointerEvent): Vec2 | null {
         if (!viewport) return null
@@ -1537,5 +1596,6 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
         generateRandomCurves,
         runRandomLineLineIntersectionCases,
         runGetParamAtDemo,
+        runGetPtAtDemo,
     }
 }

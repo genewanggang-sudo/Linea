@@ -42,18 +42,23 @@ export class Arc2 extends CircleCurve2 {
     }
 
     public override pointAt(u: number) {
-        return this.pointAtAngle(this.angleAtParam(u))
+        return this.pointAtAngle(this.angleAtParamChecked(u))
+    }
+
+    public override getPtAt(u: number) {
+        MathError.assert(Number.isFinite(u), 'Arc2.getPtAt: u must be finite')
+        return this.pointAtAngle(this.angleAtParamUnchecked(u))
     }
 
     public override tangentAt(u: number) {
-        const theta = this.angleAtParam(u)
+        const theta = this.angleAtParamChecked(u)
         const sign = this._clockwise ? -1 : 1
         return this.derivativeAtAngle(theta, 1, sign)
     }
 
     public override derivatives(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'Arc2.derivatives: n must be a non-negative integer')
-        const theta = this.angleAtParam(u)
+        const theta = this.angleAtParamChecked(u)
         const sign = this._clockwise ? -1 : 1
 
         const ret: Vec2[] = [this.pointAtAngle(theta)]
@@ -64,7 +69,7 @@ export class Arc2 extends CircleCurve2 {
     }
 
     public override curvatureAt(u: number) {
-        this.angleAtParam(u)
+        this.angleAtParamChecked(u)
         return 1 / this._radius
     }
 
@@ -95,8 +100,8 @@ export class Arc2 extends CircleCurve2 {
             .map((seg) => new Arc2(
                 this._center,
                 this._radius,
-                this.angleAtParam(seg.start),
-                this.angleAtParam(seg.end),
+                this.angleAtParamChecked(seg.start),
+                this.angleAtParamChecked(seg.end),
                 this._clockwise,
             ))
             .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
@@ -106,8 +111,8 @@ export class Arc2 extends CircleCurve2 {
         this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
-        const s = this.angleAtParam(range.start)
-        const e = this.angleAtParam(range.end)
+        const s = this.angleAtParamChecked(range.start)
+        const e = this.angleAtParamChecked(range.end)
         const arc = new Arc2(this._center, this._radius, s, e, this._clockwise)
         return arc.length() <= Precision.CURVE_LENGTH_EPS ? [] : [arc]
     }
@@ -280,11 +285,15 @@ export class Arc2 extends CircleCurve2 {
         )
     }
 
-    private angleAtParam(u: number) {
+    private angleAtParamChecked(u: number) {
         const uu = this.normalizeParamForEval(u)
+        return this.angleAtParamUnchecked(uu)
+    }
+
+    private angleAtParamUnchecked(u: number) {
         // 内部参数域总是递增；顺时针时通过镜像映射回几何角度。
-        if (!this._clockwise) return uu
-        return this._range.start - (uu - this._range.start)
+        if (!this._clockwise) return u
+        return this._range.start - (u - this._range.start)
     }
 
     private paramFromAngle(theta: number) {

@@ -80,7 +80,7 @@ class MockEllipseCurve2 extends EllipseCurve2 {
         return { type: EN_GEO_TYPE.Ellipse2 }
     }
 
-    protected override paramToAngle(u: number) {
+    protected override paramToAngleUnchecked(u: number) {
         return this._sign === 1 ? u : -u
     }
 

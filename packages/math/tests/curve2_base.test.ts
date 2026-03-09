@@ -19,6 +19,10 @@ class MockCurve2 extends Curve2 {
         return new Vec2(u, 0)
     }
 
+    public override getPtAt(u: number) {
+        return new Vec2(u, 0)
+    }
+
     public override tangentAt(u: number) {
         void u
         return new Vec2(1, 0)

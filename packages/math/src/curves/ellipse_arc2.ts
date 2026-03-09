@@ -63,8 +63,8 @@ export class EllipseArc2 extends EllipseCurve2 {
                 this._rx,
                 this._ry,
                 this._rotation,
-                this.paramToAngle(seg.start),
-                this.paramToAngle(seg.end),
+                this.paramToAngleChecked(seg.start),
+                this.paramToAngleChecked(seg.end),
                 this._clockwise,
             ))
             .filter((arc) => arc.length() > Precision.CURVE_LENGTH_EPS)
@@ -74,8 +74,8 @@ export class EllipseArc2 extends EllipseCurve2 {
         this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
-        const start = this.paramToAngle(range.start)
-        const end = this.paramToAngle(range.end)
+        const start = this.paramToAngleChecked(range.start)
+        const end = this.paramToAngleChecked(range.end)
         const arc = new EllipseArc2(this._center, this._rx, this._ry, this._rotation, start, end, this._clockwise)
         return arc.length() <= Precision.CURVE_LENGTH_EPS ? [] : [arc]
     }
@@ -206,10 +206,9 @@ export class EllipseArc2 extends EllipseCurve2 {
         )
     }
 
-    protected override paramToAngle(u: number) {
-        const uu = this.normalizeParamForEval(u)
-        if (!this._clockwise) return uu
-        return this._range.start - (uu - this._range.start)
+    protected override paramToAngleUnchecked(u: number) {
+        if (!this._clockwise) return u
+        return this._range.start - (u - this._range.start)
     }
 
     protected override angleToParam(theta: number) {

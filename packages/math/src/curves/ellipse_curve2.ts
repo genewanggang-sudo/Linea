@@ -46,18 +46,23 @@ export abstract class EllipseCurve2 extends Curve2 {
 
     public override pointAt(u: number) {
         const uu = this.normalizeParamForEval(u)
-        return this.pointAtAngle(this.paramToAngle(uu))
+        return this.pointAtAngle(this.paramToAngleUnchecked(uu))
+    }
+
+    public override getPtAt(u: number) {
+        MathError.assert(Number.isFinite(u), 'EllipseCurve2.getPtAt: u must be finite')
+        return this.pointAtAngle(this.paramToAngleUnchecked(u))
     }
 
     public override tangentAt(u: number) {
         const uu = this.normalizeParamForEval(u)
-        return this.derivativeFromAngle(this.paramToAngle(uu), 1, this.angleDerivativeSign())
+        return this.derivativeFromAngle(this.paramToAngleUnchecked(uu), 1, this.angleDerivativeSign())
     }
 
     public override derivatives(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'EllipseCurve2.derivatives: n must be a non-negative integer')
         const uu = this.normalizeParamForEval(u)
-        const theta = this.paramToAngle(uu)
+        const theta = this.paramToAngleUnchecked(uu)
         const sign = this.angleDerivativeSign()
 
         const ret: Vec2[] = []
@@ -171,7 +176,12 @@ export abstract class EllipseCurve2 extends Curve2 {
     }
 
     /** 将存储参数转换为椭圆角参数 */
-    protected abstract paramToAngle(u: number): number
+    protected paramToAngleChecked(u: number) {
+        return this.paramToAngleUnchecked(this.normalizeParamForEval(u))
+    }
+
+    /** 将存储参数转换为椭圆角参数（不做参数域校验） */
+    protected abstract paramToAngleUnchecked(u: number): number
 
     /** 将椭圆角参数转换回存储参数 */
     protected abstract angleToParam(theta: number): number

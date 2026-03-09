@@ -156,7 +156,23 @@ export class BSpline2 extends Curve2 {
      * 计算参数 u 处的曲线点。
      */
     public override pointAt(u: number) {
-        return this.derivatives(u, 0)[0]
+        const uu = this.normalizeParamForEval(u)
+        return this.evalPointOnDomain(uu)
+    }
+
+    /**
+     * 宽松求值：参数越界时沿边界样条分段继续外推。
+     */
+    public override getPtAt(u: number) {
+        MathError.assert(Number.isFinite(u), 'BSpline2.getPtAt: u must be finite')
+
+        if (this._isPeriodic) {
+            return this.evalPointOnDomain(this.normalizePeriodicParam(u))
+        }
+        if (this._range.contains(u, Precision.CURVE_PARAM_EPS)) {
+            return this.evalPointOnDomain(this.snapBoundary(u))
+        }
+        return this.extrapolateFromBoundarySpan(u, u < this._range.start ? 'start' : 'end')
     }
 
     /**
@@ -172,50 +188,7 @@ export class BSpline2 extends Curve2 {
     public override derivatives(u: number, n: number) {
         MathError.assert(Number.isInteger(n) && n >= 0, 'BSpline2.derivatives: n must be a non-negative integer')
         const uu = this.normalizeParamForEval(u)
-
-        const p = this._degree
-        const du = Math.min(n, p)
-
-        const span = BSpline2.findSpan(this._controlPoints.length - 1, p, uu, this._knots)
-        const ders = BSpline2.basisFunctionDerivatives(span, uu, p, du, this._knots)
-        const pw = this.homogeneousControlPoints()
-
-        const ckw: IWeightedPoint2[] = []
-        for (let k = 0; k <= du; k++) {
-            let x = 0
-            let y = 0
-            let w = 0
-            for (let j = 0; j <= p; j++) {
-                const idx = span - p + j
-                const coeff = ders[k][j]
-                x += coeff * pw[idx].x
-                y += coeff * pw[idx].y
-                w += coeff * pw[idx].w
-            }
-            ckw.push({ x, y, w })
-        }
-
-        MathError.assert(Math.abs(ckw[0].w) > Precision.CURVE_NEWTON_EPS, 'BSpline2.derivatives: rational weight is degenerate')
-
-        const ret: Vec2[] = []
-        for (let k = 0; k <= du; k++) {
-            let vx = ckw[k].x
-            let vy = ckw[k].y
-
-            for (let i = 1; i <= k; i++) {
-                const b = BSpline2.binomial(k, i) * ckw[i].w
-                vx -= b * ret[k - i].x
-                vy -= b * ret[k - i].y
-            }
-
-            ret.push(new Vec2(vx / ckw[0].w, vy / ckw[0].w))
-        }
-
-        for (let k = du + 1; k <= n; k++) {
-            ret.push(Vec2.zero())
-        }
-
-        return ret
+        return this.evalDerivativesOnDomain(uu, n)
     }
 
     /**
@@ -624,6 +597,62 @@ export class BSpline2 extends Curve2 {
             ret.push({ x: p.x * w, y: p.y * w, w })
         }
         return ret
+    }
+
+    private evalPointOnDomain(u: number) {
+        return this.evalDerivativesOnDomain(u, 0)[0]
+    }
+
+    private evalDerivativesOnDomain(u: number, n: number) {
+        const p = this._degree
+        const du = Math.min(n, p)
+        const ckw = this.homogeneousDerivativesAt(u, du)
+
+        MathError.assert(Math.abs(ckw[0].w) > Precision.CURVE_NEWTON_EPS, 'BSpline2.derivatives: rational weight is degenerate')
+
+        const ret: Vec2[] = []
+        for (let k = 0; k <= du; k++) {
+            let vx = ckw[k].x
+            let vy = ckw[k].y
+
+            for (let i = 1; i <= k; i++) {
+                const b = BSpline2.binomial(k, i) * ckw[i].w
+                vx -= b * ret[k - i].x
+                vy -= b * ret[k - i].y
+            }
+
+            ret.push(new Vec2(vx / ckw[0].w, vy / ckw[0].w))
+        }
+
+        for (let k = du + 1; k <= n; k++) {
+            ret.push(Vec2.zero())
+        }
+
+        return ret
+    }
+
+    private homogeneousDerivativesAt(u: number, n: number) {
+        const p = this._degree
+        const du = Math.min(n, p)
+        const span = BSpline2.findSpan(this._controlPoints.length - 1, p, u, this._knots)
+        const ders = BSpline2.basisFunctionDerivatives(span, u, p, du, this._knots)
+        const pw = this.homogeneousControlPoints()
+
+        const ckw: IWeightedPoint2[] = []
+        for (let k = 0; k <= du; k++) {
+            let x = 0
+            let y = 0
+            let w = 0
+            for (let j = 0; j <= p; j++) {
+                const idx = span - p + j
+                const coeff = ders[k][j]
+                x += coeff * pw[idx].x
+                y += coeff * pw[idx].y
+                w += coeff * pw[idx].w
+            }
+            ckw.push({ x, y, w })
+        }
+        return ckw
     }
 
     /**
@@ -1054,6 +1083,64 @@ export class BSpline2 extends Curve2 {
         return this.snapBoundary(start + local)
     }
 
+    private firstActiveSpan() {
+        for (let span = this._degree; span < this._controlPoints.length; span++) {
+            if (this._knots[span + 1] - this._knots[span] > Precision.CURVE_PARAM_EPS) {
+                return { span, u0: this._range.start }
+            }
+        }
+        MathError.throw('BSpline2.firstActiveSpan: no active span')
+    }
+
+    private lastActiveSpan() {
+        const n = this._controlPoints.length - 1
+        for (let span = n; span >= this._degree; span--) {
+            if (this._knots[span + 1] - this._knots[span] > Precision.CURVE_PARAM_EPS) {
+                return { span, u0: this._range.end }
+            }
+        }
+        MathError.throw('BSpline2.lastActiveSpan: no active span')
+    }
+
+    private extrapolateFromBoundarySpan(u: number, side: 'start' | 'end') {
+        const boundary = side === 'start' ? this.firstActiveSpan() : this.lastActiveSpan()
+        const du = u - boundary.u0
+        const ckw = this.homogeneousDerivativesAt(boundary.u0, this._degree)
+
+        let xw = 0
+        let yw = 0
+        let ww = 0
+        for (let k = 0; k < ckw.length; k++) {
+            const coeff = Math.pow(du, k) / BSpline2.factorial(k)
+            xw += ckw[k].x * coeff
+            yw += ckw[k].y * coeff
+            ww += ckw[k].w * coeff
+        }
+
+        if (Math.abs(ww) > Precision.CURVE_NEWTON_EPS) {
+            const x = xw / ww
+            const y = yw / ww
+            if (Number.isFinite(x) && Number.isFinite(y)) {
+                return new Vec2(x, y)
+            }
+        }
+
+        return this.fallbackJetExtrapolation(boundary.u0, du)
+    }
+
+    private fallbackJetExtrapolation(u0: number, du: number) {
+        const ds = this.evalDerivativesOnDomain(u0, Math.min(2, this._degree))
+        let point = ds[0].clone()
+        if (ds.length > 1) {
+            point = point.addScaleded(ds[1], du)
+        }
+        if (ds.length > 2) {
+            point = point.addScaleded(ds[2], 0.5 * du * du)
+        }
+        if (point.isFinite()) return point
+        return ds[0].clone()
+    }
+
     /**
      * 将接近边界的参数吸附到稳定端点值。
      */
@@ -1290,6 +1377,12 @@ export class BSpline2 extends Curve2 {
             result = (result * (n - kk + i)) / i
         }
         return result
+    }
+
+    private static factorial(n: number) {
+        let ret = 1
+        for (let i = 2; i <= n; i++) ret *= i
+        return ret
     }
 
     /**

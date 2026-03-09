@@ -70,6 +70,13 @@ export abstract class Curve2 extends GeomBase {
     public abstract pointAt(u: number): Vec2
 
     /**
+     * 宽松参数取点。
+     * @param u 曲线参数，可超出当前参数域。
+     * @returns 参数对应的二维点；对裁剪曲线返回值可落在支撑几何上。
+     */
+    public abstract getPtAt(u: number): Vec2
+
+    /**
      * 原生参数切向（一阶导）。
      * @param u 曲线参数。
      * @returns 参数处切向量。
@@ -156,9 +163,7 @@ export abstract class Curve2 extends GeomBase {
     public abstract closestPoint(p: Vec2, tol?: number): IClosestPointResult
 
     /**
-     * 获取给定点投影到当前曲线后的代表参数。
-     * - 点可以不在曲线上。
-     * - 周期曲线返回主参数域内代表值。
+     * 获取某点（点也可以不在曲线上）对应的参数t（不限参数域）
      */
     public abstract getParamAt(p: Vec2): number
 
