@@ -101,7 +101,7 @@ export class Line2 extends Curve2 {
         const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
         if (parts.length === 0) return []
 
-        const p = this.pointAt(u)
+        const p = this.getPtAt(u)
         const left = new Line2(this._start, p)
         const right = new Line2(p, this._end)
 
@@ -112,8 +112,8 @@ export class Line2 extends Curve2 {
         this._range.assertContainsRange(range)
         if (range.length() <= Precision.CURVE_LENGTH_EPS) return []
 
-        const s = this.pointAt(range.start)
-        const e = this.pointAt(range.end)
+        const s = this.getPtAt(range.start)
+        const e = this.getPtAt(range.end)
         return [new Line2(s, e)]
     }
 
@@ -147,7 +147,7 @@ export class Line2 extends Curve2 {
     public override closestPoint(p: Vec2): IClosestPointResult {
         const sp = p.subtracted(this._start)
         const u = Math.min(this._len, Math.max(0, sp.dot(this._dir)))
-        const point = this.pointAt(u)
+        const point = this.getPtAt(u)
         return {
             point,
             param: u,

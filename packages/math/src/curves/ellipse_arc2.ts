@@ -94,8 +94,8 @@ export class EllipseArc2 extends EllipseCurve2 {
     public override transform(m: Mat3) {
         const oldSweep = this._range.length()
 
-        const startPoint = this.pointAt(this._range.start)
-        const endPoint = this.pointAt(this._range.end)
+        const startPoint = this.getStartPt()
+        const endPoint = this.getEndPt()
 
         const next = this.transformedEllipseParams(m)
         MathError.assert(next.rx > Precision.CURVE_LENGTH_EPS && next.ry > Precision.CURVE_LENGTH_EPS, 'EllipseArc2.transform: degenerate ellipse after transform')

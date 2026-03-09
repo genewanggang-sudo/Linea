@@ -102,7 +102,7 @@ export class Circle2 extends CircleCurve2 {
             u = PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), domain.period, domain.start)
         }
 
-        const point = this.pointAt(u)
+        const point = this.getPtAt(u)
         return {
             point,
             param: u,

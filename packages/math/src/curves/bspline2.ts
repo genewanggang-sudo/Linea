@@ -419,8 +419,8 @@ export class BSpline2 extends Curve2 {
         const range = this.getRange()
         const spanBounds = this.buildBBoxSpanBounds()
         const candidates: Vec2[] = [
-            this.pointAt(range.start),
-            this.pointAt(range.end),
+            this.getStartPt(),
+            this.getEndPt(),
         ]
 
         for (const [u0, u1] of spanBounds) {
@@ -428,7 +428,7 @@ export class BSpline2 extends Curve2 {
             const yRoots = this.solveComponentExtremaInSpan(Axis2D.Y, u0, u1)
             for (const u of [...xRoots, ...yRoots]) {
                 if (!range.contains(u)) continue
-                candidates.push(this.pointAt(u))
+                candidates.push(this.getPtAt(u))
             }
         }
 

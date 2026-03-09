@@ -134,8 +134,8 @@ export class Arc2 extends CircleCurve2 {
         const oldSweep = this._range.length()
         const oldClockwise = this._clockwise
 
-        const startPoint = this.pointAt(this._range.start)
-        const endPoint = this.pointAt(this._range.end)
+        const startPoint = this.getStartPt()
+        const endPoint = this.getEndPt()
 
         const nextCenter = m.transformedPoint(this._center)
         const nextStartPoint = m.transformedPoint(startPoint)
@@ -182,12 +182,12 @@ export class Arc2 extends CircleCurve2 {
         candidates.push(this._range.start, this._range.end)
 
         let bestU = candidates[0]
-        let bestP = this.pointAt(bestU)
+        let bestP = this.getPtAt(bestU)
         let bestD = bestP.distanceTo(p)
 
         for (let i = 1; i < candidates.length; i++) {
             const u = candidates[i]
-            const q = this.pointAt(u)
+            const q = this.getPtAt(u)
             const d = q.distanceTo(p)
             if (d < bestD - Precision.CURVE_LENGTH_EPS) {
                 bestU = u
@@ -223,15 +223,15 @@ export class Arc2 extends CircleCurve2 {
 
     public override getBBox() {
         const points: Vec2[] = [
-            this.pointAt(this._range.start),
-            this.pointAt(this._range.end),
+            this.getStartPt(),
+            this.getEndPt(),
         ]
 
         const axes = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5]
         for (const theta of axes) {
             const u = this.paramFromAngle(theta)
             if (this.containsParam(u)) {
-                points.push(this.pointAt(u))
+                points.push(this.getPtAt(u))
             }
         }
 

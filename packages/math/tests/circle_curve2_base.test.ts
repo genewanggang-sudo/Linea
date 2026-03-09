@@ -52,7 +52,7 @@ class MockCircleCurve2 extends CircleCurve2 {
 
     public override closestPoint(p: Vec2) {
         const param = this._range.start
-        const point = this.pointAt(param)
+        const point = this.getPtAt(param)
         return { point, param, distance: point.distanceTo(p) }
     }
 

@@ -143,8 +143,8 @@ export abstract class EllipseCurve2 extends Curve2 {
 
     public override getBBox() {
         const points: Vec2[] = [
-            this.pointAt(this._range.start),
-            this.pointAt(this._range.end),
+            this.getStartPt(),
+            this.getEndPt(),
         ]
 
         const c = Math.cos(this._rotation)
@@ -157,7 +157,7 @@ export abstract class EllipseCurve2 extends Curve2 {
         for (const theta of candidates) {
             const u = this.angleToParam(theta)
             if (this.containsParam(u)) {
-                points.push(this.pointAt(u))
+                points.push(this.getPtAt(u))
             }
         }
 

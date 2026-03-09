@@ -102,8 +102,8 @@ describe('BSpline2', () => {
 
         const s = c.split(0.5)
         expect(s.length).toBe(2)
-        expect(s[0].getPtAt(s[0].getEndParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
-        expect(s[1].getPtAt(s[1].getStartParam()).equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[0].getEndPt().equals(new Vec2(1, 0), 1e-6)).toBe(true)
+        expect(s[1].getStartPt().equals(new Vec2(1, 0), 1e-6)).toBe(true)
         expect(c.split(0)).toEqual([])
 
         const t = c.trim(new Interval(0.25, 0.75))
@@ -135,7 +135,7 @@ describe('BSpline2', () => {
         expect(() => c.closestPoint(new Vec2(0, 0), 0)).toThrow('BSpline2.closestPoint: tol must be > 0')
 
         const rev = c.clone().reverse()
-        expect(rev.getPtAt(rev.getStartParam()).equals(c.getPtAt(c.getEndParam()), 1e-6)).toBe(true)
+        expect(rev.getStartPt().equals(c.getEndPt(), 1e-6)).toBe(true)
 
         const moved = c.transformed(Mat3.translation(1, 2))
         expect(moved.getPtAt(0).equals(new Vec2(1, 2), 1e-6)).toBe(true)
@@ -301,8 +301,8 @@ describe('BSpline2', () => {
         for (const p of samples) {
             expect(tightBox.containsPoint(p)).toBe(true)
         }
-        expect(tightBox.containsPoint(c.getPtAt(c.getStartParam()))).toBe(true)
-        expect(tightBox.containsPoint(c.getPtAt(c.getEndParam()))).toBe(true)
+        expect(tightBox.containsPoint(c.getStartPt())).toBe(true)
+        expect(tightBox.containsPoint(c.getEndPt())).toBe(true)
 
         const fastArea = fastBox.width() * fastBox.height()
         const tightArea = tightBox.width() * tightBox.height()

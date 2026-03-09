@@ -850,8 +850,8 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
     function addOverlapSegment(line: Line2, info: CurveXInfo): void {
         if (!info.range1) return
-        const p0 = line.pointAt(info.range1.start)
-        const p1 = line.pointAt(info.range1.end)
+        const p0 = line.getPtAt(info.range1.start)
+        const p1 = line.getPtAt(info.range1.end)
         const geometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(p0.x, p0.y, 0),
             new THREE.Vector3(p1.x, p1.y, 0),
@@ -901,12 +901,12 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
             return curve.start.added(dir.scaled(param))
         }
         if (curve.isArc()) {
-            return new Circle2(curve.center, curve.radius).pointAt(param)
+            return new Circle2(curve.center, curve.radius).getPtAt(param)
         }
         if (curve.isEllipseArc()) {
-            return new Ellipse2(curve.center, curve.rx, curve.ry, curve.rotation).pointAt(param)
+            return new Ellipse2(curve.center, curve.rx, curve.ry, curve.rotation).getPtAt(param)
         }
-        return curve.pointAt(param)
+        return curve.getPtAt(param)
     }
 
     function addSupportGeometryForGetParamAt(curve: Curve2, queryParams: number[]): void {

@@ -68,8 +68,8 @@ export class DiscretizeEngine {
         const range = curve.getRange()
         const startParam = range.start
         const endParam = range.end
-        const startPoint = curve.pointAt(startParam)
-        const endPoint = curve.pointAt(endParam)
+        const startPoint = curve.getPtAt(startParam)
+        const endPoint = curve.getPtAt(endParam)
 
         let samples = raw.map((sample) => ({ u: sample.u, p: sample.p }))
         if (samples.length === 0) {
@@ -102,17 +102,17 @@ export class DiscretizeEngine {
 
     private static discretizeLineCurve(curve: Curve2): PolylineSample[] {
         const range = curve.getRange()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.getStartPt() }]
         return [
-            { u: range.start, p: curve.pointAt(range.start) },
-            { u: range.end, p: curve.pointAt(range.end) },
+            { u: range.start, p: curve.getStartPt() },
+            { u: range.end, p: curve.getEndPt() },
         ]
     }
 
     private static discretizeCircleLikeCurve(curve: Circle2 | Arc2, options: DiscretizeOptions): PolylineSample[] {
         const range = curve.getRange()
         const sweep = range.length()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.getStartPt() }]
 
         const totalLen = curve.getLength()
         const radius = curve.radius
@@ -138,7 +138,7 @@ export class DiscretizeEngine {
 
     private static discretizeEllipseLikeCurve(curve: Curve2, options: DiscretizeOptions): PolylineSample[] {
         const range = curve.getRange()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.getStartPt() }]
 
         const initialSegmentCount = 1
         const segments = this.refineAdaptiveSegments(
@@ -151,11 +151,11 @@ export class DiscretizeEngine {
 
     private static discretizeBSplineCurve(curve: BSpline2, options: DiscretizeOptions): PolylineSample[] {
         const range = curve.getRange()
-        if (curve.isDegenerate()) return [{ u: range.start, p: curve.pointAt(range.start) }]
+        if (curve.isDegenerate()) return [{ u: range.start, p: curve.getStartPt() }]
 
         const initialSegments = this.buildInitialBSplineSegments(curve)
         if (initialSegments.length === 0) {
-            return [{ u: range.start, p: curve.pointAt(range.start) }]
+            return [{ u: range.start, p: curve.getStartPt() }]
         }
 
         const refined = this.refineAdaptiveSegments(curve, initialSegments, options)
@@ -179,7 +179,7 @@ export class DiscretizeEngine {
         for (let i = 0; i < steps; i++) {
             const t = i / segmentCount
             const u = start + span * t
-            samples.push({ u, p: curve.pointAt(u) })
+            samples.push({ u, p: curve.getPtAt(u) })
         }
         return samples
     }
@@ -196,8 +196,8 @@ export class DiscretizeEngine {
             segments.push({
                 u0,
                 u1,
-                p0: curve.pointAt(u0),
-                p1: curve.pointAt(u1),
+                p0: curve.getPtAt(u0),
+                p1: curve.getPtAt(u1),
             })
         }
         return segments
@@ -220,8 +220,8 @@ export class DiscretizeEngine {
             segments.push({
                 u0,
                 u1,
-                p0: curve.pointAt(u0),
-                p1: curve.pointAt(u1),
+                p0: curve.getPtAt(u0),
+                p1: curve.getPtAt(u1),
             })
         }
         return segments
@@ -257,7 +257,7 @@ export class DiscretizeEngine {
                 '离散不收敛',
             )
 
-            const pm = curve.pointAt(mid)
+            const pm = curve.getPtAt(mid)
             const left: AdaptiveSegment = {
                 u0: segment.u0,
                 u1: mid,
@@ -344,7 +344,7 @@ export class DiscretizeEngine {
     private static evaluateAdaptiveSegment(curve: Curve2, segment: AdaptiveSegment, options: DiscretizeOptions): SegmentEval {
         const chordLenSq = segment.p0.distanceToSq(segment.p1)
         const midParam = MathUtils.lerp(segment.u0, segment.u1, 0.5)
-        const midPoint = curve.pointAt(midParam)
+        const midPoint = curve.getPtAt(midParam)
         const approxLength = segment.p0.distanceTo(midPoint) + midPoint.distanceTo(segment.p1)
         if (approxLength <= options.minSegmentLength) {
             return { split: false, blocked: false, score: 0 }
@@ -397,7 +397,7 @@ export class DiscretizeEngine {
         let maxDeviation = 0
         for (const fraction of fractions) {
             const um = MathUtils.lerp(u0, u1, fraction)
-            const pm = curve.pointAt(um)
+            const pm = curve.getPtAt(um)
             const deviation = this.distancePointToSegment(pm, p0, p1)
             if (deviation > maxDeviation) {
                 maxDeviation = deviation
