@@ -31,6 +31,10 @@ export class Circle2 extends CircleCurve2 {
         this.setRange(new PeriodInterval(0, MathConst.PI2, MathConst.PI2))
     }
 
+    public override getDomain(): Interval {
+        return new PeriodInterval(0, MathConst.PI2, MathConst.PI2)
+    }
+
     public override getLength(range?: Interval) {
         if (!range) return MathConst.PI2 * this._radius
         this._range.assertContainsRange(range)
@@ -94,8 +98,8 @@ export class Circle2 extends CircleCurve2 {
         let u = this._range.start
 
         if (v.len() > Precision.CURVE_NEWTON_EPS) {
-            const range = this._range as PeriodInterval
-            u = PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), range.period, range.start)
+            const domain = this.getDomain() as PeriodInterval
+            u = PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), domain.period, domain.start)
         }
 
         const point = this.pointAt(u)
@@ -107,12 +111,12 @@ export class Circle2 extends CircleCurve2 {
     }
 
     public override getParamAt(p: Vec2) {
-        const range = this._range as PeriodInterval
+        const domain = this.getDomain() as PeriodInterval
         const v = p.subtracted(this._center)
         if (v.lenSq() <= Precision.CURVE_NEWTON_EPS * Precision.CURVE_NEWTON_EPS) {
-            return range.start
+            return domain.start
         }
-        return PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), range.period, range.start)
+        return PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), domain.period, domain.start)
     }
 
     public override boundingBox() {

@@ -3,12 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { Ellipse2 } from '../src/curves/ellipse2'
 import { EllipseArc2 } from '../src/curves/ellipse_arc2'
 import { Interval } from '../src/curves/interval'
+import { PeriodInterval } from '../src/curves/period_interval'
 import { Mat3 } from '../src/core/mat3'
 import { Vec2 } from '../src/core/vec2'
 
 describe('Ellipse2', () => {
     it('evaluates points and basic properties', () => {
         const e = new Ellipse2(new Vec2(0, 0), 4, 2, 0)
+        expect(e.getDomain().equals(new PeriodInterval(0, Math.PI * 2, Math.PI * 2))).toBe(true)
         expect(e.pointAt(0).equals(new Vec2(4, 0), 1e-9)).toBe(true)
         expect(e.pointAt(Math.PI / 2).equals(new Vec2(0, 2), 1e-9)).toBe(true)
         expect(e.getLength()).toBeGreaterThan(0)

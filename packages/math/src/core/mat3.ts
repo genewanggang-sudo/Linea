@@ -9,7 +9,7 @@ import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IDBMat3 } from '../serialize/dump_types'
 import { Vec2 } from './vec2'
 import type { Num3x3 } from '../types/type_guard'
-import type { IMat3 } from '../types/type_define'
+import type { IMat3, IVec2 } from '../types/type_define'
 import { Precision } from '../utils/precision'
 import { MathError } from '../utils/math_error'
 
@@ -81,6 +81,10 @@ export class Mat3 extends GeomBase implements IMat3 {
         )
     }
 
+    public static makeTranslate(offset: IVec2) {
+        return Mat3.translation(offset.x, offset.y)
+    }
+
     /** 旋转矩阵（弧度） */
     public static rotation(rad: number) {
         const c = Math.cos(rad)
@@ -92,6 +96,12 @@ export class Mat3 extends GeomBase implements IMat3 {
         )
     }
 
+    public static makeRotate(pivot: IVec2, rad: number) {
+        return Mat3.translation(pivot.x, pivot.y)
+            .multiply(Mat3.rotation(rad))
+            .multiply(Mat3.translation(-pivot.x, -pivot.y))
+    }
+
     /** 缩放矩阵 */
     public static scaling(sx: number, sy: number) {
         return new Mat3(
@@ -99,6 +109,12 @@ export class Mat3 extends GeomBase implements IMat3 {
             0, sy, 0,
             0, 0, 1,
         )
+    }
+
+    public static makeScale(center: IVec2, scale: number) {
+        return Mat3.translation(center.x, center.y)
+            .multiply(Mat3.scaling(scale, scale))
+            .multiply(Mat3.translation(-center.x, -center.y))
     }
 
     /** 克隆 */

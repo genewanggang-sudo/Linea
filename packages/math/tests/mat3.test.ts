@@ -42,6 +42,16 @@ describe('Mat3', () => {
         expect(ss.transformedPoint(new Vec2(2, 1)).equals(r)).toBe(true)
     })
 
+    it('makeTranslate makeRotate and makeScale build anchored transforms', () => {
+        expect(Mat3.makeTranslate(new Vec2(3, 4)).transformedPoint(new Vec2(1, 2)).equals(new Vec2(4, 6))).toBe(true)
+
+        const rotated = Mat3.makeRotate(new Vec2(1, 0), Math.PI).transformedPoint(new Vec2(2, 0))
+        expect(rotated.equals(new Vec2(0, 0), 1e-12)).toBe(true)
+
+        const scaled = Mat3.makeScale(new Vec2(1, 0), 2).transformedPoint(new Vec2(0, 0))
+        expect(scaled.equals(new Vec2(-1, 0), 1e-12)).toBe(true)
+    })
+
     it('transformVector ignores translation', () => {
         const m = Mat3.translation(10, 0)
         const v = new Vec2(1, 2)

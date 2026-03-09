@@ -10,6 +10,7 @@ import { Vec2 } from '../core/vec2'
 import { MathError } from '../utils/math_error'
 import { Precision } from '../utils/precision'
 import type { IClosestPointResult } from '../types/type_define'
+import type { IVec2 } from '../types/type_define'
 import { DiscretizeEngine } from '../discretize/discretize_engine'
 import { DiscretizeOptions } from '../discretize/discretize_options'
 import type { Arc2 } from './arc2'
@@ -34,6 +35,14 @@ export abstract class Curve2 extends GeomBase {
      */
     public getRange(): Interval {
         return this._range.clone()
+    }
+
+    /**
+     * 获取曲线理论参数定义域。
+     * @returns 理论定义域副本；默认与当前参数区间一致。
+     */
+    public getDomain(): Interval {
+        return this.getRange()
     }
 
     /**
@@ -170,6 +179,35 @@ export abstract class Curve2 extends GeomBase {
      */
     public reversed(): this {
         return this.clone().reverse()
+    }
+
+    /**
+     * 平移曲线（就地）。
+     * @param offset 平移向量。
+     * @returns 当前实例。
+     */
+    public translate(offset: IVec2): this {
+        return this.transform(Mat3.makeTranslate(offset))
+    }
+
+    /**
+     * 绕指定点旋转曲线（就地）。
+     * @param angle 旋转角度（弧度）。
+     * @param pivot 旋转中心。
+     * @returns 当前实例。
+     */
+    public rotate(angle: number, pivot: IVec2 = { x: 0, y: 0 }): this {
+        return this.transform(Mat3.makeRotate(pivot, angle))
+    }
+
+    /**
+     * 等比缩放曲线（就地）。
+     * @param factor 缩放因子。
+     * @param center 缩放中心。
+     * @returns 当前实例。
+     */
+    public scale(factor: number, center: IVec2 = { x: 0, y: 0 }): this {
+        return this.transform(Mat3.makeScale(center, factor))
     }
 
     /**

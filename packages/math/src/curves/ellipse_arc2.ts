@@ -53,6 +53,10 @@ export class EllipseArc2 extends EllipseCurve2 {
         return this.normalizeAngle(end)
     }
 
+    public override getDomain(): Interval {
+        return new PeriodInterval(this._range.start, this._range.start + MathConst.PI2, MathConst.PI2)
+    }
+
     public override split(u: number) {
         const parts = this._range.split(u, Precision.CURVE_PARAM_EPS)
         if (parts.length === 0) return []
@@ -120,20 +124,20 @@ export class EllipseArc2 extends EllipseCurve2 {
     }
 
     public override getParamAt(p: Vec2) {
-        const range = this._range as PeriodInterval
+        const domain = this.getDomain() as PeriodInterval
         if (p.distanceToSq(this._center) <= Precision.CURVE_LENGTH_EPS_SQ) {
-            return range.start
+            return domain.start
         }
 
-        const normalizeParam = (u: number) => PeriodInterval.normalizeParam(u, range.period, range.start)
+        const normalizeParam = (u: number) => PeriodInterval.normalizeParam(u, domain.period, domain.start)
         const evalAngle = (u: number) => {
             const uu = normalizeParam(u)
-            return this._clockwise ? (2 * range.start - uu) : uu
+            return this._clockwise ? (2 * domain.start - uu) : uu
         }
         return this.solveProjectedParamOnSupport(
             p,
-            range.start,
-            range.start + range.period,
+            domain.start,
+            domain.start + domain.period,
             (u) => this.pointAtAngle(evalAngle(u)),
             (u) => this.derivativeFromAngle(evalAngle(u), 1, this._clockwise ? -1 : 1),
             (u) => this.derivativeFromAngle(evalAngle(u), 2, this._clockwise ? -1 : 1),
@@ -212,12 +216,12 @@ export class EllipseArc2 extends EllipseCurve2 {
     }
 
     protected override angleToParam(theta: number) {
-        const range = this._range as PeriodInterval
+        const domain = this.getDomain() as PeriodInterval
         if (!this._clockwise) {
-            return PeriodInterval.normalizeParam(theta, range.period, range.start)
+            return PeriodInterval.normalizeParam(theta, domain.period, domain.start)
         }
-        const reflected = 2 * range.start - theta
-        return PeriodInterval.normalizeParam(reflected, range.period, range.start)
+        const reflected = 2 * domain.start - theta
+        return PeriodInterval.normalizeParam(reflected, domain.period, domain.start)
     }
 
     protected override angleDerivativeSign(): 1 | -1 {

@@ -48,6 +48,10 @@ export class Line2 extends Curve2 {
         return this._end.clone()
     }
 
+    public override getDomain(): Interval {
+        return Interval.infinite()
+    }
+
     public override pointAt(u: number) {
         const uu = this.snapParam(u)
         return this.evalPointAt(uu)

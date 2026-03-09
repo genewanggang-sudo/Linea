@@ -41,6 +41,10 @@ export class Arc2 extends CircleCurve2 {
         return this.normalizeAngle(end)
     }
 
+    public override getDomain(): Interval {
+        return new PeriodInterval(this._range.start, this._range.start + MathConst.PI2, MathConst.PI2)
+    }
+
     public override pointAt(u: number) {
         return this.pointAtAngle(this.angleAtParamChecked(u))
     }
@@ -297,13 +301,13 @@ export class Arc2 extends CircleCurve2 {
     }
 
     private paramFromAngle(theta: number) {
-        const range = this._range as PeriodInterval
+        const domain = this.getDomain() as PeriodInterval
         if (!this._clockwise) {
-            return PeriodInterval.normalizeParam(theta, range.period, range.start)
+            return PeriodInterval.normalizeParam(theta, domain.period, domain.start)
         }
         // 反向参数化：关于 start 角做镜像。
-        const reflected = 2 * range.start - theta
-        return PeriodInterval.normalizeParam(reflected, range.period, range.start)
+        const reflected = 2 * domain.start - theta
+        return PeriodInterval.normalizeParam(reflected, domain.period, domain.start)
     }
 
     private resetAngles(startAngle: number, endAngle: number, clockwise: boolean) {

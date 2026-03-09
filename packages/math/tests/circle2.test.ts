@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { Arc2 } from '../src/curves/arc2'
 import { Circle2 } from '../src/curves/circle2'
 import { Interval } from '../src/curves/interval'
+import { PeriodInterval } from '../src/curves/period_interval'
 import { Mat3 } from '../src/core/mat3'
 import { Vec2 } from '../src/core/vec2'
 
@@ -10,6 +11,7 @@ describe('Circle2', () => {
     it('uses periodic range and analytic evaluation', () => {
         const c = new Circle2(new Vec2(1, 2), 3)
         expect(c.getRange().length()).toBeCloseTo(Math.PI * 2, 12)
+        expect(c.getDomain().equals(new PeriodInterval(0, Math.PI * 2, Math.PI * 2))).toBe(true)
         expect(c.pointAt(0).equals(new Vec2(4, 2), 1e-12)).toBe(true)
         expect(c.getLength()).toBeCloseTo(6 * Math.PI, 12)
         expect(c.curvatureAt(1.2)).toBeCloseTo(1 / 3, 12)

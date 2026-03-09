@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { BSpline2 } from '../src/curves/bspline2'
 import { DiscretizeOptions } from '../src/discretize/discretize_options'
 import { Interval } from '../src/curves/interval'
+import { PeriodInterval } from '../src/curves/period_interval'
 import { Mat3 } from '../src/core/mat3'
 import { Vec2 } from '../src/core/vec2'
 import { Precision } from '../src/utils/precision'
@@ -53,6 +54,7 @@ describe('BSpline2', () => {
         const periodic = new BSpline2({ controlPoints: cps, degree, knots, multiplicities, isPeriodic: true })
         expect(periodic.isPeriodic).toBe(true)
         expect(periodic.isClosed()).toBe(true)
+        expect(periodic.getDomain().equals(new PeriodInterval(0, 1, 1))).toBe(true)
         expect(periodic.pointAt(0.2).equals(periodic.pointAt(1.2), 1e-9)).toBe(true)
         expect(periodic.tangentAt(0.2).equals(periodic.tangentAt(1.2), 1e-9)).toBe(true)
         expect(periodic.pointAt(1).equals(periodic.pointAt(0), 1e-9)).toBe(true)
@@ -71,6 +73,7 @@ describe('BSpline2', () => {
 
     it('derivatives contract and high-order zeros', () => {
         const c = new BSpline2({ controlPoints: cps, degree, knots, multiplicities })
+        expect(c.getDomain().equals(c.getRange())).toBe(true)
         const d = c.derivatives(0.5, 5)
         expect(d.length).toBe(6)
         expect(d[3].equals(Vec2.zero(), 1e-12)).toBe(true)

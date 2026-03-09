@@ -11,6 +11,7 @@ describe('Arc2', () => {
     it('supports empty and full-span semantics', () => {
         const empty = new Arc2(new Vec2(0, 0), 2, 0, 0, false)
         expect(empty.getLength()).toBeCloseTo(0, 12)
+        expect(empty.getDomain().equals(new PeriodInterval(0, Math.PI * 2, Math.PI * 2))).toBe(true)
 
         const full = new Arc2(new Vec2(0, 0), 2, 0, Math.PI * 2, false)
         expect(full.getLength()).toBeCloseTo(4 * Math.PI, 10)
@@ -85,6 +86,7 @@ describe('Arc2', () => {
         expect(arc.containsParam(Math.PI / 4)).toBe(true)
         expect(arc.containsParam(Math.PI * 2 + Math.PI / 4)).toBe(true)
         expect(arc.containsParam(Math.PI * 2 + Math.PI)).toBe(false)
+        expect(arc.getDomain().contains(Math.PI * 2 + Math.PI / 4)).toBe(true)
     })
 
     it('transform requires similarity and mirror flips clockwise', () => {

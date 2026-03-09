@@ -11,6 +11,7 @@ import type { IDB } from '../src/serialize/dump_types'
 
 class MockCurve2 extends Curve2 {
     private _reversed = false
+    private _transform = Mat3.identity()
 
     constructor() {
         super()
@@ -18,16 +19,16 @@ class MockCurve2 extends Curve2 {
     }
 
     public override pointAt(u: number) {
-        return new Vec2(this._reversed ? 1 - u : u, 0)
+        return this._transform.transformedPoint(new Vec2(this._reversed ? 1 - u : u, 0))
     }
 
     public override getPtAt(u: number) {
-        return new Vec2(this._reversed ? 1 - u : u, 0)
+        return this._transform.transformedPoint(new Vec2(this._reversed ? 1 - u : u, 0))
     }
 
     public override tangentAt(u: number) {
         void u
-        return new Vec2(1, 0)
+        return this._transform.transformedVector(new Vec2(1, 0))
     }
 
     public override derivatives(u: number, n: number) {
@@ -72,7 +73,7 @@ class MockCurve2 extends Curve2 {
     }
 
     public override transform(m: Mat3) {
-        void m
+        this._transform = this._transform.premultiplied(m)
         return this
     }
 
@@ -101,6 +102,7 @@ class MockCurve2 extends Curve2 {
     public override clone() {
         const cloned = new MockCurve2()
         cloned._reversed = this._reversed
+        cloned._transform = this._transform.clone()
         return cloned
     }
 
@@ -159,6 +161,13 @@ describe('Curve2 base methods', () => {
         expect(current.equals(new Interval(0, 1))).toBe(true)
     })
 
+    it('getDomain defaults to range and returns defensive copy', () => {
+        const c = new MockCurve2()
+        const d = c.getDomain()
+        expect(d.equals(new Interval(0, 1))).toBe(true)
+        expect(d).not.toBe(c.getRange())
+    })
+
     it('setRange stores a defensive copy', () => {
         const c = new MockCurve2()
         const src = new Interval(2, 3)
@@ -207,6 +216,20 @@ describe('Curve2 base methods', () => {
         expect(c.pointAt(0).equals(new Vec2(0, 0))).toBe(true)
         expect(r.pointAt(0).equals(c.pointAt(1))).toBe(true)
         expect(r.reversed().pointAt(0).equals(c.pointAt(0))).toBe(true)
+    })
+
+    it('translate rotate and scale delegate to transform', () => {
+        const c = new MockCurve2()
+
+        const moved = c.clone().translate({ x: 2, y: 3 })
+        expect(moved.pointAt(0).equals(new Vec2(2, 3))).toBe(true)
+
+        const rotated = c.clone().rotate(Math.PI / 2)
+        expect(rotated.pointAt(1).equals(new Vec2(0, 1), 1e-12)).toBe(true)
+
+        const scaled = c.clone().scale(2, { x: 1, y: 0 })
+        expect(scaled.pointAt(0).equals(new Vec2(-1, 0), 1e-12)).toBe(true)
+        expect(scaled.pointAt(1).equals(new Vec2(1, 0), 1e-12)).toBe(true)
     })
 
     it('closestParam and distanceToPoint derive from closestPoint', () => {

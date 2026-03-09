@@ -9,6 +9,7 @@ import { Vec2 } from '../src/core/vec2'
 describe('EllipseArc2', () => {
     it('handles clockwise and counter-clockwise mapping', () => {
         const ccw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, Math.PI / 2, false)
+        expect(ccw.getDomain().equals(new PeriodInterval(0, Math.PI * 2, Math.PI * 2))).toBe(true)
         expect(ccw.pointAt(ccw.startParam()).equals(new Vec2(4, 0), 1e-9)).toBe(true)
         expect(ccw.pointAt(ccw.endParam()).equals(new Vec2(0, 2), 1e-9)).toBe(true)
         expect(new EllipseArc2(new Vec2(0, 0), 4, 2, 0, -0.2, 0.3, false).startAngle).toBeGreaterThan(0)
@@ -70,6 +71,7 @@ describe('EllipseArc2', () => {
         const ccw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, Math.PI / 2, false)
         const mappedCcw = (ccw as unknown as { angleToParam: (theta: number) => number }).angleToParam(Math.PI * 3)
         expect(mappedCcw).toBeGreaterThanOrEqual(ccw.startParam())
+        expect(mappedCcw).toBeLessThanOrEqual((ccw.getDomain() as PeriodInterval).end)
         const cw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, -Math.PI / 2, true)
         const mapped = (cw as unknown as { angleToParam: (theta: number) => number }).angleToParam(-Math.PI / 4)
         expect(mapped).toBeGreaterThanOrEqual(cw.startParam())

@@ -9,6 +9,7 @@ import { MathError } from '../utils/math_error'
 import { Precision } from '../utils/precision'
 import { Curve2 } from './curve2'
 import { Interval } from './interval'
+import { PeriodInterval } from './period_interval'
 
 export type IBSpline2Param = {
     controlPoints: IVec2[]
@@ -122,6 +123,11 @@ export class BSpline2 extends Curve2 {
      */
     public get isPeriodic() {
         return this._isPeriodic
+    }
+
+    public override getDomain(): Interval {
+        if (!this._isPeriodic) return this.getRange()
+        return new PeriodInterval(this._range.start, this._range.end, this._range.end - this._range.start)
     }
 
     /**
@@ -1076,8 +1082,9 @@ export class BSpline2 extends Curve2 {
      * 将参数映射到周期域并执行边界吸附。
      */
     private normalizePeriodicParam(u: number) {
-        const start = this._range.start
-        const period = this._range.length()
+        const domain = this.getDomain() as PeriodInterval
+        const start = domain.start
+        const period = domain.period
         let local = (u - start) % period
         if (local < 0) local += period
         return this.snapBoundary(start + local)

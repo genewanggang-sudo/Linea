@@ -9,6 +9,8 @@ describe('Line2', () => {
     it('constructs with length-based parameter range', () => {
         const line = new Line2(new Vec2(0, 0), new Vec2(3, 4))
         expect(line.getRange().equals(new Interval(0, 5))).toBe(true)
+        expect(line.getDomain().start).toBe(Number.NEGATIVE_INFINITY)
+        expect(line.getDomain().end).toBe(Number.POSITIVE_INFINITY)
         expect(line.getLength()).toBeCloseTo(5, 12)
         expect(line.getLength(new Interval(1, 3))).toBeCloseTo(2, 12)
         const s = line.start
