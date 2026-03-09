@@ -16,7 +16,6 @@
 | D10 | BSpline2 输入 | 同时支持 expanded knots 与 knots+multiplicities |
 | D11 | 数值常量 | 统一放 `Precision` 并补注释 |
 | D12 | 序列化 | 本轮同步接入 `EN_GEO_TYPE/dump_types/GeomMgr` |
-| D13 | `pointAt(u)` 越界行为 | 一律抛 `MathError`（不自动 clamp） |
 | D14 | Arc/EllipseArc 内部存储 | 统一规范化为参数递增区间 |
 | D15 | 相似变换判定 | 用 `A^T A = s^2 I`（容差内），允许镜像 |
 | D16 | 弧段 `reverse` 字段更新 | 交换起终角并翻转 `clockwise`，再规范化 |
@@ -160,25 +159,19 @@ Line2 (directly extends Curve2)
 
 > 下列规则适用于所有曲线类。
 
-### 5.1 `pointAt(u)`
-
-1. 输入：参数 `u`。
-2. 行为：仅在合法参数域内计算。
-3. 异常：参数越界一律抛 `MathError`（不自动 clamp）。
-
-### 5.2 `tangentAt(u)` / `derivatives(u,n)` / `curvatureAt(u)`
+### 5.1 `tangentAt(u)` / `derivatives(u,n)` / `curvatureAt(u)`
 
 1. 尽量解析解，不能解析再用稳定数值法。
 2. `n` 非法必须抛错。
 3. 导数不可用时抛 `MathError`，不返回脏值。
 
-### 5.3 `length(range?)` / `lengthAtParam(u)` / `paramAtLength(s,tol?)`
+### 5.2 `length(range?)` / `lengthAtParam(u)` / `paramAtLength(s,tol?)`
 
 1. 可解析时用解析式。
 2. 数值法必须有收敛判据与 fallback（二分兜底）。
 3. 失败抛 `MathError`，包含 `tol/maxIter` 细节。
 
-### 5.4 `split(u)` / `trim(range)`
+### 5.3 `split(u)` / `trim(range)`
 
 1. `split` 在边界返回 `[]`。
 2. `trim` 无结果返回 `[]`。
@@ -191,26 +184,26 @@ Line2 (directly extends Curve2)
 - `BSpline2 -> BSpline2[]`
 4. `Circle2.split(u)` 边界切分同样返回 `[]`（保持全库一致）。
 
-### 5.5 `reverse()`
+### 5.4 `reverse()`
 
 1. 几何不变，仅参数方向反转。
 2. 要满足 `reverse().reverse()` 等价原对象（允许浮点容差）。
 
-### 5.6 `transform(m)` / `transformed(m)`
+### 5.5 `transform(m)` / `transformed(m)`
 
 1. `transform` 就地修改；`transformed` 返回新对象。
 2. `Circle2/Arc2`：仅允许相似变换，其他仿射抛错。
 3. 相似变换判定：取线性部分 `A(2x2)`，在容差内满足 `A^T A = s^2 I`；允许镜像（`det(A) < 0`）。
 4. 椭圆系、B 样条、线段按一般仿射处理。
 
-### 5.7 `closestPoint(p,tol?)`
+### 5.6 `closestPoint(p,tol?)`
 
 1. 返回 `{ point, param, distance }`。
 2. 并列最优点时返回最小参数值。
 3. 周期曲线先把候选参数规范化到 `[range.start, range.start + period)` 再比较最小值。
 4. 收敛失败抛 `MathError`。
 
-### 5.8 `boundingBox(accurate?)`
+### 5.7 `boundingBox(accurate?)`
 
 1. 第一版无条件返回准确包围盒。
 2. `accurate` 参数保留，仅为后续优化兼容。

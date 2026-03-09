@@ -9,9 +9,9 @@ import { Line2 } from '../src/curves/line2'
 import { Vec2 } from '../src/core/vec2'
 
 describe('Curve2.getPtAt', () => {
-    it('matches pointAt on-domain and rejects non-finite input', () => {
+    it('evaluates on-domain and rejects non-finite input', () => {
         const line = new Line2(new Vec2(1, 2), new Vec2(4, 6))
-        expect(line.getPtAt(2.5).equals(line.pointAt(2.5), 1e-9)).toBe(true)
+        expect(line.getPtAt(2.5).equals(new Vec2(2.5, 4), 1e-9)).toBe(true)
         expect(() => line.getPtAt(Number.NaN)).toThrow('Line2.getPtAt: u must be finite')
     })
 
@@ -25,11 +25,11 @@ describe('Curve2.getPtAt', () => {
 
     it('evaluates circle-like curves on support geometry outside range', () => {
         const circle = new Circle2(new Vec2(1, 1), 2)
-        expect(circle.getPtAt(Math.PI / 3).equals(circle.pointAt(Math.PI / 3), 1e-9)).toBe(true)
+        expect(circle.getPtAt(Math.PI / 3).equals(new Vec2(2, 1 + Math.sqrt(3)), 1e-9)).toBe(true)
         expect(circle.getPtAt(MathConstLike.PI2 + Math.PI / 2).equals(new Vec2(1, 3), 1e-9)).toBe(true)
 
         const arc = new Arc2(new Vec2(0, 0), 2, 0, Math.PI / 2, true)
-        expect(arc.getPtAt(arc.getStartParam()).equals(arc.pointAt(arc.getStartParam()), 1e-9)).toBe(true)
+        expect(arc.getStartPt().equals(new Vec2(2, 0), 1e-9)).toBe(true)
         const p = arc.getPtAt(arc.getEndParam() + Math.PI / 2)
         expect(p.equals(new Vec2(2, 0), 1e-9)).toBe(true)
     })
@@ -37,10 +37,14 @@ describe('Curve2.getPtAt', () => {
     it('evaluates ellipse-like curves on support geometry outside range', () => {
         const ellipse = new Ellipse2(new Vec2(0, 0), 4, 2, Math.PI / 6)
         const u = Math.PI / 4
-        expect(ellipse.getPtAt(u).equals(ellipse.pointAt(u), 1e-9)).toBe(true)
+        const expected = new Vec2(
+            4 * Math.cos(Math.PI / 6) * Math.cos(u) - 2 * Math.sin(Math.PI / 6) * Math.sin(u),
+            4 * Math.sin(Math.PI / 6) * Math.cos(u) + 2 * Math.cos(Math.PI / 6) * Math.sin(u),
+        )
+        expect(ellipse.getPtAt(u).equals(expected, 1e-9)).toBe(true)
 
         const arc = new EllipseArc2(new Vec2(0, 0), 3, 2, Math.PI / 8, 0, Math.PI / 2, true)
-        expect(arc.getPtAt(arc.getStartParam()).equals(arc.pointAt(arc.getStartParam()), 1e-9)).toBe(true)
+        expect(arc.getStartPt().distanceTo(arc.getPtAt(arc.getStartParam()))).toBeLessThan(1e-9)
         const out = arc.getPtAt(arc.getEndParam() + Math.PI / 3)
         expect(Number.isFinite(out.x) && Number.isFinite(out.y)).toBe(true)
     })
@@ -53,7 +57,7 @@ describe('Curve2.getPtAt', () => {
             multiplicities: [3, 3],
             isPeriodic: true,
         })
-        expect(periodic.getPtAt(1.25).equals(periodic.pointAt(0.25), 1e-9)).toBe(true)
+        expect(periodic.getPtAt(1.25).equals(periodic.getPtAt(0.25), 1e-9)).toBe(true)
 
         const linear = new BSpline2({
             controlPoints: [new Vec2(0, 0), new Vec2(3, 0)],
@@ -61,7 +65,7 @@ describe('Curve2.getPtAt', () => {
             knots: [0, 1],
             multiplicities: [2, 2],
         })
-        expect(linear.getPtAt(0.5).equals(linear.pointAt(0.5), 1e-9)).toBe(true)
+        expect(linear.getPtAt(0.5).equals(new Vec2(1.5, 0), 1e-9)).toBe(true)
         expect(linear.getPtAt(-1).equals(new Vec2(-3, 0), 1e-9)).toBe(true)
         expect(linear.getPtAt(2).equals(new Vec2(6, 0), 1e-9)).toBe(true)
     })

@@ -60,7 +60,7 @@ class UnsupportedCurve extends Curve2 {
     }
 
     public override getDerivatives(u: number, n: number): Vec2[] {
-        const ret: Vec2[] = [this.pointAt(u)]
+        const ret: Vec2[] = [this.getPtAt(u)]
         for (let i = 1; i <= n; i++) ret.push(i === 1 ? this.getTangentAt(u) : Vec2.zero())
         return ret
     }

@@ -70,7 +70,6 @@
 
 抽象接口（子类必须实现）：
 
-- `pointAt(u)`
 - `tangentAt(u)`
 - `derivatives(u, n)`
 - `curvatureAt(u)`
