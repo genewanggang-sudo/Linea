@@ -89,11 +89,13 @@ importers:
         specifier: ^3.1.4
         version: 3.2.4(typescript@5.9.3)
 
-  packages/canvas: {}
+  packages/canvas:
+    dependencies:
+      '@ccpc/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/core: {}
-
-  packages/editor: {}
 
   packages/math:
     devDependencies:
@@ -103,6 +105,8 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@24.10.9)
+
+  packages/platform: {}
 
 packages:
 

@@ -17,6 +17,9 @@
         "dist",
         "README.md"
     ],
+    "dependencies": {
+        "@ccpc/math": "workspace:*"
+    },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "build": "tsc -p tsconfig.json",
