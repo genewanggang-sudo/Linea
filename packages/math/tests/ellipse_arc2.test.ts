@@ -86,7 +86,7 @@ describe('EllipseArc2', () => {
         const cw = new EllipseArc2(new Vec2(0, 0), 4, 2, 0, 0, -Math.PI / 2, true)
         const mapped = (cw as unknown as { angleToParam: (theta: number) => number }).angleToParam(-Math.PI / 4)
         expect(mapped).toBeGreaterThanOrEqual(cw.getStartParam())
-        expect(cw.boundingBox().isFinite()).toBe(true)
+        expect(cw.getBBox().isFinite()).toBe(true)
         expect(arc.isValid()).toBe(true)
 
         const hacked = arc as unknown as { _rx: number }

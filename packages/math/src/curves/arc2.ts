@@ -221,7 +221,7 @@ export class Arc2 extends CircleCurve2 {
         return this.paramFromAngle(Math.atan2(v.y, v.x))
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         const points: Vec2[] = [
             this.pointAt(this._range.start),
             this.pointAt(this._range.end),

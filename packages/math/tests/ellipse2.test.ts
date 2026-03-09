@@ -64,7 +64,7 @@ describe('Ellipse2', () => {
         expect(e.equals(new Ellipse2(new Vec2(1, 2), 4, 2, 0.31))).toBe(false)
         const normalized = (e as unknown as { angleToParam: (theta: number) => number }).angleToParam(Math.PI * 3)
         expect(normalized).toBeCloseTo(Math.PI, 9)
-        const box = e.boundingBox()
+        const box = e.getBBox()
         expect(box.minX).toBeLessThan(box.maxX)
 
         const hacked = e as unknown as { _rx: number }

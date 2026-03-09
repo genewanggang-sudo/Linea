@@ -9,8 +9,8 @@ export type IntersectionTolerance = {
 }
 
 export function makeIntersectionTolerance(c1: Curve2, c2: Curve2): IntersectionTolerance {
-    const b1 = c1.boundingBox()
-    const b2 = c2.boundingBox()
+    const b1 = c1.getBBox()
+    const b2 = c2.getBBox()
     const diag = Math.hypot(
         Math.max(b1.maxX, b2.maxX) - Math.min(b1.minX, b2.minX),
         Math.max(b1.maxY, b2.maxY) - Math.min(b1.minY, b2.minY),
@@ -26,7 +26,7 @@ export function makeIntersectionTolerance(c1: Curve2, c2: Curve2): IntersectionT
 }
 
 export function curvePointTolerance(curve: Curve2) {
-    const box = curve.boundingBox()
+    const box = curve.getBBox()
     const diag = Math.hypot(box.width(), box.height())
     const scaleTol = (Number.isFinite(diag) && diag > 0) ? diag * 1e-9 : 0
     return Math.max(Precision.CURVE_LENGTH_EPS * 8, scaleTol)

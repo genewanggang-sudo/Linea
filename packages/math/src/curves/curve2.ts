@@ -287,7 +287,7 @@ export abstract class Curve2 extends GeomBase {
      * - `accurate === true`：尽量返回更紧的包围盒（允许更慢）
      * @returns 曲线包围盒。
      */
-    public abstract boundingBox(accurate?: boolean): Box2
+    public abstract getBBox(accurate?: boolean): Box2
 
     /**
      * 有效性检查。

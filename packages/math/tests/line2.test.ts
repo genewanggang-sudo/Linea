@@ -125,7 +125,7 @@ describe('Line2', () => {
 
         const reversed = new Line2(new Vec2(10, 0), new Vec2(0, 0))
         expect(line.equals(reversed)).toBe(false)
-        const box = line.boundingBox()
+        const box = line.getBBox()
         expect(box.minX).toBe(0)
         expect(box.maxX).toBe(10)
     })

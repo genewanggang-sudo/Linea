@@ -106,8 +106,8 @@ export class AnalyticXAlgorithm {
 
     private boxesLikelyIntersect(c1: Curve2, c2: Curve2) {
         const t = makeIntersectionTolerance(c1, c2)
-        const b1 = c1.boundingBox().expandByScalar(t.pointTol * 2)
-        const b2 = c2.boundingBox().expandByScalar(t.pointTol * 2)
+        const b1 = c1.getBBox().expandByScalar(t.pointTol * 2)
+        const b2 = c2.getBBox().expandByScalar(t.pointTol * 2)
         return b1.intersects(b2)
     }
 }

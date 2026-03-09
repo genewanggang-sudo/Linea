@@ -380,9 +380,9 @@ export function useMathViz(canvasHost: Ref<HTMLDivElement | null>) {
 
         const curves = entities.map((entity) => entity.curve)
         const curveItems = entities.map((entity, idx) => {
-            let bbox: ReturnType<Curve2['boundingBox']> | null = null
+            let bbox: ReturnType<Curve2['getBBox']> | null = null
             try {
-                bbox = entity.curve.boundingBox()
+                bbox = entity.curve.getBBox()
             } catch {
                 bbox = null
             }

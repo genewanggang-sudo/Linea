@@ -92,7 +92,7 @@ export class Ellipse2 extends EllipseCurve2 {
         )
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         const c = Math.cos(this._rotation)
         const s = Math.sin(this._rotation)
         const ex = Math.hypot(this._rx * c, this._ry * s)

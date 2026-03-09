@@ -64,7 +64,7 @@ class MockCircleCurve2 extends CircleCurve2 {
         return angle
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         return new Box2(
             this._center.x - this._radius,
             this._center.y - this._radius,

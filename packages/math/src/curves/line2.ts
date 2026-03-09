@@ -159,7 +159,7 @@ export class Line2 extends Curve2 {
         return p.subtracted(this._start).dot(this._dir)
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         return Box2.fromPoints([this._start, this._end])
     }
 

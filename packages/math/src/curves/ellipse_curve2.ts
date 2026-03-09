@@ -141,7 +141,7 @@ export abstract class EllipseCurve2 extends Curve2 {
         )
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         const points: Vec2[] = [
             this.pointAt(this._range.start),
             this.pointAt(this._range.end),

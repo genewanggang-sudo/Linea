@@ -140,7 +140,7 @@ describe('BSpline2', () => {
         const moved = c.transformed(Mat3.translation(1, 2))
         expect(moved.pointAt(0).equals(new Vec2(1, 2), 1e-6)).toBe(true)
         expect(() => c.transform(new Mat3(1, 0, Number.POSITIVE_INFINITY, 0, 1, 0, 0, 0, 1))).toThrow('BSpline2: control point must be finite')
-        expect(c.boundingBox().isFinite()).toBe(true)
+        expect(c.getBBox().isFinite()).toBe(true)
 
         const restored = BSpline2.load(c.dump())
         expect(restored.pointAt(0.3).equals(c.pointAt(0.3), 1e-6)).toBe(true)
@@ -274,7 +274,7 @@ describe('BSpline2', () => {
         expect((BSpline2 as unknown as { binomial: (n: number, k: number) => number }).binomial(6, 4)).toBe(15)
     })
 
-    it('boundingBox supports fast and accurate modes with tighter result', () => {
+    it('getBBox supports fast and accurate modes with tighter result', () => {
         const c = new BSpline2({
             controlPoints: [
                 new Vec2(0, 0),
@@ -288,8 +288,8 @@ describe('BSpline2', () => {
             knots: [0, 1, 2, 3], multiplicities: [4, 1, 1, 4],
         })
 
-        const fastBox = c.boundingBox()
-        const tightBox = c.boundingBox(true)
+        const fastBox = c.getBBox()
+        const tightBox = c.getBBox(true)
 
         // Fast mode should remain control-point-safe.
         for (const cp of c.controlPoints) {
@@ -310,7 +310,7 @@ describe('BSpline2', () => {
 
         // Reverse should preserve accurate bbox.
         const reversed = c.clone().reverse()
-        expect(reversed.boundingBox(true).equals(tightBox, 1e-6)).toBe(true)
+        expect(reversed.getBBox(true).equals(tightBox, 1e-6)).toBe(true)
     })
 })
 

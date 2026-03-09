@@ -115,7 +115,7 @@ class UnsupportedCurve extends Curve2 {
         return p.x
     }
 
-    public override boundingBox(): Box2 {
+    public override getBBox(): Box2 {
         return new Box2(new Vec2(0, 0), new Vec2(1, 1))
     }
 

@@ -301,7 +301,7 @@ function pushUnique(out: CurveXInfo[], next: CurveXInfo, pointTol: number, sepTo
 }
 
 function selfAcceptTol(curve: BSpline2, pointTol: number) {
-    const box = curve.boundingBox()
+    const box = curve.getBBox()
     const diag = Math.hypot(box.width(), box.height())
     return Math.max(pointTol * 32, diag * 2e-6, Precision.CURVE_LENGTH_EPS * 16)
 }

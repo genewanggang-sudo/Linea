@@ -412,7 +412,7 @@ export class BSpline2 extends Curve2 {
     /**
      * 计算包围盒：快速控制盒或基于极值根的紧包围盒。
      */
-    public override boundingBox(accurate = false) {
+    public override getBBox(accurate = false) {
         const controlBox = Box2.fromPoints(this._controlPoints)
         if (!accurate) return controlBox
 

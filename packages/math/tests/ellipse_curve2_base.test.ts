@@ -209,9 +209,9 @@ describe('EllipseCurve2 base', () => {
         Precision.CURVE_MAX_ITER = oldIter
     })
 
-    it('boundingBox and validity checks', () => {
+    it('getBBox and validity checks', () => {
         const e = new MockEllipseCurve2(new Vec2(0, 0), 4, 2, Math.PI / 6)
-        const box = e.boundingBox()
+        const box = e.getBBox()
         expect(box).toBeInstanceOf(Box2)
         expect(e.isValid()).toBe(true)
 

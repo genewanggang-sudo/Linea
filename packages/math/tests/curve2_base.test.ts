@@ -91,7 +91,7 @@ class MockCurve2 extends Curve2 {
         return p.x
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         return new Box2(new Vec2(0, 0), new Vec2(1, 0))
     }
 

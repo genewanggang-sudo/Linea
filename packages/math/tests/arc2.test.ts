@@ -130,10 +130,10 @@ describe('Arc2', () => {
         expect(restored.getLength()).toBeCloseTo(arc.getLength(), 10)
         expect(restored.equals(arc)).toBe(true)
         expect(arc.equals(new Arc2(new Vec2(1, 2), 3, 0.2, 1.3, false))).toBe(false)
-        const box = arc.boundingBox()
+        const box = arc.getBBox()
         expect(box.minX).toBeLessThanOrEqual(box.maxX)
         const tiny = new Arc2(new Vec2(0, 0), 2, 0.1, 0.11, false)
-        expect(tiny.boundingBox().isFinite()).toBe(true)
+        expect(tiny.getBBox().isFinite()).toBe(true)
         expect(arc.isValid()).toBe(true)
 
         const hacked = arc as unknown as { _radius: number }

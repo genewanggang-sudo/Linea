@@ -76,7 +76,7 @@ describe('Circle2', () => {
 
         const cp = c.closestPoint(new Vec2(6, -2))
         expect(cp.param).toBeCloseTo(0, 9)
-        const box = c.boundingBox()
+        const box = c.getBBox()
         expect(box.minX).toBeCloseTo(-4, 12)
         expect(box.maxY).toBeCloseTo(3, 12)
 

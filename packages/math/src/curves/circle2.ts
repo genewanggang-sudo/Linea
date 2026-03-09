@@ -119,7 +119,7 @@ export class Circle2 extends CircleCurve2 {
         return PeriodInterval.normalizeParam(Math.atan2(v.y, v.x), domain.period, domain.start)
     }
 
-    public override boundingBox() {
+    public override getBBox() {
         return new Box2(
             this._center.x - this._radius,
             this._center.y - this._radius,

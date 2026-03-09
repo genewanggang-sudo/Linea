@@ -33,7 +33,7 @@ export function sampleCurveAdaptive(curve: Curve2, targetSegmentCount: number, o
         return [{ u: range.start, p: curve.pointAt(range.start) }]
     }
 
-    const bbox = curve.boundingBox()
+    const bbox = curve.getBBox()
     const diag = Math.hypot(bbox.width(), bbox.height())
     const scale = Math.max(diag, 1)
     const segCount = Math.max(8, targetSegmentCount)

@@ -70,7 +70,7 @@ function boxSegments(box: Box2): THREE.Vector3[] {
 }
 
 export function buildBoundingBox(curve: Curve2): THREE.LineSegments {
-    const geometry = new THREE.BufferGeometry().setFromPoints(boxSegments(curve.boundingBox(true)))
+    const geometry = new THREE.BufferGeometry().setFromPoints(boxSegments(curve.getBBox(true)))
     const material = new THREE.LineBasicMaterial({ color: 0x64748b })
     return new THREE.LineSegments(geometry, material)
 }
@@ -78,7 +78,7 @@ export function buildBoundingBox(curve: Curve2): THREE.LineSegments {
 export function buildDirectionArrows(curve: Curve2, count = 4): THREE.Group {
     const group = new THREE.Group()
     const range = curve.getRange()
-    const box = curve.boundingBox(true)
+    const box = curve.getBBox(true)
     const scale = Math.max(box.width(), box.height(), 1) * 0.12
     const sampleCount = Math.max(1, Math.floor(count))
 
