@@ -12,6 +12,7 @@ export enum EN_GEO_TYPE {
     Box3 = 'Box3',
     Coord2D = 'Coord2D',
     Coord3D = 'Coord3D',
+    Plane = 'Plane',
 
     Line2 = 'Line2',
     Circle2 = 'Circle2',

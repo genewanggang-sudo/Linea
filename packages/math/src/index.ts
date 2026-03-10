@@ -6,6 +6,7 @@ export { Box2 } from './core/box2'
 export { Box3 } from './core/box3'
 export { Coord2D } from './core/coord2d'
 export { Coord3D } from './core/coord3d'
+export { Plane } from './core/plane'
 export { GeomBase } from './core/geom_base'
 
 export { MathConst } from './constants/math_const'
@@ -45,6 +46,7 @@ export type {
     IDBBox3,
     IDBCoord2D,
     IDBCoord3D,
+    IDBPlane,
     IDBLine2,
     IDBCircle2,
     IDBArc2,

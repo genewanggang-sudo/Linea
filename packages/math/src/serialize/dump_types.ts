@@ -66,6 +66,12 @@ export type IDBCoord3D = IDB & {
     zAxis: { x: number; y: number; z: number }
 }
 
+export type IDBPlane = IDB & {
+    type: EN_GEO_TYPE.Plane
+    origin: { x: number; y: number; z: number }
+    normal: { x: number; y: number; z: number }
+}
+
 export type IDBLine2 = IDB & {
     type: EN_GEO_TYPE.Line2
     start: { x: number; y: number }
