@@ -9,6 +9,10 @@ export class GGroup extends GNode {
         return this._children
     }
 
+    public isEmpty(): boolean {
+        return this._children.length < 1;
+    }
+
     /**
      * 添加子节点
      */

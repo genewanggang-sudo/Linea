@@ -68,8 +68,7 @@ export type IDBCoord3D = IDB & {
 
 export type IDBPlane = IDB & {
     type: EN_GEO_TYPE.Plane
-    origin: IDBVec3
-    normal: IDBVec3
+    coord: IDBCoord3D
 }
 
 export type IDBLine2 = IDB & {

@@ -15,13 +15,13 @@ export class GPoint2d extends GNode2d {
     // 当前最小化版本未保留 style 体系，因此这里只保留点坐标转换。
     protected _toRenderNodeWithoutMatrix(): RenderNode {
         const render = new RenderPoint();
-        render.point = this.plane.toWorld(this.geo)
+        render.point = this.plane.getPtAt(this.geo)
         return render;
     }
 
     // 返回当前二维点映射到平面后的三维坐标。
     public getPoint(): IVec3 {
-        return this.plane.toWorld(this.geo)
+        return this.plane.getPtAt(this.geo)
     }
 
     // TODO GPoint2d的clone方法待修改

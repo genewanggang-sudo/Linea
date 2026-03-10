@@ -24,10 +24,6 @@ export class GRep extends GGroup {
         this._refElementId = eId
     }
 
-    public isEmpty() {
-        return true
-    }
-
     public clone(): GRep {
         const copy = new GRep();
         copy._localMatrix = this._localMatrix?.clone();

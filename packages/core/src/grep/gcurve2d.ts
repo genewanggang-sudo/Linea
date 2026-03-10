@@ -16,14 +16,14 @@ export class GCurve2d extends GNode2d {
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscretizeOptions): RenderNode {
         const render = new RenderEdge();
         render.points = [
-            this.geo.discretize(discreteParams).map(p => this.plane.toWorld(p)),
+            this.geo.discretize(discreteParams).map(p => this.plane.getPtAt(p)),
         ];
         return render;
     }
 
     // 将二维曲线离散并映射为三维顺序点列。
     public discrete(params?: DiscretizeOptions): IVec3[] {
-        return this.geo.discretize(params).map(v => this.plane.toWorld(v));
+        return this.geo.discretize(params).map(v => this.plane.getPtAt(v));
     }
 
     // 克隆当前二维曲线节点。

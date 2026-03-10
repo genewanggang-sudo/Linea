@@ -93,6 +93,13 @@ export class Element implements IElement {
         return (this.constructor as typeof Element).serializedId.ctor;
     }
 
+    /**
+     * 重置缓存的 GRep，强制后续重新生成图形表示。
+     */
+    public markGRepDirty() {
+        this._db.C_GRep = new GRep();
+    }
+
     public getGRep() {
         const grep = this.C_GRep
         if (!grep.elementId.isValid()) {

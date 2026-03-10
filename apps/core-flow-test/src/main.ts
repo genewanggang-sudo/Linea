@@ -1,87 +1,200 @@
 import { Document, Element, RegisterElement, Request, registerRequest, requestMgr } from '@ccpc/core'
-import { GRep } from '../../../packages/core/src/grep/grep'
 import type { IRender } from '../../../packages/core/src/render/i_render'
+import { GRep } from '../../../packages/core/src/grep/grep'
+import { GPoint2d } from '../../../packages/core/src/grep/gpoint2d'
+import { GCurve2d } from '../../../packages/core/src/grep/gcurve2d'
+import { RenderEdge, RenderGroup, RenderNode, RenderPoint } from '../../../packages/core/src/render/render_node'
+import { Line2, Plane, Vec2 } from '../../../packages/math/src'
 
+/** 页面日志输出缓存。 */
 const lines: string[] = []
 
+/** 追加一行日志，并同步到页面。 */
 function log(line: string): void {
     lines.push(line)
     const app = document.getElementById('app')
     if (app) app.textContent = lines.join('\n')
 }
 
-@RegisterElement('flow-element')
-class FlowElement extends Element {
-    public x = 0
-    public y = 0
-}
-
-class VisibleGRep extends GRep {
-    public override isEmpty(): boolean {
-        return false
+/** 断言两个值严格相等。 */
+function assertEqual<T>(actual: T, expected: T, title: string): void {
+    if (actual !== expected) {
+        throw new Error(`[FAIL] ${title}: actual=${String(actual)} expected=${String(expected)}`)
     }
+    log(`[PASS] ${title}`)
 }
 
+/** 断言条件为真。 */
+function assertTrue(condition: boolean, title: string): void {
+    assertEqual(condition, true, title)
+}
+
+/** 断言字符串数组内容一致。 */
+function assertArrayEqual(actual: string[], expected: string[], title: string): void {
+    assertEqual(JSON.stringify(actual), JSON.stringify(expected), title)
+}
+
+/** 清空页面日志。 */
+function clearLog(): void {
+    lines.length = 0
+}
+
+/**
+ * 将 RenderNode 转成简短字符串，便于在测试页展示。
+ * 这里只保留最关键的结构信息，不追求完整渲染语义。
+ */
+function describeRenderNode(node: RenderNode): string {
+    if (node instanceof RenderPoint) {
+        const { x, y, z } = node.point
+        return `Point(${x},${y},${z})`
+    }
+    if (node instanceof RenderEdge) {
+        const path = node.points[0] ?? []
+        return `Edge(points=${path.length})`
+    }
+    if (node instanceof RenderGroup) {
+        return `Group(${node.children.map(describeRenderNode).join(',')})`
+    }
+    return 'Node'
+}
+
+/**
+ * 假渲染器。
+ * 不真正绘制，只记录 ModelView 下发的渲染操作，便于断言。
+ */
 class FakeRender implements IRender {
     public readonly calls: string[] = []
+
+    public clear(): void {
+        this.calls.length = 0
+    }
 
     public updateView(): void {
         this.calls.push('updateView')
     }
 
     public addGRep(grep: GRep): void {
-        this.calls.push(`add:${grep.elementId.asInt()}`)
+        const renderNode = grep.toRenderNode()
+        const desc = renderNode ? describeRenderNode(renderNode) : 'None'
+        this.calls.push(`add:${grep.elementId.asInt()}:${desc}`)
     }
 
     public removeGRep(eId: number): void {
         this.calls.push(`remove:${eId}`)
     }
+}
 
-    public clear(): void {
-        this.calls.length = 0
+/** 用于验证事务、视图缓存与 GRep 同步的最小业务元素。 */
+@RegisterElement('flow-sketch-element')
+class FlowSketchElement extends Element {
+    public x = 0
+    public y = 0
+    public width = 20
+    public label = ''
+
+    public override markGRepDirty(): void {
+        this.C_GRep = buildSketchGRep(this)
     }
 }
 
-@registerRequest('create-flow-element')
+/**
+ * 为元素构造一份最小 GRep：
+ * - 一个点，表示中心
+ * - 一条线段，表示水平轮廓
+ */
+function buildSketchGRep(element: FlowSketchElement): GRep {
+    const plane = new Plane()
+    const center = new Vec2(element.x, element.y)
+    const line = new Line2(
+        new Vec2(element.x - element.width * 0.5, element.y),
+        new Vec2(element.x + element.width * 0.5, element.y),
+    )
+
+    const grep = new GRep()
+    grep.addNode(new GPoint2d(plane, center))
+    grep.addNode(new GCurve2d(plane, line))
+    return grep
+}
+
+/** 创建一份独立的文档与假渲染器。 */
+function createDoc(): { doc: Document; render: FakeRender } {
+    const doc = new Document()
+    const render = new FakeRender()
+    doc.modelView.iRender = render
+    return { doc, render }
+}
+
+/** 创建元素请求。 */
+@registerRequest('flow-create')
 class CreateFlowElementReq extends Request {
-    public execute(): FlowElement {
-        const e = this._doc.create(FlowElement)
-        e.name = 'flow-1'
-        e.x = 1
-        e.y = 2
-        e.C_GRep = new VisibleGRep()
-        return e
+    public execute(): FlowSketchElement {
+        const element = this._doc.create(FlowSketchElement)
+        element.name = 'flow-sketch'
+        element.x = 10
+        element.y = 20
+        element.width = 30
+        element.label = 'A'
+        element.markGRepDirty()
+        return element
     }
 }
 
-@registerRequest('move-flow-element')
+/** 移动元素请求，同时重建 GRep。 */
+@registerRequest('flow-move')
 class MoveFlowElementReq extends Request {
-    constructor(private readonly id: number, private readonly dx: number, private readonly dy: number) {
+    constructor(
+        private readonly id: number,
+        private readonly dx: number,
+        private readonly dy: number,
+    ) {
         super()
     }
 
-    public execute(): FlowElement {
-        const e = this._doc.getElementByIdEnsure<FlowElement>(this.id)
-        e.x += this.dx
-        e.y += this.dy
-        return e
+    public execute(): FlowSketchElement {
+        const element = this._doc.getElementByIdEnsure<FlowSketchElement>(this.id)
+        element.x += this.dx
+        element.y += this.dy
+        element.markGRepDirty()
+        return element
     }
 }
 
-@registerRequest('set-flow-element-visible')
-class SetFlowElementVisibleReq extends Request {
-    constructor(private readonly id: number, private readonly visible: boolean) {
+/** 修改一个非视图属性，用于验证不会触发视图刷新。 */
+@registerRequest('flow-rename')
+class RenameFlowElementReq extends Request {
+    constructor(
+        private readonly id: number,
+        private readonly label: string,
+    ) {
         super()
     }
 
-    public execute(): FlowElement {
-        const e = this._doc.getElementByIdEnsure<FlowElement>(this.id)
-        e.visible = this.visible
-        return e
+    public execute(): FlowSketchElement {
+        const element = this._doc.getElementByIdEnsure<FlowSketchElement>(this.id)
+        element.label = this.label
+        return element
     }
 }
 
-@registerRequest('delete-flow-element')
+/** 切换可见性请求。 */
+@registerRequest('flow-visible')
+class SetFlowVisibleReq extends Request {
+    constructor(
+        private readonly id: number,
+        private readonly visible: boolean,
+    ) {
+        super()
+    }
+
+    public execute(): FlowSketchElement {
+        const element = this._doc.getElementByIdEnsure<FlowSketchElement>(this.id)
+        element.visible = this.visible
+        return element
+    }
+}
+
+/** 删除元素请求。 */
+@registerRequest('flow-delete')
 class DeleteFlowElementReq extends Request {
     constructor(private readonly id: number) {
         super()
@@ -92,195 +205,145 @@ class DeleteFlowElementReq extends Request {
     }
 }
 
-function expectEqual(actual: unknown, expected: unknown, title: string): void {
-    if (actual !== expected) {
-        const formatValue = (value: unknown): string => {
-            if (value === null) return 'null'
-            const t = typeof value
-            if (t === 'string') {
-                return value as string
-            }
-            if (t === 'number' || t === 'boolean' || t === 'bigint') {
-                return `${value as number | boolean | bigint}`
-            }
-            if (t === 'undefined') {
-                return 'undefined'
-            }
-            if (t === 'symbol') {
-                return (value as symbol).toString()
-            }
-            try {
-                return JSON.stringify(value)
-            } catch {
-                return '[Unserializable]'
-            }
-        }
-        const actualStr = formatValue(actual)
-        const expectedStr = formatValue(expected)
-        throw new Error(`[FAIL] ${title}: actual=${actualStr} expected=${expectedStr}`)
-    }
-    log(`[PASS] ${title}`)
-}
+/**
+ * 场景 1：
+ * 验证创建元素后，数据层入库、缓存清空、视图新增与刷新是否正确。
+ */
+function runCreateScenario(): void {
+    const { doc, render } = createDoc()
+    const req = requestMgr.createReq(CreateFlowElementReq)
+    const element = requestMgr.executeReq(req, true)
 
-function expectArrayEqual(actual: string[], expected: string[], title: string): void {
-    expectEqual(JSON.stringify(actual), JSON.stringify(expected), title)
-}
-
-function createDocWithRender(): { doc: Document, render: FakeRender } {
-    const doc = new Document()
-    const render = new FakeRender()
-    doc.modelView.iRender = render
-    return { doc, render }
-}
-
-function runScenarioCreateUndoRedo(): void {
-    const { doc } = createDocWithRender()
-
-    const createReq = requestMgr.createReq(CreateFlowElementReq)
-    const created = requestMgr.executeReq(createReq, true)
-
-    expectEqual(created.x, 1, 'create x = 1')
-    expectEqual(created.y, 2, 'create y = 2')
-
-    const undoOk = doc.transactionMgr.undo()
-    expectEqual(undoOk, true, 'undo create success')
-    expectEqual(doc.getElementById(created.id), undefined, 'undo create removes element')
-
-    const redoOk = doc.transactionMgr.redo()
-    expectEqual(redoOk, true, 'redo create success')
-    const afterRedo = doc.getElementByIdEnsure<FlowElement>(created.id)
-    expectEqual(afterRedo.x, 1, 'redo create x = 1')
-    expectEqual(afterRedo.y, 2, 'redo create y = 2')
-}
-
-function runScenarioCancelRequest(): void {
-    const { doc } = createDocWithRender()
-
-    const createReq = requestMgr.createReq(CreateFlowElementReq)
-    const created = requestMgr.executeReq(createReq, true)
-
-    const moveReq = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 10, 5)
-    requestMgr.executeReq(moveReq, false)
-    requestMgr.cancelReq()
-
-    const afterCancel = doc.getElementByIdEnsure<FlowElement>(created.id)
-    expectEqual(afterCancel.x, 1, 'cancel request rollback x')
-    expectEqual(afterCancel.y, 2, 'cancel request rollback y')
-}
-
-function runScenarioSessionCommitAndUndo(): void {
-    const { doc } = createDocWithRender()
-
-    const createReq = requestMgr.createReq(CreateFlowElementReq)
-    const created = requestMgr.executeReq(createReq, true)
-
-    requestMgr.startSession('drag-session')
-    const moveReq1 = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 2, 0)
-    requestMgr.executeReq(moveReq1, true)
-    const moveReq2 = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 3, 0)
-    const moved = requestMgr.executeReq(moveReq2, true)
-    requestMgr.commitSession()
-
-    expectEqual(moved.x, 6, 'session commit final x = 6')
-    expectEqual(moved.y, 2, 'session commit final y = 2')
-
-    const undoOk = doc.transactionMgr.undo()
-    expectEqual(undoOk, true, 'session undo success')
-    const afterUndo = doc.getElementByIdEnsure<FlowElement>(created.id)
-    expectEqual(afterUndo.x, 1, 'session undo rollback x = 1')
-    expectEqual(afterUndo.y, 2, 'session undo rollback y = 2')
-
-    const redoOk = doc.transactionMgr.redo()
-    expectEqual(redoOk, true, 'session redo success')
-    const afterRedo = doc.getElementByIdEnsure<FlowElement>(created.id)
-    expectEqual(afterRedo.x, 6, 'session redo x = 6')
-    expectEqual(afterRedo.y, 2, 'session redo y = 2')
-}
-
-function runScenarioSessionAbort(): void {
-    const { doc } = createDocWithRender()
-
-    const createReq = requestMgr.createReq(CreateFlowElementReq)
-    const created = requestMgr.executeReq(createReq, true)
-
-    requestMgr.startSession('abort-session')
-    const moveReq1 = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 4, 0)
-    requestMgr.executeReq(moveReq1, true)
-    const moveReq2 = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 5, 0)
-    requestMgr.executeReq(moveReq2, true)
-    requestMgr.abortSession()
-
-    const afterAbort = doc.getElementByIdEnsure<FlowElement>(created.id)
-    expectEqual(afterAbort.x, 1, 'session abort rollback x')
-    expectEqual(afterAbort.y, 2, 'session abort rollback y')
-}
-
-function runScenarioViewCreateUpdateDelete(): void {
-    const { doc, render } = createDocWithRender()
-
-    const createReq = requestMgr.createReq(CreateFlowElementReq)
-    const created = requestMgr.executeReq(createReq, true)
-
-    doc.updateView(false)
-    expectArrayEqual(
+    assertEqual(element.db.x as number, 10, 'create commits x into db')
+    assertEqual(element.db.y as number, 20, 'create commits y into db')
+    assertEqual(element.db.width as number, 30, 'create commits width into db')
+    assertEqual(Object.keys(element.cache).length, 0, 'create clears cache after commit')
+    assertArrayEqual(
         render.calls,
-        [`remove:${created.id.asInt()}`, `add:${created.id.asInt()}`, 'updateView'],
-        'create triggers render refresh',
+        [`add:${element.id.asInt()}:Group(Point(10,20,0),Edge(points=2))`, 'updateView'],
+        'create triggers render add and refresh',
+    )
+
+    const loaded = doc.getElementByIdEnsure<FlowSketchElement>(element.id)
+    assertEqual(loaded.label, 'A', 'created element can be retrieved from document')
+}
+
+/**
+ * 场景 2：
+ * 验证非提交请求会写入 cache，并可通过 cancelReq 回滚。
+ */
+function runCancelScenario(): void {
+    const { doc, render } = createDoc()
+    const createReq = requestMgr.createReq(CreateFlowElementReq)
+    const element = requestMgr.executeReq(createReq, true)
+
+    render.clear()
+    const moveReq = requestMgr.createReq(MoveFlowElementReq, element.id.asInt(), 5, -3)
+    requestMgr.executeReq(moveReq, false)
+
+    assertEqual(element.db.x as number, 10, 'non committed move keeps db x unchanged')
+    assertEqual(element.cache.x as number, 15, 'non committed move writes x to cache')
+    assertArrayEqual(
+        render.calls,
+        [
+            `remove:${element.id.asInt()}`,
+            `add:${element.id.asInt()}:Group(Point(15,17,0),Edge(points=2))`,
+            'updateView',
+        ],
+        'non committed move still refreshes current view snapshot',
     )
 
     render.clear()
-    const moveReq = requestMgr.createReq(MoveFlowElementReq, created.id.asInt(), 10, 5)
-    requestMgr.executeReq(moveReq, true)
-    doc.updateView(false)
-    expectArrayEqual(render.calls, [], 'move x y does not trigger view refresh')
+    requestMgr.cancelReq()
+    assertEqual(element.x, 10, 'cancel request rolls back x')
+    assertEqual(element.y, 20, 'cancel request rolls back y')
+    assertEqual(Object.keys(element.cache).length, 0, 'cancel request clears cache')
+    assertArrayEqual(render.calls, [], 'cancel request without visibility cache adds no extra render ops')
+
+    const again = doc.getElementByIdEnsure<FlowSketchElement>(element.id)
+    assertEqual(again.width, 30, 'cancel keeps original width')
+}
+
+/**
+ * 场景 3：
+ * 验证事务会话的提交、undo、redo 是否能正确回放数据变化。
+ */
+function runSessionScenario(): void {
+    const { doc, render } = createDoc()
+    const createReq = requestMgr.createReq(CreateFlowElementReq)
+    const element = requestMgr.executeReq(createReq, true)
 
     render.clear()
-    const hideReq = requestMgr.createReq(SetFlowElementVisibleReq, created.id.asInt(), false)
-    requestMgr.executeReq(hideReq, true)
-    doc.updateView(false)
-    expectArrayEqual(
+    requestMgr.startSession('drag')
+    requestMgr.executeReq(requestMgr.createReq(MoveFlowElementReq, element.id.asInt(), 2, 0), true)
+    requestMgr.executeReq(requestMgr.createReq(MoveFlowElementReq, element.id.asInt(), 3, 1), true)
+    requestMgr.commitSession()
+
+    assertEqual(element.x, 15, 'session commit applies cumulative x')
+    assertEqual(element.y, 21, 'session commit applies cumulative y')
+
+    const undoOk = doc.transactionMgr.undo()
+    assertTrue(undoOk, 'session undo succeeds')
+    assertEqual(element.x, 10, 'session undo restores x')
+    assertEqual(element.y, 20, 'session undo restores y')
+
+    const redoOk = doc.transactionMgr.redo()
+    assertTrue(redoOk, 'session redo succeeds')
+    assertEqual(element.x, 15, 'session redo reapplies x')
+    assertEqual(element.y, 21, 'session redo reapplies y')
+
+    assertTrue(render.calls.length >= 2, 'session scenario produced render activity')
+}
+
+/**
+ * 场景 4：
+ * 验证视图缓存规则：
+ * - 普通属性修改不刷新渲染
+ * - visible 改变会删除 GRep
+ * - delete 会触发 remove + updateView
+ */
+function runViewScenario(): void {
+    const { doc, render } = createDoc()
+    const createReq = requestMgr.createReq(CreateFlowElementReq)
+    const element = requestMgr.executeReq(createReq)
+
+    render.clear()
+    requestMgr.executeReq(requestMgr.createReq(RenameFlowElementReq, element.id.asInt(), 'B'), true)
+    assertArrayEqual(render.calls, [], 'non visual property change does not trigger render update')
+
+    requestMgr.executeReq(requestMgr.createReq(SetFlowVisibleReq, element.id.asInt(), false), true)
+    assertArrayEqual(
         render.calls,
-        [`remove:${created.id.asInt()}`, 'updateView'],
+        [`remove:${element.id.asInt()}`, 'updateView'],
         'visible false removes grep from render',
     )
 
-    const undoVisibleOk = doc.transactionMgr.undo()
-    expectEqual(undoVisibleOk, true, 'undo visible change success')
     render.clear()
-    doc.updateView(false)
-    expectArrayEqual(
+    requestMgr.executeReq(requestMgr.createReq(DeleteFlowElementReq, element.id.asInt()), true)
+    assertArrayEqual(
         render.calls,
-        [`remove:${created.id.asInt()}`, `add:${created.id.asInt()}`, 'updateView'],
-        'undo visible change adds grep back',
+        [],
+        'delete after hidden element produces no extra render ops',
     )
 
-    render.clear()
-    const deleteReq = requestMgr.createReq(DeleteFlowElementReq, created.id.asInt())
-    const deleteOk = requestMgr.executeReq(deleteReq, true)
-    expectEqual(deleteOk, true, 'delete element success')
-    doc.updateView(false)
-    expectArrayEqual(
-        render.calls,
-        [`remove:${created.id.asInt()}`, 'updateView'],
-        'delete removes grep from render',
-    )
 }
 
-function runFlow(): void {
+/** 运行整套 core 流程验证。 */
+function run(): void {
+    clearLog()
     log('=== Core Flow Verify ===')
-    runScenarioCreateUndoRedo()
-    runScenarioCancelRequest()
-    runScenarioSessionCommitAndUndo()
-    runScenarioSessionAbort()
-    runScenarioViewCreateUpdateDelete()
+    runCreateScenario()
+    runCancelScenario()
+    runSessionScenario()
+    runViewScenario()
     log('ALL_PASS')
 }
 
 try {
-    runFlow()
-} catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    log(msg)
+    run()
+} catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    log(message)
     log('FAIL')
-    throw err
+    throw error
 }

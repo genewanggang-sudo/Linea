@@ -1,8 +1,3 @@
-/*
- * Linea Math - Core
- * Plane: 3D 平面（原点 + 法向）
- */
-
 import { EN_GEO_TYPE } from '../constants/geom_type'
 import type { IDBPlane } from '../serialize/dump_types'
 import { RegisterGeom } from '../serialize/geom_mgr'
@@ -16,208 +11,188 @@ import { Vec3 } from './vec3'
 
 @RegisterGeom
 export class Plane extends GeomBase {
-    /** 序列化类型标识 */
     public static readonly type = EN_GEO_TYPE.Plane
 
-    /** 平面上一点 */
-    private _origin: Vec3
-    /** 平面法向 */
-    private _normal: Vec3
+    private _coord: Coord3D
 
-    /** 创建平面 */
+    public static fromPointNormal(origin: Vec3, normal: Vec3, xDir: Vec3) {
+        return new Plane(Plane.makeCoordFromOriginNormalX(origin, normal, xDir))
+    }
+
+    public static fromThreePoints(p0: Vec3, p1: Vec3, p2: Vec3, eps = Precision.LEN_EPS) {
+        const xDir = p1.subtracted(p0)
+        if (xDir.len() <= eps) {
+            MathError.throw('Plane: points must not be coincident')
+        }
+
+        const normal = p1.subtracted(p0).cross(p2.subtracted(p0))
+        if (normal.len() <= eps) {
+            MathError.throw('Plane: three points must not be collinear')
+        }
+
+        return Plane.fromPointNormal(p0, normal, xDir)
+    }
+
     constructor()
     constructor(p: Plane)
-    constructor(origin: Vec3, normal: Vec3)
-    constructor(p0: Vec3, p1: Vec3, p2: Vec3)
     constructor(coord: Coord3D)
-    constructor(
-        a0?: Plane | Coord3D | Vec3,
-        a1?: Vec3,
-        a2?: Vec3,
-    ) {
+    constructor(a0?: Plane | Coord3D) {
         super()
+
         if (a0 instanceof Plane) {
-            this._origin = a0._origin
-            this._normal = a0._normal
+            this._coord = a0._coord.clone()
             return
         }
+
         if (a0 instanceof Coord3D) {
-            this._origin = a0.getOrigin()
-            this._normal = a0.getDz()
-            return
-        }
-        if (a0 instanceof Vec3 && a1 instanceof Vec3 && a2 instanceof Vec3) {
-            this._origin = a0
-            this._normal = a1.subtracted(a0).cross(a2.subtracted(a0))
-            return
-        }
-        if (a0 instanceof Vec3 && a1 instanceof Vec3) {
-            this._origin = a0
-            this._normal = a1
+            this._coord = a0.clone()
             return
         }
 
-        this._origin = Vec3.zero()
-        this._normal = Vec3.unitZ()
+        this._coord = new Coord3D()
     }
 
-    /** 克隆平面 */
+    private static makeCoordFromOriginNormalX(origin: Vec3, normal: Vec3, xDir: Vec3, eps = Precision.LEN_EPS) {
+        if (normal.len() <= eps) {
+            MathError.throw('Plane: normal must be non-zero')
+        }
+
+        const z = normal.normalized(eps)
+        const xProjected = xDir.subtracted(z.scaled(xDir.dot(z)))
+        if (xProjected.len() <= eps) {
+            MathError.throw('Plane: xDir must not be parallel to normal')
+        }
+
+        const x = xProjected.normalized(eps)
+        const y = z.cross(x)
+        return new Coord3D(origin, x, y, z)
+    }
+
+    private _unitNormal(eps = Precision.LEN_EPS) {
+        const normal = this.getNormal()
+        if (normal.len() <= eps) {
+            MathError.throw('Plane: plane is degenerate')
+        }
+        return normal.normalized(eps)
+    }
+
     public clone() {
-        return new Plane(this._origin, this._normal)
+        return new Plane(this._coord)
     }
 
-    /** 获取平面上一点 */
     public getOrigin() {
-        return this._origin
+        return this._coord.getOrigin()
     }
 
-    /** 获取平面法向 */
     public getNormal() {
-        return this._normal
+        return this._coord.getDz()
     }
 
-    /** 判断平面是否有效（法向不退化） */
+    public getUDir() {
+        return this._coord.getDx().clone()
+    }
+
+    public getVDir() {
+        return this._coord.getDy().clone()
+    }
+
     public isValid(eps = Precision.LEN_EPS) {
-        return this._normal.len() > eps
+        return this._coord.isValid(eps)
     }
 
-    /** 近似相等判断 */
     public equals(p: Plane, eps = Precision.EPS) {
-        return this._origin.equals(p._origin, eps) && this._normal.equals(p._normal, eps)
+        return this._coord.equals(p._coord, eps)
     }
 
-    /** 获取单位法向 */
-    public normalizedNormal(eps = Precision.LEN_EPS) {
-        return this._normal.normalized(eps)
-    }
-
-    /**
-     * 计算点到平面的有符号距离
-     * - 法向正侧为正
-     * - 法向反侧为负
-     */
     public signedDistanceToPoint(p: Vec3, eps = Precision.LEN_EPS) {
-        if (!this.isValid(eps)) {
-            MathError.throw('Plane.signedDistanceToPoint: plane is degenerate')
-        }
-        const n = this.normalizedNormal(eps)
-        return p.subtracted(this._origin).dot(n)
+        const n = this._unitNormal(eps)
+        return p.subtracted(this.getOrigin()).dot(n)
     }
 
-    /** 计算点到平面的绝对距离 */
     public distanceToPoint(p: Vec3, eps = Precision.LEN_EPS) {
         return Math.abs(this.signedDistanceToPoint(p, eps))
     }
 
-    /** 判断点是否在平面上 */
     public containsPoint(p: Vec3, tolerance = Precision.LEN_EPS) {
         return this.distanceToPoint(p, tolerance) <= tolerance
     }
 
-    /** 将点正交投影到平面上 */
     public projectPoint(p: Vec3, eps = Precision.LEN_EPS) {
-        const n = this.normalizedNormal(eps)
+        const n = this._unitNormal(eps)
         const d = this.signedDistanceToPoint(p, eps)
         return p.subtracted(n.scaled(d))
     }
 
-    /** 计算点关于平面的镜像点 */
     public mirrorPoint(p: Vec3, eps = Precision.LEN_EPS) {
-        const n = this.normalizedNormal(eps)
+        const n = this._unitNormal(eps)
         const d = this.signedDistanceToPoint(p, eps)
         return p.subtracted(n.scaled(2 * d))
     }
 
-    /**
-     * 将平面转换为一个局部坐标系
-     * - 原点取平面原点
-     * - Z 轴取单位法向
-     * - X/Y 轴按稳定参考轴构造
-     */
-    public toCoord3D(eps = Precision.LEN_EPS) {
-        if (!this.isValid(eps)) {
-            MathError.throw('Plane.toCoord3D: plane is degenerate')
-        }
-        const z = this.normalizedNormal(eps)
-        const ax = Math.abs(z.x)
-        const ay = Math.abs(z.y)
-        const az = Math.abs(z.z)
-        const ref =
-            ax <= ay && ax <= az ? Vec3.unitX() :
-                ay <= az ? Vec3.unitY() :
-                    Vec3.unitZ()
-        const x = ref.cross(z).normalized(eps)
-        const y = z.cross(x)
-        return new Coord3D(this._origin, x, y, z)
+    public toCoord3D() {
+        return this._coord.clone()
     }
 
-    /** 将平面局部二维坐标映射为三维世界坐标 */
-    public toWorld(p: Vec2, eps = Precision.LEN_EPS) {
-        return this.toCoord3D(eps).toWorld(new Vec3(p.x, p.y, 0))
+    public getPtAt(uv: Vec2) {
+        return this._coord.toWorld(new Vec3(uv.x, uv.y, 0))
     }
 
-    /** 将三维世界坐标映射为平面局部二维坐标 */
-    public toLocal(p: Vec3, eps = Precision.LEN_EPS) {
-        const local = this.toCoord3D(eps).toLocal(p)
+    public getUVAt(pt: Vec3, eps = Precision.LEN_EPS) {
+        const local = this._coord.toLocal(pt, eps)
         return new Vec2(local.x, local.y)
     }
 
-    /**
-     * 变换平面（就地修改）
-     * - 原点按点变换
-     * - 法向按向量变换
-     */
     public transform(m: Mat4) {
-        this._origin = m.transformedPoint(this._origin)
-        this._normal = m.transformedVector(this._normal)
+        this._coord.transform(m)
         return this
     }
 
-    /** 变换平面（返回新对象） */
     public transformed(m: Mat4) {
         return this.clone().transform(m)
     }
 
-    /** 设置平面上一点（就地修改） */
+    public reverse() {
+        const origin = this.getOrigin()
+        const x = this._coord.getDx().clone()
+        const y = this._coord.getDy().negated()
+        const z = x.cross(y)
+        this._coord = new Coord3D(origin, x, y, z)
+        return this
+    }
+
     public setOrigin(origin: Vec3) {
-        this._origin = origin
+        this._coord.setOrigin(origin)
         return this
     }
 
-    /** 设置平面法向（就地修改） */
-    public setNormal(normal: Vec3) {
-        this._normal = normal
+    public setNormal(normal: Vec3, xDir?: Vec3, eps = Precision.LEN_EPS) {
+        this._coord = Plane.makeCoordFromOriginNormalX(
+            this.getOrigin(),
+            normal,
+            xDir ?? this.getUDir(),
+            eps,
+        )
         return this
     }
 
-    /**
-     * 导出为一般式系数
-     * ax + by + cz + d = 0
-     */
     public toEquation(eps = Precision.LEN_EPS) {
-        if (!this.isValid(eps)) {
-            MathError.throw('Plane.toEquation: plane is degenerate')
-        }
-        const n = this.normalizedNormal(eps)
+        const n = this._unitNormal(eps)
         return {
             a: n.x,
             b: n.y,
             c: n.z,
-            d: -n.dot(this._origin),
+            d: -n.dot(this.getOrigin()),
         }
     }
 
-    /** 序列化为结构对象 */
     public dump(): IDBPlane {
         return {
             type: Plane.type,
-            origin: this._origin.dump(),
-            normal: this._normal.dump(),
+            coord: this._coord.dump(),
         }
     }
 
-    /** 从结构对象反序列化 */
     public static load(data: IDBPlane) {
-        return new Plane(Vec3.load(data.origin), Vec3.load(data.normal))
+        return new Plane(Coord3D.load(data.coord))
     }
 }
