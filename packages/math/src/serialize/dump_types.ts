@@ -53,40 +53,40 @@ export type IDBBox3 = IDB & {
 
 export type IDBCoord2D = IDB & {
     type: EN_GEO_TYPE.Coord2D
-    origin: { x: number; y: number }
-    xAxis: { x: number; y: number }
-    yAxis: { x: number; y: number }
+    origin: IDBVec2
+    xAxis: IDBVec2
+    yAxis: IDBVec2
 }
 
 export type IDBCoord3D = IDB & {
     type: EN_GEO_TYPE.Coord3D
-    origin: { x: number; y: number; z: number }
-    xAxis: { x: number; y: number; z: number }
-    yAxis: { x: number; y: number; z: number }
-    zAxis: { x: number; y: number; z: number }
+    origin: IDBVec3
+    xAxis: IDBVec3
+    yAxis: IDBVec3
+    zAxis: IDBVec3
 }
 
 export type IDBPlane = IDB & {
     type: EN_GEO_TYPE.Plane
-    origin: { x: number; y: number; z: number }
-    normal: { x: number; y: number; z: number }
+    origin: IDBVec3
+    normal: IDBVec3
 }
 
 export type IDBLine2 = IDB & {
     type: EN_GEO_TYPE.Line2
-    start: { x: number; y: number }
-    end: { x: number; y: number }
+    start: IDBVec2
+    end: IDBVec2
 }
 
 export type IDBCircle2 = IDB & {
     type: EN_GEO_TYPE.Circle2
-    center: { x: number; y: number }
+    center: IDBVec2
     radius: number
 }
 
 export type IDBArc2 = IDB & {
     type: EN_GEO_TYPE.Arc2
-    center: { x: number; y: number }
+    center: IDBVec2
     radius: number
     startAngle: number
     endAngle: number
@@ -95,7 +95,7 @@ export type IDBArc2 = IDB & {
 
 export type IDBEllipse2 = IDB & {
     type: EN_GEO_TYPE.Ellipse2
-    center: { x: number; y: number }
+    center: IDBVec2
     rx: number
     ry: number
     rotation: number
@@ -103,7 +103,7 @@ export type IDBEllipse2 = IDB & {
 
 export type IDBEllipseArc2 = IDB & {
     type: EN_GEO_TYPE.EllipseArc2
-    center: { x: number; y: number }
+    center: IDBVec2
     rx: number
     ry: number
     rotation: number

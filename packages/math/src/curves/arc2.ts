@@ -267,7 +267,7 @@ export class Arc2 extends CircleCurve2 {
     public override dump(): IDBArc2 {
         return {
             type: Arc2.type,
-            center: { x: this._center.x, y: this._center.y },
+            center: this._center.dump(),
             radius: this._radius,
             startAngle: this.startAngle,
             endAngle: this.endAngle,
@@ -277,7 +277,7 @@ export class Arc2 extends CircleCurve2 {
 
     public static load(data: IDBArc2) {
         return new Arc2(
-            new Vec2(data.center.x, data.center.y),
+            Vec2.load(data.center),
             data.radius,
             data.startAngle,
             data.endAngle,

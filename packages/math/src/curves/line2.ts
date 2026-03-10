@@ -187,15 +187,15 @@ export class Line2 extends Curve2 {
     public override dump(): IDBLine2 {
         return {
             type: Line2.type,
-            start: { x: this._start.x, y: this._start.y },
-            end: { x: this._end.x, y: this._end.y },
+            start: this._start.dump(),
+            end: this._end.dump(),
         }
     }
 
     public static load(data: IDBLine2) {
         return new Line2(
-            new Vec2(data.start.x, data.start.y),
-            new Vec2(data.end.x, data.end.y),
+            Vec2.load(data.start),
+            Vec2.load(data.end),
         )
     }
 

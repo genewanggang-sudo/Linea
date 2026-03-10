@@ -157,19 +157,19 @@ export class Coord3D extends GeomBase {
     public dump(): IDBCoord3D {
         return {
             type: Coord3D.type,
-            origin: { x: this._origin.x, y: this._origin.y, z: this._origin.z },
-            xAxis: { x: this._xAxis.x, y: this._xAxis.y, z: this._xAxis.z },
-            yAxis: { x: this._yAxis.x, y: this._yAxis.y, z: this._yAxis.z },
-            zAxis: { x: this._zAxis.x, y: this._zAxis.y, z: this._zAxis.z },
+            origin: this._origin.dump(),
+            xAxis: this._xAxis.dump(),
+            yAxis: this._yAxis.dump(),
+            zAxis: this._zAxis.dump(),
         }
     }
 
     public static load(data: IDBCoord3D) {
         return new Coord3D(
-            new Vec3(data.origin),
-            new Vec3(data.xAxis),
-            new Vec3(data.yAxis),
-            new Vec3(data.zAxis),
+            Vec3.load(data.origin),
+            Vec3.load(data.xAxis),
+            Vec3.load(data.yAxis),
+            Vec3.load(data.zAxis),
         )
     }
 }

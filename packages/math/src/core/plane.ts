@@ -211,13 +211,13 @@ export class Plane extends GeomBase {
     public dump(): IDBPlane {
         return {
             type: Plane.type,
-            origin: { x: this._origin.x, y: this._origin.y, z: this._origin.z },
-            normal: { x: this._normal.x, y: this._normal.y, z: this._normal.z },
+            origin: this._origin.dump(),
+            normal: this._normal.dump(),
         }
     }
 
     /** 从结构对象反序列化 */
     public static load(data: IDBPlane) {
-        return new Plane(new Vec3(data.origin), new Vec3(data.normal))
+        return new Plane(Vec3.load(data.origin), Vec3.load(data.normal))
     }
 }

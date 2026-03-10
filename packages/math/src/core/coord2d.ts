@@ -180,18 +180,18 @@ export class Coord2D extends GeomBase {
     public dump(): IDBCoord2D {
         return {
             type: Coord2D.type,
-            origin: { x: this._origin.x, y: this._origin.y },
-            xAxis: { x: this._xAxis.x, y: this._xAxis.y },
-            yAxis: { x: this._yAxis.x, y: this._yAxis.y },
+            origin: this._origin.dump(),
+            xAxis: this._xAxis.dump(),
+            yAxis: this._yAxis.dump(),
         }
     }
 
     /** 从结构对象反序列化 */
     public static load(data: IDBCoord2D) {
         return new Coord2D(
-            new Vec2(data.origin.x, data.origin.y),
-            new Vec2(data.xAxis.x, data.xAxis.y),
-            new Vec2(data.yAxis.x, data.yAxis.y),
+            Vec2.load(data.origin),
+            Vec2.load(data.xAxis),
+            Vec2.load(data.yAxis),
         )
     }
 }

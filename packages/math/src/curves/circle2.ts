@@ -157,12 +157,12 @@ export class Circle2 extends CircleCurve2 {
     public override dump(): IDBCircle2 {
         return {
             type: Circle2.type,
-            center: { x: this._center.x, y: this._center.y },
+            center: this._center.dump(),
             radius: this._radius,
         }
     }
 
     public static load(data: IDBCircle2) {
-        return new Circle2(new Vec2(data.center.x, data.center.y), data.radius)
+        return new Circle2(Vec2.load(data.center), data.radius)
     }
 }

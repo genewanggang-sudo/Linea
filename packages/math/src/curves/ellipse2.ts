@@ -137,7 +137,7 @@ export class Ellipse2 extends EllipseCurve2 {
     public override dump(): IDBEllipse2 {
         return {
             type: Ellipse2.type,
-            center: { x: this._center.x, y: this._center.y },
+            center: this._center.dump(),
             rx: this._rx,
             ry: this._ry,
             rotation: this._rotation,
@@ -146,7 +146,7 @@ export class Ellipse2 extends EllipseCurve2 {
 
     public static load(data: IDBEllipse2) {
         return new Ellipse2(
-            new Vec2(data.center.x, data.center.y),
+            Vec2.load(data.center),
             data.rx,
             data.ry,
             data.rotation,
