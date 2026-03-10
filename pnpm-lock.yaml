@@ -98,7 +98,11 @@ importers:
         specifier: workspace:*
         version: link:../math
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      '@ccpc/math':
+        specifier: workspace:*
+        version: link:../math
 
   packages/math:
     devDependencies:
