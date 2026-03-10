@@ -1,7 +1,8 @@
 import { ElementId } from '../element/element_id';
+import { GGroup } from './ggroup';
 
 // TODO 补充完整
-export class GRep {
+export class GRep extends GGroup {
 
     /**
      * 为减少对象的构造，可直接引用GRep.empty,来构造空的grep
@@ -25,5 +26,13 @@ export class GRep {
 
     public isEmpty() {
         return true
+    }
+
+    public clone(): GRep {
+        const copy = new GRep();
+        copy._localMatrix = this._localMatrix?.clone();
+        copy._globalMatrix = this._globalMatrix?.clone();
+        this.children.forEach(child => copy.addNode(child.clone()));
+        return copy;
     }
 }

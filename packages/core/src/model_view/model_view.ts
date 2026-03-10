@@ -2,6 +2,7 @@ import { IDocument } from '../document/i_document';
 import { IElement } from '../element/i_element';
 import { GRep } from '../grep/grep';
 import { IRender } from '../render/i_render';
+import { NullRender } from '../render/null_render';
 import { EN_ModelViewChanged } from '../types/type_define';
 import { ModelChangedCache } from './model_changed_cache';
 
@@ -14,7 +15,7 @@ export class ModelView {
 
     private _renderDirty: boolean = true
 
-    public iRender!: IRender
+    public iRender: IRender = new NullRender()
 
     public readonly cacheForView = new ModelChangedCache()
 
