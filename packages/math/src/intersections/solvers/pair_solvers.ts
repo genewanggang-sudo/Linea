@@ -258,7 +258,10 @@ function solveLineBSplineRoots(line: Line2, bspline: BSpline2) {
     const lineUnit = lineDir.scaled(1 / lineLen)
 
     // Signed distance to line support.
-    const f = (u: number) => bspline.pointAt(u).subtracted(lineStart).cross(lineUnit)
+    const f = (u: number) => {
+        bspline.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        return bspline.getPtAt(u).subtracted(lineStart).cross(lineUnit)
+    }
     const df = (u: number) => bspline.derivativeAt(u, 1).cross(lineUnit)
 
     const pointTol = curvePointTolerance(bspline) * 4
@@ -288,7 +291,8 @@ function solveLineBSplineRoots(line: Line2, bspline: BSpline2) {
     roots.sort((a, b) => a - b)
     const hits: CurveXInfo[] = []
     for (const uSpline of roots) {
-        const p = bspline.pointAt(uSpline)
+        bspline.getRange().assertContains(uSpline, Precision.CURVE_PARAM_EPS)
+        const p = bspline.getPtAt(uSpline)
         const uLine = p.subtracted(lineStart).dot(lineUnit)
         if (uLine < -pointTol || uLine > lineLen + pointTol) continue
         if (linePointDistance(line, p) > pointTol * 3) continue
@@ -457,11 +461,13 @@ function solveImplicitBSplineRoots(
     }
 
     const f = (u: number) => {
-        const p = bspline.pointAt(u)
+        bspline.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p = bspline.getPtAt(u)
         return implicit(p).value
     }
     const df = (u: number) => {
-        const p = bspline.pointAt(u)
+        bspline.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p = bspline.getPtAt(u)
         const d1 = bspline.derivativeAt(u, 1)
         const evalv = implicit(p)
         return evalv.grad.dot(d1)
@@ -516,7 +522,8 @@ function solveImplicitBSplineRoots(
 
     const out: CurveXInfo[] = []
     for (const uSpline of allRoots) {
-        const p = bspline.pointAt(uSpline)
+        bspline.getRange().assertContains(uSpline, Precision.CURVE_PARAM_EPS)
+        const p = bspline.getPtAt(uSpline)
         const ev = implicit(p)
         if (Math.abs(ev.value) > valueTol * 4) continue
         const cpTarget = safeClosestPoint(target, p, targetProjectTol)
@@ -657,11 +664,13 @@ function solveParametricImplicitRoots(
     const targetProjectTol = Math.max(pointTol * 128, valueTolScale * 1e-5, Precision.CURVE_LENGTH_EPS * 32)
     const range = paramCurve.getRange()
     const f = (u: number) => {
-        const p = paramCurve.pointAt(u)
+        paramCurve.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p = paramCurve.getPtAt(u)
         return implicit(p).value
     }
     const df = (u: number) => {
-        const p = paramCurve.pointAt(u)
+        paramCurve.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p = paramCurve.getPtAt(u)
         const d1 = paramCurve.derivativeAt(u, 1)
         const evalv = implicit(p)
         return evalv.grad.dot(d1)
@@ -670,7 +679,8 @@ function solveParametricImplicitRoots(
     const out: CurveXInfo[] = []
     for (const uCircle of roots) {
         const uu = normalizeClosedParam(paramCurve, uCircle)
-        const p = paramCurve.pointAt(uu)
+        paramCurve.getRange().assertContains(uu, Precision.CURVE_PARAM_EPS)
+        const p = paramCurve.getPtAt(uu)
         const ev = implicit(p)
         if (Math.abs(ev.value) > valueTol * 8) continue
         const cpTarget = safeClosestPoint(target, p, targetProjectTol)
@@ -950,7 +960,7 @@ function sampleRangeContains(curve: Curve2, other: Curve2, sampleCount: number) 
     for (let i = 0; i <= sampleCount; i++) {
         const t = i / sampleCount
         const u = range.start + (range.end - range.start) * t
-        const p = curve.pointAt(u)
+        const p = curve.getPtAt(u)
         const uOther = tryParamOnCurve(other, p)
         if (uOther === undefined) continue
         hit++
@@ -966,7 +976,7 @@ function estimateOverlapRange(base: Curve2, other: Curve2, sampleCount: number) 
     for (let i = 0; i <= sampleCount; i++) {
         const t = i / sampleCount
         const u = range.start + (range.end - range.start) * t
-        const p = base.pointAt(u)
+        const p = base.getPtAt(u)
         if (tryParamOnCurve(other, p) === undefined) continue
         if (start === undefined) start = u
         end = u

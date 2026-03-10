@@ -159,14 +159,6 @@ export class BSpline2 extends Curve2 {
     }
 
     /**
-     * 计算参数 u 处的曲线点。
-     */
-    public override pointAt(u: number) {
-        const uu = this.normalizeParamForEval(u)
-        return this.evalPointOnDomain(uu)
-    }
-
-    /**
      * 宽松求值：参数越界时沿边界样条分段继续外推。
      */
     public override getPtAt(u: number) {

@@ -52,11 +52,6 @@ export class Line2 extends Curve2 {
         return Interval.infinite()
     }
 
-    public override pointAt(u: number) {
-        const uu = this.snapParam(u)
-        return this.evalPointAt(uu)
-    }
-
     public override getPtAt(u: number) {
         MathError.assert(Number.isFinite(u), 'Line2.getPtAt: u must be finite')
         return this.evalPointAt(u)

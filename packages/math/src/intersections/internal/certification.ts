@@ -42,8 +42,10 @@ export function certifyParamPair(
     tol: number,
     closestPoint: ClosestPointProvider,
 ): CertificationOutcome | undefined {
-    const cp2 = closestPoint(c2, c1.pointAt(candidate.u1), tol * 2)
-    const cp1 = closestPoint(c1, c2.pointAt(candidate.u2), tol * 2)
+    c1.getRange().assertContains(candidate.u1, Precision.CURVE_PARAM_EPS)
+    c2.getRange().assertContains(candidate.u2, Precision.CURVE_PARAM_EPS)
+    const cp2 = closestPoint(c2, c1.getPtAt(candidate.u1), tol * 2)
+    const cp1 = closestPoint(c1, c2.getPtAt(candidate.u2), tol * 2)
     if (!cp1 || !cp2) return undefined
     if (cp1.distance > tol * 3 || cp2.distance > tol * 3) return undefined
     const measured = measureParamPair(c1, c2, cp1.param, cp2.param)
@@ -74,8 +76,8 @@ export function projectRangeToCurve(
     tol: number,
     closestPoint: ClosestPointProvider,
 ): Interval | undefined {
-    const startOnBase = baseCurve.pointAt(rangeOnBase.start)
-    const endOnBase = baseCurve.pointAt(rangeOnBase.end)
+    const startOnBase = baseCurve.getPtAt(rangeOnBase.start)
+    const endOnBase = baseCurve.getPtAt(rangeOnBase.end)
     const cpStart = closestPoint(otherCurve, startOnBase, tol)
     const cpEnd = closestPoint(otherCurve, endOnBase, tol)
     if (!cpStart || !cpEnd) return undefined
@@ -95,7 +97,8 @@ export function certifyOverlapMonotone(
     const paramsOnOther: number[] = []
     for (const t of samples) {
         const u = rangeOnBase.start + (rangeOnBase.end - rangeOnBase.start) * t
-        const p = baseCurve.pointAt(u)
+        baseCurve.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p = baseCurve.getPtAt(u)
         const cp = closestPoint(otherCurve, p, tol)
         if (!cp) continue
         paramsOnOther.push(cp.param)
@@ -114,8 +117,10 @@ export function certifyOverlapMonotone(
 }
 
 function measureParamPair(c1: Curve2, c2: Curve2, u1: number, u2: number): CertifiedParamPair {
-    const p1 = c1.pointAt(u1)
-    const p2 = c2.pointAt(u2)
+    c1.getRange().assertContains(u1, Precision.CURVE_PARAM_EPS)
+    c2.getRange().assertContains(u2, Precision.CURVE_PARAM_EPS)
+    const p1 = c1.getPtAt(u1)
+    const p2 = c2.getPtAt(u2)
     return {
         u1,
         u2,
@@ -181,9 +186,11 @@ function tryDegenerateRescue(
 
     let best = measured
     for (const u of grid) {
-        const p1 = c1.pointAt(u)
+        c1.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p1 = c1.getPtAt(u)
         for (const v of grid2) {
-            const p2 = c2.pointAt(v)
+            c2.getRange().assertContains(v, Precision.CURVE_PARAM_EPS)
+            const p2 = c2.getPtAt(v)
             const d = p1.distanceTo(p2)
             if (d >= best.residual) continue
             best = {
@@ -195,9 +202,11 @@ function tryDegenerateRescue(
         }
     }
 
-    const cp2 = closestPoint(c2, c1.pointAt(best.u1), tol * 3)
+    c1.getRange().assertContains(best.u1, Precision.CURVE_PARAM_EPS)
+    const cp2 = closestPoint(c2, c1.getPtAt(best.u1), tol * 3)
     if (cp2) {
-        const cp1 = closestPoint(c1, c2.pointAt(cp2.param), tol * 3)
+        c2.getRange().assertContains(cp2.param, Precision.CURVE_PARAM_EPS)
+        const cp1 = closestPoint(c1, c2.getPtAt(cp2.param), tol * 3)
         if (cp1) {
             best = measureParamPair(c1, c2, cp1.param, cp2.param)
         }
@@ -219,9 +228,11 @@ function evaluateWindowEnvelope(c1: Curve2, c2: Curve2, w1: Interval, w2: Interv
     let maxSample = 0
 
     for (const a of uSamples) {
-        const p1 = c1.pointAt(a)
+        c1.getRange().assertContains(a, Precision.CURVE_PARAM_EPS)
+        const p1 = c1.getPtAt(a)
         for (const b of vSamples) {
-            const p2 = c2.pointAt(b)
+            c2.getRange().assertContains(b, Precision.CURVE_PARAM_EPS)
+            const p2 = c2.getPtAt(b)
             const r = p1.distanceTo(p2)
             if (r < minSample) minSample = r
             if (r > maxSample) maxSample = r

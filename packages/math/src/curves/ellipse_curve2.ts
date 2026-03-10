@@ -44,11 +44,6 @@ export abstract class EllipseCurve2 extends Curve2 {
         return this._rotation
     }
 
-    public override pointAt(u: number) {
-        const uu = this.normalizeParamForEval(u)
-        return this.pointAtAngle(this.paramToAngleUnchecked(uu))
-    }
-
     public override getPtAt(u: number) {
         MathError.assert(Number.isFinite(u), 'EllipseCurve2.getPtAt: u must be finite')
         return this.pointAtAngle(this.paramToAngleUnchecked(u))

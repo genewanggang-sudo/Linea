@@ -45,10 +45,6 @@ export class Arc2 extends CircleCurve2 {
         return new PeriodInterval(this._range.start, this._range.start + MathConst.PI2, MathConst.PI2)
     }
 
-    public override pointAt(u: number) {
-        return this.pointAtAngle(this.angleAtParamChecked(u))
-    }
-
     public override getPtAt(u: number) {
         MathError.assert(Number.isFinite(u), 'Arc2.getPtAt: u must be finite')
         return this.pointAtAngle(this.angleAtParamUnchecked(u))

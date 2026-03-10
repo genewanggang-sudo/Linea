@@ -61,8 +61,10 @@ function refineSeedsToResults(curve: BSpline2, seeds: Seed[], acceptTol: number,
         const refined = refineSelfPairLM(curve, seed.u1, seed.u2, acceptTol, sepTol)
         if (!refined) continue
         if (isTrivialDiagonalPair(curve, refined.u1, refined.u2, diagonalParamTol)) continue
-        const p1 = curve.pointAt(refined.u1)
-        const p2 = curve.pointAt(refined.u2)
+        curve.getRange().assertContains(refined.u1, Precision.CURVE_PARAM_EPS)
+        curve.getRange().assertContains(refined.u2, Precision.CURVE_PARAM_EPS)
+        const p1 = curve.getPtAt(refined.u1)
+        const p2 = curve.getPtAt(refined.u2)
         const point = p1.added(p2).scale(0.5)
         pushUnique(out, {
             point,
@@ -203,8 +205,10 @@ function refineSelfPairLM(curve: Curve2, u1Seed: number, u2Seed: number, pointTo
 
     let lambda = 1e-6
     for (let i = 0; i < 40; i++) {
-        const p1 = curve.pointAt(u1)
-        const p2 = curve.pointAt(u2)
+        curve.getRange().assertContains(u1, Precision.CURVE_PARAM_EPS)
+        curve.getRange().assertContains(u2, Precision.CURVE_PARAM_EPS)
+        const p1 = curve.getPtAt(u1)
+        const p2 = curve.getPtAt(u2)
         const diff = p1.subtracted(p2)
         const residual = diff.len()
         if (residual < best.pointDist) best = { u1, u2, pointDist: residual }
@@ -267,8 +271,10 @@ function refineSelfPairLM(curve: Curve2, u1Seed: number, u2Seed: number, pointTo
 }
 
 function measure(curve: Curve2, u1: number, u2: number): RefinedPair {
-    const p1 = curve.pointAt(u1)
-    const p2 = curve.pointAt(u2)
+    curve.getRange().assertContains(u1, Precision.CURVE_PARAM_EPS)
+    curve.getRange().assertContains(u2, Precision.CURVE_PARAM_EPS)
+    const p1 = curve.getPtAt(u1)
+    const p2 = curve.getPtAt(u2)
     return {
         u1,
         u2,

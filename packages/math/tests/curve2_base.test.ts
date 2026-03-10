@@ -18,10 +18,6 @@ class MockCurve2 extends Curve2 {
         this.setRange(new Interval(0, 1))
     }
 
-    public override pointAt(u: number) {
-        return this._transform.transformedPoint(new Vec2(this._reversed ? 1 - u : u, 0))
-    }
-
     public override getPtAt(u: number) {
         return this._transform.transformedPoint(new Vec2(this._reversed ? 1 - u : u, 0))
     }

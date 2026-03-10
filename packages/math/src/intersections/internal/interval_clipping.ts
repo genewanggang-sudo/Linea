@@ -66,7 +66,8 @@ export function collectIntervalClipSeeds(
         const key = u.toPrecision(15)
         const found = cache.get(key)
         if (found) return found
-        const p = curve.pointAt(u)
+        curve.getRange().assertContains(u, Precision.CURVE_PARAM_EPS)
+        const p = curve.getPtAt(u)
         cache.set(key, p)
         return p
     }

@@ -47,10 +47,6 @@ class UnsupportedCurve extends Curve2 {
         this.setRange(new Interval(0, 1))
     }
 
-    public override pointAt(u: number): Vec2 {
-        return new Vec2(u, u * u)
-    }
-
     public override getPtAt(u: number): Vec2 {
         return new Vec2(u, u * u)
     }

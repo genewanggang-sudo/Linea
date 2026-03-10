@@ -30,11 +30,6 @@ export abstract class CircleCurve2 extends Curve2 {
         return this._radius
     }
 
-    public override pointAt(u: number) {
-        const uu = this.normalizeParamForEval(u)
-        return this.pointAtAngle(uu)
-    }
-
     public override getPtAt(u: number) {
         MathError.assert(Number.isFinite(u), 'CircleCurve2.getPtAt: u must be finite')
         return this.pointAtAngle(u)

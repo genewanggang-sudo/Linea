@@ -139,13 +139,6 @@ export abstract class Curve2 extends GeomBase {
     }
 
     /**
-     * 原生参数取点。
-     * @param u 曲线参数。
-     * @returns 参数对应的二维点。
-     */
-    public abstract pointAt(u: number): Vec2
-
-    /**
      * 宽松参数取点。
      * @param u 曲线参数，可超出当前参数域。
      * @returns 参数对应的二维点；对裁剪曲线返回值可落在支撑几何上。
