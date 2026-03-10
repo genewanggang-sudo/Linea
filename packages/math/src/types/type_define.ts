@@ -3,12 +3,19 @@
  * 数学库相关的通用类型定义
  */
 
-import type { Num3x3 } from './type_guard'
+import type { Num3x3, Num4x4 } from './type_guard'
 
 /** 二维向量类型 */
 export interface IVec2 {
     x: number
     y: number
+}
+
+/** 三维向量类型 */
+export interface IVec3 {
+    x: number
+    y: number
+    z: number
 }
 
 /** 二维带权点（可用于齐次坐标或加权几何计算） */
@@ -25,6 +32,11 @@ export enum Axis2D {
 /** 3x3 矩阵类型（对外行主序） */
 export interface IMat3 {
     elements: Num3x3
+}
+
+/** 4x4 矩阵类型（对外行主序） */
+export interface IMat4 {
+    elements: Num4x4
 }
 
 /** 曲线最近点查询结果 */

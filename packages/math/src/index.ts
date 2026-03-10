@@ -1,7 +1,11 @@
-﻿export { Vec2 } from './core/vec2'
+export { Vec2 } from './core/vec2'
+export { Vec3 } from './core/vec3'
 export { Mat3 } from './core/mat3'
+export { Mat4 } from './core/mat4'
 export { Box2 } from './core/box2'
+export { Box3 } from './core/box3'
 export { Coord2D } from './core/coord2d'
+export { Coord3D } from './core/coord3d'
 export { GeomBase } from './core/geom_base'
 
 export { MathConst } from './constants/math_const'
@@ -34,9 +38,13 @@ export type { IDumpable, ILoadable } from './serialize/geom_mgr'
 export type {
     IDB,
     IDBVec2,
+    IDBVec3,
     IDBMat3,
+    IDBMat4,
     IDBBox2,
+    IDBBox3,
     IDBCoord2D,
+    IDBCoord3D,
     IDBLine2,
     IDBCircle2,
     IDBArc2,
@@ -45,4 +53,4 @@ export type {
     IDBBSpline2,
 } from './serialize/dump_types'
 
-export type { IVec2, IClosestPointResult } from './types/type_define'
+export type { IVec2, IVec3, IClosestPointResult } from './types/type_define'

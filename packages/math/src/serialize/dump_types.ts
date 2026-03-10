@@ -4,7 +4,7 @@
  */
 
 import { EN_GEO_TYPE } from '../constants/geom_type'
-import type { Num3x3 } from '../types/type_guard'
+import type { Num3x3, Num4x4 } from '../types/type_guard'
 
 export type IDB = {
     type: EN_GEO_TYPE
@@ -16,9 +16,21 @@ export type IDBVec2 = IDB & {
     y: number
 }
 
+export type IDBVec3 = IDB & {
+    type: EN_GEO_TYPE.Vec3
+    x: number
+    y: number
+    z: number
+}
+
 export type IDBMat3 = IDB & {
     type: EN_GEO_TYPE.Mat3
     elements: Num3x3
+}
+
+export type IDBMat4 = IDB & {
+    type: EN_GEO_TYPE.Mat4
+    elements: Num4x4
 }
 
 export type IDBBox2 = IDB & {
@@ -29,11 +41,29 @@ export type IDBBox2 = IDB & {
     maxY: number
 }
 
+export type IDBBox3 = IDB & {
+    type: EN_GEO_TYPE.Box3
+    minX: number
+    minY: number
+    minZ: number
+    maxX: number
+    maxY: number
+    maxZ: number
+}
+
 export type IDBCoord2D = IDB & {
     type: EN_GEO_TYPE.Coord2D
     origin: { x: number; y: number }
     xAxis: { x: number; y: number }
     yAxis: { x: number; y: number }
+}
+
+export type IDBCoord3D = IDB & {
+    type: EN_GEO_TYPE.Coord3D
+    origin: { x: number; y: number; z: number }
+    xAxis: { x: number; y: number; z: number }
+    yAxis: { x: number; y: number; z: number }
+    zAxis: { x: number; y: number; z: number }
 }
 
 export type IDBLine2 = IDB & {

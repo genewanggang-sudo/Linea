@@ -5,9 +5,13 @@
 
 export enum EN_GEO_TYPE {
     Vec2 = 'Vec2',
+    Vec3 = 'Vec3',
     Mat3 = 'Mat3',
+    Mat4 = 'Mat4',
     Box2 = 'Box2',
+    Box3 = 'Box3',
     Coord2D = 'Coord2D',
+    Coord3D = 'Coord3D',
 
     Line2 = 'Line2',
     Circle2 = 'Circle2',
