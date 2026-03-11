@@ -1,6 +1,6 @@
 import { ModelView } from '@ccpc/core'
-import { CRenderer } from './c_renderer'
 import { ICCanvas } from './i_c_canvas'
+import { CRenderer } from '../render/c_renderer'
 
 // TODO 先简单分层,canvas中只持有renderer
 export class CCanvas implements ICCanvas {

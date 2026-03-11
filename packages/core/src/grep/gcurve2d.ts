@@ -15,10 +15,8 @@ export class GCurve2d extends GNode2d {
     // 当前最小化版本未保留 style 体系，因此这里只保留离散后的点数据。
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscretizeOptions): RenderNode {
         const render = new RenderEdge();
-        render.points = [
-            this.geo.discretize(discreteParams).map(p => this.plane.getPtAt(p)),
-        ];
-        return render;
+        render.points = this.geo.discretize(discreteParams).map(p => this.plane.getPtAt(p))
+        return render
     }
 
     // 将二维曲线离散并映射为三维顺序点列。

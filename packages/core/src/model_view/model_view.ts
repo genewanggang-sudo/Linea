@@ -15,7 +15,10 @@ export class ModelView {
 
     private _renderDirty = true
 
-    private _grepMap = new Map<number, GRep>()
+    /**
+     * 已添加到渲染层的eId
+     */
+    private _addedEid: Set<number> = new Set()
 
     public iRender: IRender = new NullRender()
 
@@ -54,9 +57,9 @@ export class ModelView {
             const element = this._doc.getElementById(id)
             if (!element) continue
 
-            const hasOldGRep = this._grepMap.has(id)
+            const added = this._addedEid.has(id)
             if (!this._isElementValid(element)) {
-                if (hasOldGRep) {
+                if (added) {
                     this._removeGRep(id)
                 }
                 continue
@@ -65,7 +68,7 @@ export class ModelView {
             const grep = element.getGRep()
             if (!grep) continue
 
-            if (hasOldGRep) {
+            if (added) {
                 this._updateGRep(grep)
             } else {
                 this._addGRep(grep)
@@ -73,7 +76,7 @@ export class ModelView {
         }
 
         for (const id of deleted) {
-            if (this._grepMap.has(id)) {
+            if (this._addedEid.has(id)) {
                 this._removeGRep(id)
             }
         }
@@ -88,7 +91,7 @@ export class ModelView {
     private _addGRep(grep: GRep) {
         const eId = grep.elementId.asInt()
         this.iRender.addGRep(grep)
-        this._grepMap.set(eId, grep)
+        this._addedEid.add(eId)
         this._renderDirty = true
     }
 
@@ -96,13 +99,13 @@ export class ModelView {
         const eId = grep.elementId.asInt()
         this.iRender.removeGRep(eId)
         this.iRender.addGRep(grep)
-        this._grepMap.set(eId, grep)
+        this._addedEid.add(eId)
         this._renderDirty = true
     }
 
     private _removeGRep(eId: number) {
+        this._addedEid.delete(eId)
         this.iRender.removeGRep(eId)
-        this._grepMap.delete(eId)
         this._renderDirty = true
     }
 }

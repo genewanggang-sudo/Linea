@@ -1,5 +1,5 @@
 import { EN_RNODE_TYPE } from '../types/type_define';
-import { IVec3, Mat4 } from '@ccpc/math'
+import { Mat4, Vec3 } from '@ccpc/math'
 import { IConstructor } from '../types/type_guard';
 import { GNode } from '../grep/gnode';
 /**
@@ -63,13 +63,13 @@ export class RenderGroup extends RenderNode {
 }
 
 export class RenderPoint extends RenderNode {
-    public point!: IVec3
+    public point!: Vec3
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.POINT;
 }
 
 export class RenderEdge extends RenderNode {
-    public points!: IVec3[][];
+    public points!: Vec3[];
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.EDGE;
 }

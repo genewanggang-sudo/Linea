@@ -1,6 +1,7 @@
 import { DiscretizeOptions, Mat4 } from '@ccpc/math'
 import { RenderNode } from '../render/render_node'
 import { CMathUtil } from '../toolkit/cmath_util'
+import { DebugUtil } from '../toolkit/debug_util'
 
 /**
  * 表示图形的基本单元, 包括几何数据和显示样式
@@ -42,6 +43,7 @@ export abstract class GNode {
      */
     public toRenderNode(discreteParams?: DiscretizeOptions) {
         this.updateRenderNode(discreteParams)
+        DebugUtil.assert(this._renderNode, '转RenderNode失败', 'wg', '2026-03-11')
         return this._renderNode
     }
 

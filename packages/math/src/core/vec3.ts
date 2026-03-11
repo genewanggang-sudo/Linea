@@ -4,6 +4,7 @@ import { RegisterGeom } from '../serialize/geom_mgr'
 import type { IVec3 } from '../types/type_define'
 import { Precision } from '../utils/precision'
 import { GeomBase } from './geom_base'
+import type { Mat4 } from './mat4'
 
 @RegisterGeom
 export class Vec3 extends GeomBase implements IVec3 {
@@ -179,6 +180,34 @@ export class Vec3 extends GeomBase implements IVec3 {
 
     public normalized(eps = Precision.LEN_EPS) {
         return this.clone().normalize(eps)
+    }
+
+    public applyMat4(m: Mat4) {
+        const e = m.elements
+        const x = this.x
+        const y = this.y
+        const z = this.z
+
+        const nextX = e[0] * x + e[4] * y + e[8] * z + e[12]
+        const nextY = e[1] * x + e[5] * y + e[9] * z + e[13]
+        const nextZ = e[2] * x + e[6] * y + e[10] * z + e[14]
+        const nextW = e[3] * x + e[7] * y + e[11] * z + e[15]
+
+        if (Math.abs(nextW) > Precision.LEN_EPS && Math.abs(nextW - 1) > Precision.EPS) {
+            this.x = nextX / nextW
+            this.y = nextY / nextW
+            this.z = nextZ / nextW
+            return this
+        }
+
+        this.x = nextX
+        this.y = nextY
+        this.z = nextZ
+        return this
+    }
+
+    public appliedMat4(m: Mat4) {
+        return this.clone().applyMat4(m)
     }
 
     public distanceToSq(v: IVec3) {

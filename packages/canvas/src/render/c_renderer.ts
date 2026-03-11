@@ -1,7 +1,8 @@
-import { AxesHelper, OrthographicCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three'
+import { AxesHelper, Object3D, OrthographicCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { GRep, IRender } from '@ccpc/core'
+import { RenderHub } from './render_hub'
 
 export class CRenderer implements IRender {
     private _width: number
@@ -17,6 +18,11 @@ export class CRenderer implements IRender {
     private _camera: OrthographicCamera
 
     private _cameraControls: OrbitControls
+
+    private _renderHub: RenderHub
+
+    // TODO eId到渲染图元的映射
+    private _eIdToObject: Map<number, Object3D> = new Map()
 
     // TODO 相关逻辑移动到canvas
     private _resizeObserver: ResizeObserver
@@ -42,14 +48,16 @@ export class CRenderer implements IRender {
         this._scene = new Scene()
 
         const aspect = this._width / this._height
-        const vh = 1000
+        const vh = 500
         const vw = vh * aspect
         this._camera = new OrthographicCamera(-vw / 2, vw / 2, vh / 2, -vh / 2, 0.1, 100)
-        this._camera.position.set(0, 0, 10)
+        this._camera.position.set(0, 0, 20)
 
         this._cameraControls = new OrbitControls(this._camera, this._renderer.domElement)
         this._cameraControls.enableRotate = false
         this._cameraControls.enablePan = true
+
+        this._renderHub = new RenderHub()
 
         // TODO 测试代码
         this._scene.add(new AxesHelper(30))
@@ -63,12 +71,17 @@ export class CRenderer implements IRender {
         console.log('updateView not implemented.')
     }
 
-    public removeGRep(_eId: number): void {
-        console.log('removeGRep not implemented.')
+    public removeGRep(eId: number): void {
+        const obj = this._eIdToObject.get(eId)
+        if (obj) this._scene.remove(obj)
+        this._eIdToObject.delete(eId)
     }
 
-    public addGRep(_grep: GRep) {
-        console.log('addGRep not implemented.')
+    public addGRep(grep: GRep) {
+        const obj = this._renderHub.addGrep(grep)
+        this._scene.add(obj)
+        this._eIdToObject.set(grep.elementId.asInt(), obj)
+
     }
 
     public render = () => {
