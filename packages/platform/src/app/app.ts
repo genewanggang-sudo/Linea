@@ -10,6 +10,15 @@ export class App {
 
     private _cmdMgr = cmdMgr
 
+    private static _instance: App
+
+    public static instance() {
+        if (!this._instance) {
+            this._instance = new App()
+        }
+        return this._instance
+    }
+
     public get doc() {
         DebugUtil.assert(this._curDoc, '请先调用start方法给doc赋值', 'wg', '2026-03-11')
         return this._curDoc
@@ -39,3 +48,5 @@ export class App {
         return cCanvas
     }
 }
+
+export const app = App.instance()
