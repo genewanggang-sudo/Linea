@@ -8,6 +8,10 @@ import { IConstructor } from '../types/type_guard';
 import type { ElementMgr } from './element_mgr'
 
 export interface IDocument {
+
+    /**是否为主文档*/
+    isMainDoc: boolean
+
     /**对象管理器*/
     readonly elementMgr: ElementMgr
 
@@ -41,4 +45,6 @@ export interface IDocument {
     cacheForViewElementChanged(evtType: EN_ModelViewChanged, elements: Array<IElement>): void
 
     updateView(rebuild?: boolean): boolean
+
+    destroy(): void
 }

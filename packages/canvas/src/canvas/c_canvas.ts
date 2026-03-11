@@ -8,6 +8,11 @@ export class CCanvas implements ICCanvas {
 
     private _renderer: CRenderer
 
+    /**
+     * 鼠标事件监听器
+     */
+    // private _mouse
+
     constructor(container: HTMLElement) {
         this._container = container
         this._renderer = new CRenderer(this._container)
@@ -19,5 +24,10 @@ export class CCanvas implements ICCanvas {
 
     public resetModelView(modelView: ModelView) {
         modelView.iRender = this._renderer
+    }
+
+    // TODO 补充完整
+    public destroy() {
+
     }
 }

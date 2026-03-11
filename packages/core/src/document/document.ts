@@ -12,6 +12,8 @@ import { ModelView } from '../model_view/model_view'
 
 export class Document implements IDocument {
 
+    public isMainDoc: boolean = false
+
     /**是否可以创建对象*/
     public static canCreate = false;
 
@@ -112,5 +114,10 @@ export class Document implements IDocument {
     public updateView(_rebuild: boolean = false) {
         this.modelView.updateView()
         return true
+    }
+
+    // TODO 补充完整
+    public destroy() {
+
     }
 }

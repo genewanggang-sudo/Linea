@@ -23,7 +23,8 @@
             "@ccpc/platform": [
                 "packages/platform/src/index.ts"
             ]
-        }
+        },
+        "strict": true,
     },
     "include": [
         "apps/**/*.ts",
