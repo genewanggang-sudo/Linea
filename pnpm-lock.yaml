@@ -35,9 +35,15 @@ importers:
 
   apps/core-flow-test:
     dependencies:
+      '@ccpc/canvas':
+        specifier: workspace:*
+        version: link:../../packages/canvas
       '@ccpc/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@ccpc/math':
+        specifier: workspace:*
+        version: link:../../packages/math
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -94,9 +100,19 @@ importers:
 
   packages/canvas:
     dependencies:
+      '@ccpc/core':
+        specifier: workspace:*
+        version: link:../core
       '@ccpc/math':
         specifier: workspace:*
         version: link:../math
+      three:
+        specifier: ^0.181.1
+        version: 0.181.2
+    devDependencies:
+      '@types/three':
+        specifier: ^0.181.0
+        version: 0.181.0
 
   packages/core:
     dependencies:

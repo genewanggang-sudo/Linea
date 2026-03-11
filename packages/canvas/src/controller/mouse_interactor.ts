@@ -1,5 +1,5 @@
 import { Vec2 } from '@ccpc/math';
-import { ICCanvas } from '../canvas/i_ccanvas';
+import { ICCanvas } from '../canvas/i_c_canvas';
 import { IMouseController } from './i_mouse_controller';
 import { EN_MouseEvent, EN_NativeMouseEvent } from '../types/type_define';
 import { FnKey } from './fn_key';
@@ -12,7 +12,7 @@ export class MouseInteractor {
     private _container: HTMLElement;
 
     /**画布*/
-    // TODO 暂时没用到，可以考虑去掉
+    // TODO _canvas暂时没用到,需要视具体情况定
     private _canvas: ICCanvas;
 
     /**鼠标事件处理器*/

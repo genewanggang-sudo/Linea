@@ -6,7 +6,8 @@ export {
     type IMouseEvent,
     type IKeyboardEvent,
 } from './types/type_define'
-export { type ICCanvas } from './canvas/i_ccanvas'
+export { CCanvas } from './canvas/c_canvas'
+export { type ICCanvas } from './canvas/i_c_canvas'
 export { DefaultController } from './controller/default_controller'
 export { FnKey } from './controller/fn_key'
 export {

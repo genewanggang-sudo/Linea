@@ -9,8 +9,12 @@
     "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
+      "@ccpc/canvas": ["../../packages/canvas/src/index.ts"],
+      "@ccpc/canvas/*": ["../../packages/canvas/src/*"],
       "@ccpc/core": ["../../packages/core/src/index.ts"],
-      "@ccpc/core/*": ["../../packages/core/src/*"]
+      "@ccpc/core/*": ["../../packages/core/src/*"],
+      "@ccpc/math": ["../../packages/math/src/index.ts"],
+      "@ccpc/math/*": ["../../packages/math/src/*"]
     }
   },
   "include": ["src", "vite.config.ts"]
