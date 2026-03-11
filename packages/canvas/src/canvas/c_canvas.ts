@@ -1,6 +1,8 @@
 import { ModelView } from '@ccpc/core'
 import { ICCanvas } from './i_c_canvas'
 import { CRenderer } from '../render/c_renderer'
+import { MouseInteractor } from '../controller/mouse_interactor'
+import { IProcessEvent } from '../controller/i_process_event'
 
 // TODO 先简单分层,canvas中只持有renderer
 export class CCanvas implements ICCanvas {
@@ -11,10 +13,11 @@ export class CCanvas implements ICCanvas {
     /**
      * 鼠标事件监听器
      */
-    // private _mouse
+    private _mouseInteractor: MouseInteractor
 
-    constructor(container: HTMLElement) {
+    constructor(container: HTMLElement, evtProcess: Array<IProcessEvent>) {
         this._container = container
+        this._mouseInteractor = new MouseInteractor(this, this._container, evtProcess)
         this._renderer = new CRenderer(this._container)
     }
 
@@ -26,8 +29,22 @@ export class CCanvas implements ICCanvas {
         modelView.iRender = this._renderer
     }
 
+    /**
+     * 开启监听
+     */
+    public startListening() {
+        this._mouseInteractor.startListening()
+    }
+
+    /**
+     * 停止监听
+     */
+    public stopListening() {
+        this._mouseInteractor.stopListening()
+    }
+
     // TODO 补充完整
     public destroy() {
-
+        this.stopListening()
     }
 }

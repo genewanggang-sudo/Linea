@@ -35,6 +35,7 @@ export class App {
         const evtProcess: Array<IProcessEvent> = [this._cmdMgr]
         const cCanvas = new CCanvas(container, evtProcess)
         this._curCanvas = cCanvas
+        this._curCanvas.startListening()
         return cCanvas
     }
 }

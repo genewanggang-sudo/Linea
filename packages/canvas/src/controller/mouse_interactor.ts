@@ -1,6 +1,6 @@
 import { Vec2 } from '@ccpc/math';
 import { ICCanvas } from '../canvas/i_c_canvas';
-import { IMouseController } from './i_mouse_controller';
+import { IProcessMouseEvent } from './i_mouse_controller';
 import { EN_MouseEvent, EN_NativeMouseEvent } from '../types/type_define';
 import { FnKey } from './fn_key';
 import { canvasConfig } from '../toolkit/canvas_config';
@@ -16,7 +16,7 @@ export class MouseInteractor {
     private _canvas: ICCanvas;
 
     /**鼠标事件处理器*/
-    private _mouseControllers: Array<IMouseController> = [];
+    private _mouseControllers: Array<IProcessMouseEvent> = [];
 
     /**鼠标是否按下*/
     private _mouseDown = false;
@@ -40,7 +40,7 @@ export class MouseInteractor {
 
     private _wheelTimer?: number;
 
-    constructor(canvas: ICCanvas, container: HTMLElement, controllers: Array<IMouseController>) {
+    constructor(canvas: ICCanvas, container: HTMLElement, controllers: Array<IProcessMouseEvent>) {
         this._canvas = canvas;
         this._container = container;
         this._mouseControllers = controllers;
