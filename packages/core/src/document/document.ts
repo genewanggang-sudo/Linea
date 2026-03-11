@@ -32,7 +32,6 @@ export class Document implements IDocument {
         this.transactionMgr = new TransactionMgr()
         this.transactionMgr.init(this)
         this.requestMgr.init(this)
-        // TODO 需要测试会不会报错
         this.modelView = new ModelView(this);
     }
 

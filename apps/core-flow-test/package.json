@@ -11,7 +11,8 @@
   "dependencies": {
     "@ccpc/canvas": "workspace:*",
     "@ccpc/core": "workspace:*",
-    "@ccpc/math": "workspace:*"
+    "@ccpc/math": "workspace:*",
+    "@ccpc/platform": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.9.3",

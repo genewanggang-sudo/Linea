@@ -1,184 +1,209 @@
-import { CCanvas } from '@ccpc/canvas'
 import {
     Document,
     Element,
     GCurve2d,
-    GPoint2d,
     GRep,
     RegisterElement,
     Request,
     registerRequest,
     requestMgr,
 } from '@ccpc/core'
-import { Arc2, Circle2, Line2, Plane, Vec2 } from '@ccpc/math'
+import { Line2, Plane, Vec2 } from '@ccpc/math'
+import { app, Cmd, cmdMgr, registerCmd } from '@ccpc/platform'
 
-const lines: string[] = []
+type LinePattern = 'horizontal' | 'diagonal' | 'cross'
+
+const logs: string[] = []
 
 function log(line: string): void {
-    lines.push(line)
-    const app = document.getElementById('app')
-    if (app) {
-        app.textContent = lines.join('\n')
+    logs.push(line)
+    const logPanel = document.getElementById('log-panel')
+    if (logPanel) {
+        logPanel.textContent = logs.join('\n')
     }
+}
+
+function createToolbar(): HTMLElement {
+    const toolbar = document.createElement('div')
+    toolbar.style.display = 'flex'
+    toolbar.style.gap = '12px'
+    toolbar.style.marginBottom = '12px'
+    document.body.appendChild(toolbar)
+    return toolbar
+}
+
+function createButton(label: string, onClick: () => void): HTMLButtonElement {
+    const button = document.createElement('button')
+    button.textContent = label
+    button.style.padding = '10px 16px'
+    button.style.border = '1px solid #777'
+    button.style.background = '#f3f3f3'
+    button.style.cursor = 'pointer'
+    button.addEventListener('click', onClick)
+    return button
 }
 
 function createMount(): HTMLElement {
     const mount = document.createElement('div')
-    mount.style.width = '1920px'
-    mount.style.height = '1080px'
+    mount.id = 'canvas-mount'
+    mount.style.width = '1280px'
+    mount.style.height = '720px'
     mount.style.border = '1px solid #999'
-    mount.style.marginTop = '16px'
+    mount.style.background = '#111'
     document.body.appendChild(mount)
     return mount
 }
 
-@RegisterElement('flow-sketch-element')
-class FlowSketchElement extends Element {
-    public x = 0
+function createLogPanel(): HTMLElement {
+    const panel = document.createElement('pre')
+    panel.id = 'log-panel'
+    panel.style.marginTop = '12px'
+    panel.style.padding = '12px'
+    panel.style.border = '1px solid #ddd'
+    panel.style.background = '#fafafa'
+    panel.style.whiteSpace = 'pre-wrap'
+    document.body.appendChild(panel)
+    return panel
+}
 
-    public y = 0
+function toWorldPos(screenPos: Vec2, mount: HTMLElement): Vec2 {
+    return new Vec2(screenPos.x - mount.clientWidth * 0.5, mount.clientHeight * 0.5 - screenPos.y)
+}
 
-    public width = 20
+@RegisterElement('test-line-element')
+class TestLineElement extends Element {
+    public center = new Vec2(0, 0)
 
-    public height = 20
+    public pattern: LinePattern = 'horizontal'
 
     public override markGRepDirty(): void {
-        this.C_GRep = buildSketchGRep(this)
+        this.C_GRep = buildLineGRep(this)
     }
 }
 
-function buildSketchGRep(element: FlowSketchElement): GRep {
+function buildLineGRep(element: TestLineElement): GRep {
     const plane = new Plane()
     const grep = new GRep()
-
-    const left = element.x - element.width * 0.5
-    const right = element.x + element.width * 0.5
-    const bottom = element.y - element.height * 0.5
-    const top = element.y + element.height * 0.5
-
-    const innerMargin = 30
-    const titleBlockWidth = 220
-    const titleRowHeight = 45
-    const titleRows = 3
-
-    const innerLeft = left + innerMargin
-    const innerRight = right - innerMargin
-    const innerBottom = bottom + innerMargin
-    const innerTop = top - innerMargin
-
-    const titleLeft = innerRight - titleBlockWidth
-    const titleTop = innerBottom + titleRowHeight * titleRows
-
-    const center = new Vec2(element.x, element.y)
+    const { center, pattern } = element
 
     const addLine = (start: Vec2, end: Vec2) => {
         grep.addNode(new GCurve2d(plane, new Line2(start, end)))
     }
 
-    const addRect = (minX: number, minY: number, maxX: number, maxY: number) => {
-        addLine(new Vec2(minX, minY), new Vec2(maxX, minY))
-        addLine(new Vec2(maxX, minY), new Vec2(maxX, maxY))
-        addLine(new Vec2(maxX, maxY), new Vec2(minX, maxY))
-        addLine(new Vec2(minX, maxY), new Vec2(minX, minY))
+    if (pattern === 'horizontal') {
+        addLine(new Vec2(center.x - 120, center.y), new Vec2(center.x + 120, center.y))
+        return grep
     }
 
-    grep.addNode(new GPoint2d(plane, center))
-
-    addRect(left, bottom, right, top)
-    addRect(innerLeft, innerBottom, innerRight, innerTop)
-
-    addLine(new Vec2(titleLeft, innerBottom), new Vec2(titleLeft, titleTop))
-    addLine(new Vec2(titleLeft, titleTop), new Vec2(innerRight, titleTop))
-
-    for (let i = 1; i < titleRows; i += 1) {
-        const y = innerBottom + titleRowHeight * i
-        addLine(new Vec2(titleLeft, y), new Vec2(innerRight, y))
+    if (pattern === 'diagonal') {
+        addLine(new Vec2(center.x - 100, center.y - 100), new Vec2(center.x + 100, center.y + 100))
+        addLine(new Vec2(center.x - 100, center.y + 40), new Vec2(center.x + 100, center.y - 40))
+        return grep
     }
 
-    const titleCol1 = titleLeft + 80
-    const titleCol2 = titleLeft + 150
-    addLine(new Vec2(titleCol1, innerBottom), new Vec2(titleCol1, titleTop))
-    addLine(new Vec2(titleCol2, innerBottom), new Vec2(titleCol2, titleTop))
-
-    addLine(new Vec2(innerLeft, innerBottom + 120), new Vec2(titleLeft, innerBottom + 120))
-    addLine(new Vec2(innerLeft, innerBottom + 240), new Vec2(titleLeft, innerBottom + 240))
-    addLine(new Vec2(innerLeft + 120, innerBottom), new Vec2(innerLeft + 120, innerBottom + 240))
-
-    const shapeMinX = innerLeft + 80
-    const shapeMaxX = titleLeft - 80
-    const shapeMinY = innerBottom + 300
-    const shapeMaxY = innerTop - 80
-    const shapeCenter = new Vec2((shapeMinX + shapeMaxX) * 0.5, (shapeMinY + shapeMaxY) * 0.5)
-
-    addLine(new Vec2(shapeMinX, shapeMinY), new Vec2(shapeMaxX, shapeMaxY))
-    addLine(new Vec2(shapeMinX, shapeMaxY), new Vec2(shapeMaxX, shapeMinY))
-    addLine(new Vec2(shapeMinX, shapeCenter.y), new Vec2(shapeMaxX, shapeCenter.y))
-
-    grep.addNode(new GCurve2d(plane, new Circle2(shapeCenter, 120)))
-    grep.addNode(new GCurve2d(plane, new Circle2(shapeCenter, 60)))
-    grep.addNode(new GCurve2d(plane, new Arc2(shapeCenter, 170, Math.PI * 0.1, Math.PI * 0.9, false)))
-
-    const wavePoints = [
-        new Vec2(shapeMinX + 40, shapeMinY + 40),
-        new Vec2(shapeMinX + 120, shapeMinY + 140),
-        new Vec2(shapeMinX + 200, shapeMinY + 60),
-        new Vec2(shapeMinX + 280, shapeMinY + 180),
-        new Vec2(shapeMinX + 360, shapeMinY + 90),
-        new Vec2(shapeMinX + 440, shapeMinY + 160),
-    ]
-
-    for (let i = 0; i < wavePoints.length - 1; i += 1) {
-        addLine(wavePoints[i], wavePoints[i + 1])
-    }
-
-    addLine(new Vec2(element.x - 40, element.y), new Vec2(element.x + 40, element.y))
-    addLine(new Vec2(element.x, element.y - 40), new Vec2(element.x, element.y + 40))
-
+    addLine(new Vec2(center.x - 110, center.y), new Vec2(center.x + 110, center.y))
+    addLine(new Vec2(center.x, center.y - 110), new Vec2(center.x, center.y + 110))
+    addLine(new Vec2(center.x - 80, center.y - 80), new Vec2(center.x + 80, center.y + 80))
+    addLine(new Vec2(center.x - 80, center.y + 80), new Vec2(center.x + 80, center.y - 80))
     return grep
 }
 
-@registerRequest('flow-create')
-class CreateFlowElementReq extends Request {
-    public execute(): FlowSketchElement {
-        const element = this._doc.create(FlowSketchElement)
-        element.name = 'flow-sketch'
-        element.x = 0
-        element.y = 0
-        element.width = 1600
-        element.height = 900
+@registerRequest('draw-test-line')
+class DrawTestLineReq extends Request {
+    constructor(
+        private readonly _pattern: LinePattern,
+        private readonly _center: Vec2,
+    ) {
+        super()
+    }
+
+    public execute(): TestLineElement {
+        const element = this._doc.create(TestLineElement)
+        element.name = `test-line-${this._pattern}`
+        element.pattern = this._pattern
+        element.center = this._center
         element.markGRepDirty()
         return element
     }
 }
 
+class BaseDrawLineCmd extends Cmd {
+    public override executeImmediately = false
+
+    constructor(private readonly _pattern: LinePattern) {
+        super()
+    }
+
+    public override execute(): Promise<void> {
+        log(`${this._pattern} cmd armed, click canvas to draw`)
+        return Promise.resolve()
+    }
+
+    public override onClick(evt: { pos: Vec2 }): boolean {
+        const mount = document.getElementById('canvas-mount')
+        if (!mount) {
+            log('canvas mount not found')
+            this._resolve()
+            return true
+        }
+
+        const worldPos = toWorldPos(evt.pos, mount)
+        const req = requestMgr.createReq(DrawTestLineReq, this._pattern, worldPos)
+        requestMgr.executeReq(req, true)
+        log(`draw ${this._pattern} at ${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)}`)
+        this._resolve()
+        return true
+    }
+}
+
+@registerCmd('draw-horizontal-line-cmd')
+class DrawHorizontalLineCmd extends BaseDrawLineCmd {
+    constructor() {
+        super('horizontal')
+    }
+}
+
+@registerCmd('draw-diagonal-line-cmd')
+class DrawDiagonalLineCmd extends BaseDrawLineCmd {
+    constructor() {
+        super('diagonal')
+    }
+}
+
+@registerCmd('draw-cross-line-cmd')
+class DrawCrossLineCmd extends BaseDrawLineCmd {
+    constructor() {
+        super('cross')
+    }
+}
+
+function armCommand(label: string, cmd: typeof Cmd): void {
+    void cmdMgr.sendCmd(cmd).then(() => undefined)
+    log(`${label} button clicked`)
+}
+
 function run(): void {
-    log('=== Core + Canvas Flow Test ===')
+    log('=== App + Cmd Draw Test ===')
 
+    const toolbar = createToolbar()
+    createLogPanel()
     const mount = createMount()
-    log('mount ready')
 
-    const canvas = new CCanvas(mount)
-    log('canvas created')
+    toolbar.appendChild(createButton('Horizontal', () => armCommand('horizontal', DrawHorizontalLineCmd)))
+    toolbar.appendChild(createButton('Diagonal', () => armCommand('diagonal', DrawDiagonalLineCmd)))
+    toolbar.appendChild(createButton('Cross', () => armCommand('cross', DrawCrossLineCmd)))
 
     const doc = new Document()
-    log('document created')
+    app.start(doc)
+    app.createCanvas(mount)
 
-    canvas.resetModelView(doc.modelView)
-    log('modelView connected to canvas renderer')
-
-    const req = requestMgr.createReq(CreateFlowElementReq)
-    log('request created')
-
-    requestMgr.executeReq(req, true)
-    log('request executed')
-
-    console.log(doc);
-
+    log('app started')
+    log('choose a button, then click inside canvas')
 }
 
 try {
     run()
-    log('DONE')
+    log('ready')
 } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     log(`ERROR: ${message}`)

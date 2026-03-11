@@ -44,6 +44,7 @@ export class App {
         const evtProcess: Array<IProcessEvent> = [this._cmdMgr]
         const cCanvas = new CCanvas(container, evtProcess)
         this._curCanvas = cCanvas
+        if (this._curDoc) this._curCanvas.resetModelView(this._curDoc.modelView)
         this._curCanvas.startListening()
         return cCanvas
     }

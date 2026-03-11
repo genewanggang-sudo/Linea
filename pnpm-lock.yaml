@@ -44,6 +44,9 @@ importers:
       '@ccpc/math':
         specifier: workspace:*
         version: link:../../packages/math
+      '@ccpc/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
     devDependencies:
       typescript:
         specifier: 5.9.3
