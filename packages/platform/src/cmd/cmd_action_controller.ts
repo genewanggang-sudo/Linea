@@ -1,6 +1,7 @@
 import { DefaultController, IKeyboardEvent, IMouseEvent } from '@ccpc/canvas'
 import { IDocument } from '@ccpc/core'
 import { ActionResult } from './action_result'
+import { app } from '../app/app'
 
 export type ICmdStatus<T = unknown> = {
     promise: Promise<T | undefined>,
@@ -33,22 +34,35 @@ export class CmdActionController<T = unknown> extends DefaultController {
         return this._status
     }
 
+    /**
+     * 获取画布
+     */
     public getCanvas() {
-        // TODO 从app获取
-        throw new Error('Method not implemented.');
+        return app.getCanvas()
     }
 
+    /**
+     * 获取文档
+     */
     public getDoc(): IDocument {
-        // TODO 从app获取
-        throw new Error('Method not implemented.');
+        return app.doc
     }
 
+    /**
+     * 刷新视图
+     */
     protected _updateView() {
         this.getDoc().updateView()
     }
 
+    /**
+     * 命令执行
+     */
     public async execute(..._params: unknown[]) { }
 
+    /**
+     * 命令取消
+     */
     public cancel() {
         this._resolve()
     }

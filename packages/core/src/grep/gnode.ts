@@ -2,11 +2,15 @@ import { DiscretizeOptions, Mat4 } from '@ccpc/math'
 import { RenderNode } from '../render/render_node'
 import { CMathUtil } from '../toolkit/cmath_util'
 import { DebugUtil } from '../toolkit/debug_util'
+import { ElementId } from '../element/element_id'
 
 /**
  * 表示图形的基本单元, 包括几何数据和显示样式
  */
 export abstract class GNode {
+
+    protected _elementId = ElementId.INVALID
+
     /**父节点*/
     public parent?: GNode
 
@@ -36,6 +40,11 @@ export abstract class GNode {
 
     public get globalMatrix() {
         return this._globalMatrix
+    }
+
+    public get elementId() {
+        const root = this.getRoot()
+        return root._elementId
     }
 
     /**
@@ -85,11 +94,11 @@ export abstract class GNode {
      * 查整根树的根节点
      */
     public getRoot() {
-        let curNode = this.parent
-        while (curNode?.parent) {
+        let curNode: GNode = this.parent || this
+        while (curNode.parent) {
             curNode = curNode.parent
         }
-        return curNode ?? this
+        return curNode
     }
 
     public traverse(callback: (gnode: GNode) => void) {

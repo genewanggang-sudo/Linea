@@ -5,7 +5,7 @@ import { DebugUtil } from '../toolkit/debug_util';
 import { Document } from '../document/document';
 import { GRep } from '../grep/grep';
 
-// TODO 补充一些方法
+// TODO 补充dump load方法,统一处理? 每个类单独写?
 export class Element implements IElement {
 
     /**

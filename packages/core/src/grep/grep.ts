@@ -11,18 +11,22 @@ export class GRep extends GGroup {
         return new GRep();
     }
 
+    public set elementId(elementId: ElementId) {
+        this._elementId = elementId
+    }
+
     /**
      * 关联的element的iD
      */
-    private _refElementId = ElementId.INVALID;
+    // private _elementId = ElementId.INVALID;
 
-    public get elementId() {
-        return this._refElementId
-    }
+    // public get elementId() {
+    //     return this._elementId
+    // }
 
-    public set elementId(eId: ElementId) {
-        this._refElementId = eId
-    }
+    // public set elementId(eId: ElementId) {
+    //     this._elementId = eId
+    // }
 
     public clone(): GRep {
         const copy = new GRep();
