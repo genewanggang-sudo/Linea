@@ -1,5 +1,3 @@
-import { GRep } from '../grep/grep'
-
 // TODO 补充完整
 export interface IRender {
     /**
@@ -7,7 +5,7 @@ export interface IRender {
      */
     updateView(): void
 
-    addGRep(grep: GRep): void
+    // addGRep(grep: GRep): void
 
-    removeGRep(eId: number): void
+    // removeGRep(eId: number): void
 }

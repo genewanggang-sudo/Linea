@@ -1,7 +1,7 @@
-import { AxesHelper, Object3D, OrthographicCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three'
+import { AxesHelper, Group, OrthographicCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
-import { GRep, IRender } from '@ccpc/core'
+import { DisplayObject, DisplayObjectMgr, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
 import { RenderHub } from './render_hub'
 
 export class CRenderer implements IRender {
@@ -19,10 +19,15 @@ export class CRenderer implements IRender {
 
     private _cameraControls: OrbitControls
 
+    /**
+     * 数据转换器
+     */
     private _renderHub: RenderHub
 
-    // TODO eId到渲染图元的映射
-    private _eIdToObject: Map<number, Object3D> = new Map()
+    /**
+     * displayId到Group映射
+     */
+    private _didMap = new Map<number, Group>()
 
     // TODO 相关逻辑移动到canvas
     private _resizeObserver: ResizeObserver
@@ -66,26 +71,75 @@ export class CRenderer implements IRender {
 
     }
 
-    // TODO 未实现方法添加
+    /**
+     * 修改完场景后,调update才会真正刷新
+     */
     public updateView(): void {
+        // TODO 添加renderState控制
         console.log('updateView not implemented.')
     }
 
-    public removeGRep(eId: number): void {
-        const obj = this._eIdToObject.get(eId)
-        if (obj) this._scene.remove(obj)
-        this._eIdToObject.delete(eId)
+    /**
+     * 根据渲染数据更新显示对象
+     */
+    private _updateDisplayByRenderData(renderData: IMgrDisplayRenderData) {
+        const { id, gRep } = renderData;
+        const display = DisplayObjectMgr.instance().getDisplay(id);
+        if (display) {
+            if (gRep) {
+                const obj = this._didMap.get(display.id);
+                if (obj) {
+                    this._removeGrepByDisplayId(id);
+                    this._addGrepByDisplay(display, gRep);
+                } else {
+                    this._addGrepByDisplay(display, gRep);
+                }
+            }
+        }
     }
 
-    public addGRep(grep: GRep) {
-        const obj = this._renderHub.addGrep(grep)
-        this._scene.add(obj)
-        this._eIdToObject.set(grep.elementId.asInt(), obj)
+    /**
+     * 移除显示对象
+     */
+    private _removeDisplayById(did: number) {
+        this._removeGrepByDisplayId(did)
+    }
 
+    /**
+     * 根据显示对象添加GRep
+     */
+    private _addGrepByDisplay(display: DisplayObject, gRep: GRep) {
+        const dId = display.id
+        console.log('==========');
+        console.log(gRep);
+        const group = this._renderHub.addGrep(gRep)
+        this._scene.add(group)
+        this._didMap.set(dId, group)
+        group.visible = display.testVisible()
+    }
+
+    /**
+     * 根据显示对象移除GRep
+     */
+    private _removeGrepByDisplayId(dId: number) {
+        const group = this._didMap.get(dId)
+        if (!group) return false
+        this._didMap.delete(dId)
+        group.removeFromParent();
+        // TODO 内存释放
     }
 
     public render = () => {
         requestAnimationFrame(this.render)
+
+        const { update, remove } = DisplayObjectMgr.instance().onBeforeRender()
+        remove.forEach(id => {
+            this._removeDisplayById(id);
+        });
+        update.forEach(renderData => {
+            this._updateDisplayByRenderData(renderData);
+        });
+
         this._cameraControls.update()
         this._renderer.render(this._scene, this._camera)
     }

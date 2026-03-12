@@ -9,7 +9,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
  * 渲染数据转换、缓存、管理
  */
 export class RenderHub {
-    private _eIdToGroup: Map<number, Group> = new Map()
+    // private _eIdToGroup: Map<number, Group> = new Map()
 
     public addGrep(grep: GRep) {
         const rNode = grep.toRenderNode()
@@ -23,17 +23,17 @@ export class RenderHub {
             }
         }
 
-        this._eIdToGroup.set(grep.elementId.asInt(), group)
+        // this._eIdToGroup.set(grep.elementId.asInt(), group)
         return group
     }
 
-    public removeGRep(eId: number) {
-        this._eIdToGroup.delete(eId)
+    public removeGRep(_eId: number) {
+        // this._eIdToGroup.delete(eId)
     }
 
-    public getObj3D(eId: number) {
-        return this._eIdToGroup.get(eId)
-    }
+    // public getObj3D(eId: number) {
+    //     return this._eIdToGroup.get(eId)
+    // }
 
     /**
      * 叶子节点拍平
