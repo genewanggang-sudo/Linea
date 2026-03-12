@@ -20,8 +20,8 @@ export class DisplayObjectMgr {
         this._displayMap.set(display.id, display)
     }
 
-    public getDisplay(id: number): DisplayObject | undefined {
-        return this._displayMap.get(id)
+    public getDisplay<T extends DisplayObject>(id: number): T | undefined {
+        return this._displayMap.get(id) as T
     }
 
     public removeDisplayById(id: number): boolean {
@@ -35,6 +35,9 @@ export class DisplayObjectMgr {
         return true
     }
 
+    /**
+     * 渲染前准备
+     */
     public onBeforeRender(rebuild = false): {
         update: IMgrDisplayRenderData[]
         remove: number[]
