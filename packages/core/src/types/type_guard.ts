@@ -3,3 +3,5 @@ export type IConstructor<T> = {
     new(...args: any[]): T
     prototype: T
 }
+
+export type IPrototype<T> = IConstructor<T>['prototype'];
