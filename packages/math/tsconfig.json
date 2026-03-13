@@ -7,10 +7,26 @@
         "declaration": true,
         "declarationMap": true,
         "emitDeclarationOnly": false,
+        "strictPropertyInitialization": false,
+        "noImplicitAny": false,
         "outDir": "dist",
         "rootDir": "src",
         "strict": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        // 下面这些是从老项目配置里拿过来的兼容项，先集中放在一起，后续方便统一评估是否保留
+        "allowJs": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "resolveJsonModule": true
     },
-    "include": ["src"]
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "src/clipperlib/**/*.js",
+        "src/verb/**/*.js",
+        "src/wasm/**/*.js"
+    ]
 }

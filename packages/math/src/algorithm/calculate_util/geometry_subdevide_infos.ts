@@ -252,7 +252,7 @@ export class Curve2dSegmentPair extends CurveSegmentPair<Vec2> {
     }
 
     public get segment2(): Curve2dSegment {
-        return this._segment1 as any;
+        return this._segment2 as any;
     }
 }
 
@@ -262,7 +262,7 @@ export class Curve3dSegmentPair extends CurveSegmentPair<Vec3> {
     }
 
     public get segment2(): Curve3dSegment {
-        return this._segment1 as any;
+        return this._segment2 as any;
     }
 }
 
