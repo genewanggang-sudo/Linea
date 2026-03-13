@@ -90,3 +90,141 @@ export class RenderText extends RenderNode {
         return copy
     }
 }
+
+/**
+ * 三角面片
+ */
+export class RenderMesh extends RenderNode {
+    private _verts: Float32Array | undefined;
+
+    private _indices: Uint32Array | undefined;
+
+    private _normals: Float32Array | undefined;
+
+    private _uvs: Float32Array | undefined;
+
+    /**
+     * 点集,一个点由一个索引组成
+     * 离散后的所有顶点, 此数据不渲染,只做存储使用
+     */
+    public setVerts(verts: types.IXYZ[] | Float32Array) {
+        if (verts instanceof Float32Array) {
+            this._verts = verts;
+        } else {
+            this._verts = new Float32Array(3 * verts.length);
+            for (let i = 0; i < verts.length; i++) {
+                this._verts[i * 3] = verts[i].x;
+                this._verts[i * 3 + 1] = verts[i].y;
+                this._verts[i * 3 + 2] = verts[i].z;
+            }
+        }
+    }
+
+    public setIndices(indices: number[][] | Uint32Array) {
+        if (indices instanceof Uint32Array) {
+            this._indices = indices;
+        } else {
+            this._indices = new Uint32Array(3 * indices.length);
+            for (let i = 0; i < indices.length; i++) {
+                this._indices[i * 3] = indices[i][0];
+                this._indices[i * 3 + 1] = indices[i][1];
+                this._indices[i * 3 + 2] = indices[i][2];
+            }
+        }
+    }
+
+    public setNormals(normals: types.IXYZ[] | Float32Array) {
+        if (normals instanceof Float32Array) {
+            this._normals = normals;
+        } else {
+            this._normals = new Float32Array(3 * normals.length);
+            for (let i = 0; i < normals.length; i++) {
+                this._normals[i * 3] = normals[i].x;
+                this._normals[i * 3 + 1] = normals[i].y;
+                this._normals[i * 3 + 2] = normals[i].z;
+            }
+        }
+    }
+
+    public setUVs(uvs: types.IXY[] | Float32Array) {
+        if (uvs instanceof Float32Array) {
+            this._uvs = uvs;
+        } else {
+            this._uvs = new Float32Array(2 * uvs.length);
+            for (let i = 0; i < uvs.length; i++) {
+                this._uvs[i * 2] = uvs[i].x;
+                this._uvs[i * 2 + 1] = uvs[i].y;
+            }
+        }
+    }
+
+    public getVertexes(): Vec3[] {
+        if (!this._verts) {
+            return [];
+        }
+
+        const result: Vec3[] = [];
+        for (let i = 0; i < this._verts.length / 3; i++) {
+            result.push(new Vec3(this._verts[i * 3], this._verts[i * 3 + 1], this._verts[i * 3 + 2]));
+        }
+
+        return result;
+    }
+
+    public getVerts(): Float32Array {
+        return this._verts ? this._verts : new Float32Array();
+    }
+
+    public getIndices(): Uint32Array {
+        return this._indices ? this._indices : new Uint32Array();
+    }
+
+    public getNormals(): Float32Array {
+        return this._normals ? this._normals : new Float32Array();
+    }
+
+    public getUVs(): Float32Array {
+        return this._uvs ? this._uvs : new Float32Array();
+    }
+
+    public clone() {
+        const copy = super.clone()
+        copy.setVerts(Float32Array.from(this._verts || []));
+        copy.setNormals(Float32Array.from(this._normals || []));
+        copy.setUVs(Float32Array.from(this._uvs || []));
+        copy.setIndices(Uint32Array.from(this._indices || []));
+        return copy
+    }
+
+    /**
+     * 将目标RenderMesh合并到当前RenderMesh, 会改变this
+     * @param 目标RenderMesh
+     */
+    public merge(renderMesh: RenderMesh) {
+        if (!renderMesh.getVerts().length) {
+            return;
+        }
+        const verts1: number[] = Array.from(this._verts || []);
+        const length1 = verts1.length / 3;
+        const verts2: number[] = Array.from(renderMesh.getVerts());
+        verts1.push(...verts2);
+
+        const normals1: number[] = Array.from(this._normals || []);
+        const normals2: number[] = Array.from(renderMesh.getNormals());
+        normals1.push(...normals2);
+
+        const uvs1: number[] = Array.from(this._uvs || []);
+        const uvs2: number[] = Array.from(renderMesh.getUVs());
+        uvs1.push(...uvs2);
+
+        const indices1: number[] = Array.from(this._indices || []);
+        let indices2: number[] = Array.from(renderMesh.getIndices());
+        indices2 = indices2.map(n => n + length1);
+        indices1.push(...indices2);
+
+        this._verts = new Float32Array(verts1);
+        this._normals = new Float32Array(normals1);
+        this._uvs = new Float32Array(uvs1);
+        this._indices = new Uint32Array(indices1);
+    }
+}

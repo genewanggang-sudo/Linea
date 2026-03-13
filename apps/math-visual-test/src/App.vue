@@ -10,6 +10,7 @@ import { Arc2 } from '@ccpc/math/geometry/arc2d'
 import type { Curve2 } from '@ccpc/math/geometry/curve2'
 import { Ln2 } from '@ccpc/math/geometry/ln2'
 import { NurbsCurve2 } from '@ccpc/math/geometry/nurbs_curve2'
+import { Polygon } from '@ccpc/math/topology/polygon'
 import { CONST } from '@ccpc/math/type_define/const'
 
 type ToolId = 'line' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
@@ -31,16 +32,39 @@ type StoredShape = {
     controls: Vec2[]
 }
 
+type PolygonPatternId = 'stripes' | 'dots' | 'grid' | 'cross'
+
+type PolygonFillStyle = {
+    pattern: PolygonPatternId
+    baseColor: string
+    accentColor: string
+    backgroundColor: string
+    outlineColor: string
+    opacity: number
+    spacing: number
+    lineWidth: number
+    rotation: number
+}
+
+type StoredPolygon = {
+    id: number
+    polygon: Polygon
+    fill: PolygonFillStyle
+}
+
 type AppState = {
     activeTool?: ToolId
     isDrawing: boolean
     precision: PrecisionId
     showDiscretePoints: boolean
+    showPolygonTriangles: boolean
     draftPoints: Vec2[]
     hoverPoint?: Vec2
     shapes: StoredShape[]
+    polygons: StoredPolygon[]
     intersections: Vec2[]
     nextShapeId: number
+    nextPolygonId: number
 }
 
 type PerfState = {
@@ -76,11 +100,14 @@ const state = reactive<AppState>({
     isDrawing: false,
     precision: 'normal',
     showDiscretePoints: false,
+    showPolygonTriangles: false,
     draftPoints: [],
     hoverPoint: undefined,
     shapes: [],
+    polygons: [],
     intersections: [],
     nextShapeId: 1,
+    nextPolygonId: 1,
 })
 
 const perf = reactive<PerfState>({
@@ -298,7 +325,10 @@ function disposeObject3D(object: THREE.Object3D): void {
         if ('geometry' in mesh && mesh.geometry) mesh.geometry.dispose()
         if ('material' in mesh && mesh.material) {
             const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-            for (const material of materials) material.dispose()
+            for (const material of materials) {
+                if ('map' in material && material.map) material.map.dispose()
+                material.dispose()
+            }
         }
     })
 }
@@ -329,6 +359,182 @@ function createPointCloud(points: Vec2[], color: string, size = 8, z = 6): THREE
     return new THREE.Points(geometry, new THREE.PointsMaterial({ color, size, sizeAttenuation: false }))
 }
 
+function makeHslColor(hue: number, saturation: number, lightness: number): string {
+    return `hsl(${Math.round(hue)} ${Math.round(saturation)}% ${Math.round(lightness)}%)`
+}
+
+function createPolygonFillStyle(seed: number): PolygonFillStyle {
+    const patternSequence: PolygonPatternId[] = ['stripes', 'dots', 'grid', 'cross']
+    const hue = (seed * 67) % 360
+    const accentHue = (hue + 140 + seed * 11) % 360
+    return {
+        pattern: patternSequence[(seed - 1) % patternSequence.length],
+        baseColor: makeHslColor(hue, 72, 58),
+        accentColor: makeHslColor(accentHue, 78, 30),
+        backgroundColor: makeHslColor((hue + 24) % 360, 80, 95),
+        outlineColor: makeHslColor((accentHue + 18) % 360, 80, 24),
+        opacity: 0.9,
+        spacing: 14 + (seed % 5) * 5,
+        lineWidth: 2 + (seed % 3),
+        rotation: ((seed * 23) % 180) * Math.PI / 180,
+    }
+}
+
+function createPatternTexture(fill: PolygonFillStyle): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas')
+    canvas.width = 192
+    canvas.height = 192
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('2D canvas is not available')
+
+    ctx.fillStyle = fill.backgroundColor
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate(fill.rotation)
+    ctx.translate(-canvas.width / 2, -canvas.height / 2)
+    ctx.fillStyle = fill.baseColor
+    ctx.strokeStyle = fill.accentColor
+    ctx.lineWidth = fill.lineWidth
+
+    if (fill.pattern === 'stripes') {
+        for (let x = -canvas.width; x <= canvas.width * 2; x += fill.spacing) {
+            ctx.beginPath()
+            ctx.moveTo(x, -canvas.height)
+            ctx.lineTo(x, canvas.height * 2)
+            ctx.stroke()
+        }
+    } else if (fill.pattern === 'dots') {
+        const radius = Math.max(fill.lineWidth * 1.2, 3)
+        for (let y = fill.spacing * -0.5; y <= canvas.height + fill.spacing; y += fill.spacing) {
+            for (let x = fill.spacing * -0.5; x <= canvas.width + fill.spacing; x += fill.spacing) {
+                ctx.beginPath()
+                ctx.arc(x, y, radius, 0, Math.PI * 2)
+                ctx.fill()
+            }
+        }
+    } else if (fill.pattern === 'grid') {
+        for (let x = 0; x <= canvas.width; x += fill.spacing) {
+            ctx.beginPath()
+            ctx.moveTo(x, 0)
+            ctx.lineTo(x, canvas.height)
+            ctx.stroke()
+        }
+        for (let y = 0; y <= canvas.height; y += fill.spacing) {
+            ctx.beginPath()
+            ctx.moveTo(0, y)
+            ctx.lineTo(canvas.width, y)
+            ctx.stroke()
+        }
+    } else {
+        for (let x = -canvas.width; x <= canvas.width * 2; x += fill.spacing) {
+            ctx.beginPath()
+            ctx.moveTo(x, -canvas.height)
+            ctx.lineTo(x, canvas.height * 2)
+            ctx.stroke()
+        }
+        ctx.strokeStyle = fill.baseColor
+        for (let x = -canvas.width; x <= canvas.width * 2; x += fill.spacing) {
+            ctx.beginPath()
+            ctx.moveTo(x, canvas.height * 2)
+            ctx.lineTo(x, -canvas.height)
+            ctx.stroke()
+        }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(2.2, 2.2)
+    texture.colorSpace = THREE.SRGBColorSpace
+    return texture
+}
+
+function createTriangleWireframe(geometry: THREE.ShapeGeometry): THREE.LineSegments | undefined {
+    const position = geometry.getAttribute('position')
+    const index = geometry.getIndex()
+    if (!position || !index) return undefined
+
+    const segments: number[] = []
+    for (let i = 0; i < index.count; i += 3) {
+        const a = index.getX(i)
+        const b = index.getX(i + 1)
+        const c = index.getX(i + 2)
+        const triangle = [a, b, b, c, c, a]
+        for (let j = 0; j < triangle.length; j += 2) {
+            const from = triangle[j]
+            const to = triangle[j + 1]
+            segments.push(
+                position.getX(from), position.getY(from), 3.5,
+                position.getX(to), position.getY(to), 3.5,
+            )
+        }
+    }
+
+    const wireGeometry = new THREE.BufferGeometry()
+    wireGeometry.setAttribute('position', new THREE.Float32BufferAttribute(segments, 3))
+    const material = new THREE.LineBasicMaterial({
+        color: '#0f172a',
+        transparent: true,
+        opacity: 0.96,
+    })
+    return new THREE.LineSegments(wireGeometry, material)
+}
+
+function createPolygonObject(item: StoredPolygon): THREE.Group | undefined {
+    const loops = item.polygon.getLoops()
+    if (!loops.length) return undefined
+
+    const [outerLoop, ...holeLoops] = loops
+    const outerPath = outerLoop.toPath(activeDiscreteParam())
+    if (outerPath.length < 3) return undefined
+
+    const shape = new THREE.Shape()
+    shape.moveTo(outerPath[0].x, toSceneY(outerPath[0].y))
+    for (let i = 1; i < outerPath.length; i++) {
+        shape.lineTo(outerPath[i].x, toSceneY(outerPath[i].y))
+    }
+    shape.closePath()
+
+    for (const holeLoop of holeLoops) {
+        const holePath = holeLoop.toPath(activeDiscreteParam())
+        if (holePath.length < 3) continue
+        const hole = new THREE.Path()
+        hole.moveTo(holePath[0].x, toSceneY(holePath[0].y))
+        for (let i = 1; i < holePath.length; i++) {
+            hole.lineTo(holePath[i].x, toSceneY(holePath[i].y))
+        }
+        hole.closePath()
+        shape.holes.push(hole)
+    }
+
+    const group = new THREE.Group()
+    const geometry = new THREE.ShapeGeometry(shape)
+    if (!state.showPolygonTriangles) {
+        const texture = createPatternTexture(item.fill)
+        const material = new THREE.MeshBasicMaterial({
+            color: '#ffffff',
+            map: texture,
+            transparent: true,
+            opacity: item.fill.opacity,
+            side: THREE.DoubleSide,
+        })
+        const mesh = new THREE.Mesh(geometry, material)
+        mesh.position.z = -1
+        group.add(mesh)
+    } else {
+        const triangles = createTriangleWireframe(geometry)
+        if (triangles) group.add(triangles)
+    }
+
+    for (const loop of loops) {
+        const outlineColor = state.showPolygonTriangles ? '#0f766e' : item.fill.outlineColor
+        const outline = createPolyline(loop.toPath(activeDiscreteParam()), outlineColor, false, 2)
+        if (outline) group.add(outline)
+    }
+
+    return group
+}
+
 function createGrid(): THREE.Group {
     const group = new THREE.Group()
     const gridMaterial = new THREE.LineBasicMaterial({ color: '#98a7ba', transparent: true, opacity: 0.14 })
@@ -354,6 +560,10 @@ scene.add(createGrid())
 function syncPermanentShapes(): void {
     clearGroup(permanentGroup)
     clearGroup(discretePointGroup)
+    for (const polygon of state.polygons) {
+        const polygonObject = createPolygonObject(polygon)
+        if (polygonObject) permanentGroup.add(polygonObject)
+    }
     for (const shape of state.shapes) {
         const curve = getShapeCurve(shape)
         if (!curve) continue
@@ -518,6 +728,11 @@ function serializeVec2(point: Vec2): { x: number; y: number } {
 function exportDebugData(): void {
     const payload = {
         exportedAt: new Date().toISOString(),
+        polygons: state.polygons.map(item => ({
+            id: item.id,
+            loops: item.polygon.getLoops().map(loop => loop.toPath(activeDiscreteParam()).map(serializeVec2)),
+            fill: item.fill,
+        })),
         curves: state.shapes.map(shape => {
             const curve = getShapeCurve(shape)
             const sampled = curve ? sampleCurve(curve) : []
@@ -610,6 +825,7 @@ function createRandomBatch(): void {
     clearIntersections()
     resetDraft()
     state.shapes = []
+    state.polygons = []
     for (let i = 0; i < 50; i++) {
         const shape = createRandomShape()
         if (shape) state.shapes.push(shape)
@@ -617,8 +833,45 @@ function createRandomBatch(): void {
     updateScene()
 }
 
+function createRandomPolygon(): StoredPolygon | undefined {
+    for (let attempt = 0; attempt < 12; attempt++) {
+        const center = randomPoint(360, 280)
+        const vertexCount = Math.floor(randomInRange(5, 10))
+        const startAngle = randomAngle()
+        const baseRadius = randomInRange(90, 190)
+        const points: Vec2[] = []
+
+        for (let i = 0; i < vertexCount; i++) {
+            const angle = startAngle + (CONST.PI2 * i) / vertexCount + randomInRange(-0.22, 0.22)
+            const radius = baseRadius * randomInRange(0.58, 1.08)
+            points.push(center.added(new Vec2(Math.cos(angle) * radius, Math.sin(angle) * radius)))
+        }
+
+        const polygon = new Polygon(points)
+        if (!polygon.isValid(activeTol()) || Math.abs(polygon.calcArea()) < 1e4) continue
+
+        return {
+            id: state.nextPolygonId,
+            polygon,
+            fill: createPolygonFillStyle(state.nextPolygonId++),
+        }
+    }
+
+    return undefined
+}
+
+function addRandomPolygon(): void {
+    clearIntersections()
+    resetDraft()
+    const polygon = createRandomPolygon()
+    if (!polygon) return
+    state.polygons.push(polygon)
+    updateScene()
+}
+
 function clearScene(): void {
     state.shapes = []
+    state.polygons = []
     clearIntersections()
     resetDraft()
     state.hoverPoint = undefined
@@ -833,19 +1086,27 @@ onBeforeUnmount(() => {
                             </el-button>
                         </el-button-group>
 
-                        <div class="switch-row">
+                        <div class="switch-row switch-row--soft">
                             <el-text>显示离散点</el-text>
                             <el-switch v-model="state.showDiscretePoints" @change="updateScene" />
                         </div>
 
                         <div class="section-title">场景操作</div>
-                        <el-space direction="vertical" :size="10" fill>
+                        <div class="switch-row switch-row--accent">
+                            <el-text>显示面三角网</el-text>
+                            <el-button class="tri-toggle-button" :type="state.showPolygonTriangles ? 'warning' : 'default'" @click="state.showPolygonTriangles = !state.showPolygonTriangles; updateScene()">
+                                {{ state.showPolygonTriangles ? '隐藏三角网' : '显示所有面三角网' }}
+                            </el-button>
+                        </div>
+
+                        <el-space direction="vertical" :size="10" fill class="action-grid">
+                            <el-button type="success" @click="addRandomPolygon">随机 Polygon</el-button>
                             <el-button :disabled="!state.isDrawing || !state.draftPoints.length" @click="state.draftPoints.pop(); updateScene()">撤销点位</el-button>
                             <el-button type="primary" :disabled="!canConfirmBspline()" @click="commitCurrentShape()">完成 B样条</el-button>
                             <el-button @click="createRandomBatch">随机 50 条</el-button>
                             <el-button @click="computeIntersections">求交显示</el-button>
                             <el-button :disabled="!state.intersections.length" @click="clearIntersections(); updateScene()">清空交点</el-button>
-                            <el-button type="danger" plain :disabled="!state.shapes.length" @click="clearScene">清空场景</el-button>
+                            <el-button type="danger" plain :disabled="!state.shapes.length && !state.polygons.length" @click="clearScene">清空场景</el-button>
                         </el-space>
                     </el-space>
                 </el-card>
