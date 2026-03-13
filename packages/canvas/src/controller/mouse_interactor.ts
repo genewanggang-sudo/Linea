@@ -98,7 +98,7 @@ export class MouseInteractor {
         this._mouseDown = false;
         let consumed = false;
         if (e.button === 0) {
-            if (this._lMouseDownPos && this._lMouseDownPos.distanceToSq(pos) < canvasConfig.common.click_to_tolerance) {
+            if (this._lMouseDownPos && this._lMouseDownPos.sqDistanceTo(pos) < canvasConfig.common.click_to_tolerance) {
                 this._processMouseEvent(EN_MouseEvent.CLICK, e);
             }
             if (!this._dblClickTimeout) {
@@ -110,7 +110,7 @@ export class MouseInteractor {
             } else {
                 // 双击时间内再次触发,根据距离判断是否真正双击
                 window.clearTimeout(this._dblClickTimeout);
-                if (this._lastLMouseUpPos && this._lastLMouseUpPos.distanceToSq(pos) < canvasConfig.common.click_to_tolerance) {
+                if (this._lastLMouseUpPos && this._lastLMouseUpPos.sqDistanceTo(pos) < canvasConfig.common.click_to_tolerance) {
                     delete this._dblClickTimeout;
                     this._processMouseEvent(EN_MouseEvent.DBL_CLICK, e);
                 } else {
@@ -130,7 +130,7 @@ export class MouseInteractor {
             consumed = this._processMouseEvent(EN_MouseEvent.R_BUTTON_UP, e);
             if (!consumed &&
                 this._rMouseDownPos &&
-                this._rMouseDownPos.distanceToSq(pos) < canvasConfig.common.click_to_tolerance
+                this._rMouseDownPos.sqDistanceTo(pos) < canvasConfig.common.click_to_tolerance
             ) {
                 consumed = this._processMouseEvent(EN_MouseEvent.R_CLICK, e);
                 delete this._rMouseDownPos;

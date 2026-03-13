@@ -1,5 +1,5 @@
 import { EN_RNODE_TYPE } from '../types/type_define';
-import { Mat4, Vec3 } from '@ccpc/math'
+import { Matrix4, Vec3 } from '@ccpc/math'
 import { IConstructor } from '../types/type_guard';
 import { GNode } from '../grep/gnode';
 /**
@@ -12,9 +12,9 @@ export class RenderNode {
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.UNKOWN;
 
-    public globalMatrix?: Mat4
+    public globalMatrix?: Matrix4
 
-    public copyWorldMatrix(m?: Mat4): void {
+    public copyWorldMatrix(m?: Matrix4): void {
         this.globalMatrix = m?.clone()
     }
 

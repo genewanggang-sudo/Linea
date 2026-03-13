@@ -8,7 +8,7 @@ import {
     registerRequest,
     requestMgr,
 } from '@ccpc/core'
-import { Line2, Plane, Vec2 } from '@ccpc/math'
+import { Ln2, Plane, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, registerCmd } from '@ccpc/platform'
 
 type LinePattern = 'horizontal' | 'diagonal' | 'cross'
@@ -87,7 +87,7 @@ function buildLineGRep(element: TestLineElement): GRep {
     const { center, pattern } = element
 
     const addLine = (start: Vec2, end: Vec2) => {
-        grep.addNode(new GCurve2d(plane, new Line2(start, end)))
+        grep.addNode(new GCurve2d(plane, new Ln2(start, end)))
     }
 
     if (pattern === 'horizontal') {
