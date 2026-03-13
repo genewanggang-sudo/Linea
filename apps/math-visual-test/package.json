@@ -1,0 +1,21 @@
+{
+  "name": "math-visual-test",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ccpc/math": "workspace:*",
+    "element-plus": "^2.13.5",
+    "three": "^0.181.1",
+    "vue": "^3.5.30"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "^7.2.4"
+  }
+}
