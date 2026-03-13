@@ -24,5 +24,16 @@
     "devDependencies": {
         "@vitest/coverage-v8": "^4.0.18",
         "vitest": "^4.0.18"
+    },
+    "dependencies": {
+        "clipper2-wasm": "^0.2.1",
+        "earcut": "^3.0.2",
+        "libtess": "^1.2.2",
+        "lodash": "^4.17.23",
+        "numeric": "^1.2.6",
+        "poly2tri": "^1.5.0",
+        "priorityqueuejs": "^2.0.0",
+        "quadtree-lib": "^1.0.9",
+        "short-uuid": "^6.0.3"
     }
 }
