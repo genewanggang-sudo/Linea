@@ -6,11 +6,9 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "dev:docs": "pnpm --filter docs dev",
-    "dev:math-viz": "pnpm --parallel --filter \"@ccpc/math\" --filter math-visual-test dev",
     "dev:core-flow-test": "pnpm --parallel --filter \"@ccpc/core\" --filter core-flow-test dev",
     "build": "pnpm -r build",
     "build:docs": "pnpm --filter docs build",
-    "build:math-viz": "pnpm --filter math-visual-test build",
     "publish:core": "pnpm --filter @ccpc/core publish --access public --no-git-checks",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
@@ -18,8 +16,7 @@
     "test:math": "pnpm --filter \"@ccpc/math\" test",
     "test:math:run": "pnpm --filter \"@ccpc/math\" test:run",
     "test:math:coverage": "pnpm --filter \"@ccpc/math\" test:coverage",
-    "preview:docs": "pnpm --filter docs preview",
-    "preview:math-viz": "pnpm --filter math-visual-test preview"
+    "preview:docs": "pnpm --filter docs preview"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
