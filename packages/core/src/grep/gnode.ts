@@ -1,4 +1,4 @@
-import { DiscretizeOptions, Mat4 } from '@ccpc/math'
+import { DiscreteParam, Matrix4 } from '@ccpc/math'
 import { RenderNode } from '../render/render_node'
 import { CMathUtil } from '../toolkit/cmath_util'
 import { DebugUtil } from '../toolkit/debug_util'
@@ -23,18 +23,18 @@ export abstract class GNode {
     /**
      * 相对父节点局部矩阵
      */
-    protected _localMatrix?: Mat4
+    protected _localMatrix?: Matrix4
 
     /**
      * 根节点累计到当前的世界矩阵
      */
-    protected _globalMatrix?: Mat4
+    protected _globalMatrix?: Matrix4
 
-    public get localMatrix(): Mat4 | undefined {
+    public get localMatrix(): Matrix4 | undefined {
         return this._localMatrix
     }
 
-    public set localMatrix(value: Mat4) {
+    public set localMatrix(value: Matrix4) {
         this._localMatrix = value
     }
 
@@ -47,10 +47,14 @@ export abstract class GNode {
         return root._elementId
     }
 
+    public set elementId(elementId: ElementId) {
+        this._elementId = elementId
+    }
+
     /**
      * GNode->RenderNode入口
      */
-    public toRenderNode(discreteParams?: DiscretizeOptions) {
+    public toRenderNode(discreteParams?: DiscreteParam) {
         this.updateRenderNode(discreteParams)
         DebugUtil.assert(this._renderNode, '转RenderNode失败', 'wg', '2026-03-11')
         return this._renderNode
@@ -59,7 +63,7 @@ export abstract class GNode {
     /**
      * 更新GNode对应的RenderNode
      */
-    public updateRenderNode(discreteParams?: DiscretizeOptions) {
+    public updateRenderNode(discreteParams?: DiscreteParam) {
         if (!this._renderNode) {
             this._renderNode = this._toRenderNodeWithoutMatrix(discreteParams)
         }
@@ -79,7 +83,7 @@ export abstract class GNode {
     /**
      * 递归计算当前节点及子节点的世界矩阵
      */
-    protected _updateMatrix(parentGlobalMatrix?: Mat4) {
+    protected _updateMatrix(parentGlobalMatrix?: Matrix4) {
         this._globalMatrix = CMathUtil.composeMatrix(parentGlobalMatrix, this._localMatrix)
         if (this._renderNode) {
             this._renderNode.globalMatrix = this._globalMatrix?.clone()
@@ -118,7 +122,7 @@ export abstract class GNode {
     /**
      * 通过离散等方式生成对应的RenderNode
      */
-    protected abstract _toRenderNodeWithoutMatrix(discreteParams?: DiscretizeOptions): RenderNode
+    protected abstract _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderNode
 
     public abstract clone(): GNode
 

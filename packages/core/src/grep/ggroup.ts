@@ -1,4 +1,4 @@
-import { DiscretizeOptions } from '@ccpc/math';
+import { DiscreteParam } from '@ccpc/math';
 import { RenderGroup, RenderNode } from '../render/render_node';
 import { GNode } from './gnode';
 
@@ -37,7 +37,7 @@ export class GGroup extends GNode {
         return [...this._children];
     }
 
-    protected _toRenderNodeWithoutMatrix(discreteParams?: DiscretizeOptions): RenderNode {
+    protected _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderNode {
         const render = new RenderGroup();
         this._children.forEach(child => {
             const renderNode = child.toRenderNode(discreteParams)

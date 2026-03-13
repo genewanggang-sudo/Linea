@@ -1,4 +1,4 @@
-import { IVec3, Plane, Vec2 } from '@ccpc/math';
+import { types, Plane, Vec2 } from '@ccpc/math';
 import { GNode2d } from './gnode2d';
 import { RenderNode, RenderPoint } from '../render/render_node';
 
@@ -20,7 +20,7 @@ export class GPoint2d extends GNode2d {
     }
 
     // 返回当前二维点映射到平面后的三维坐标。
-    public getPoint(): IVec3 {
+    public getPoint(): types.IXYZ {
         return this.plane.getPtAt(this.geo)
     }
 

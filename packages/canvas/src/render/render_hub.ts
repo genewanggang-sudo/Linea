@@ -58,7 +58,7 @@ export class RenderHub {
         if (rNode instanceof RenderPoint) {
             const point = new Vec3(rNode.point)
             if (rNode.globalMatrix) {
-                point.applyMat4(rNode.globalMatrix)
+                point.transform(rNode.globalMatrix)
             }
 
             const geo = new BufferGeometry()
@@ -79,7 +79,7 @@ export class RenderHub {
             for (const rawPoint of rNode.points) {
                 const point = rawPoint.clone()
                 if (rNode.globalMatrix) {
-                    point.applyMat4(rNode.globalMatrix)
+                    point.transform(rNode.globalMatrix)
                 }
                 positions.push(point.x, point.y, point.z)
             }
