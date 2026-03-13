@@ -1,4 +1,4 @@
-import { ElementId } from '../element/element_id';
+// import { ElementId } from '../element/element_id';
 import { GGroup } from './ggroup';
 
 // TODO 补充完整
@@ -9,10 +9,6 @@ export class GRep extends GGroup {
      */
     public static get empty() {
         return new GRep();
-    }
-
-    public set elementId(elementId: ElementId) {
-        this._elementId = elementId
     }
 
     /**

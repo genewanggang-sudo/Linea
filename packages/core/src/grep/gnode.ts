@@ -47,6 +47,10 @@ export abstract class GNode {
         return root._elementId
     }
 
+    public set elementId(elementId: ElementId) {
+        this._elementId = elementId
+    }
+
     /**
      * GNode->RenderNode入口
      */
