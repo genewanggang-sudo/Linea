@@ -126,4 +126,10 @@ export abstract class GNode {
 
     public abstract clone(): GNode
 
+    protected _copy(another: GNode) {
+        this._localMatrix = another._localMatrix?.clone()
+        this._globalMatrix = another._globalMatrix?.clone()
+        return this
+    }
+
 }

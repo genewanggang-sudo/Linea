@@ -1,5 +1,5 @@
 import { EN_RNODE_TYPE } from '../types/type_define';
-import { Matrix4, Vec3 } from '@ccpc/math'
+import { Matrix4, types, Vec3 } from '@ccpc/math'
 import { IConstructor } from '../types/type_guard';
 import { GNode } from '../grep/gnode';
 /**
@@ -27,18 +27,12 @@ export class RenderNode {
         }
     }
 
-    public clone(): this {
+    public clone() {
         const Ctor = this.constructor as IConstructor<this>
         const copy = new Ctor()
-        copy.globalMatrix = this.globalMatrix?.clone()
+        copy.parent = this.parent
         copy.gnode = this.gnode
-        return copy
-    }
-
-    protected _cloneByCtor<T extends RenderNode>(Ctor: IConstructor<T>) {
-        const copy = new Ctor()
         copy.globalMatrix = this.globalMatrix?.clone()
-        copy.gnode = this.gnode
         return copy
     }
 }
@@ -66,10 +60,33 @@ export class RenderPoint extends RenderNode {
     public point!: Vec3
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.POINT;
+
+    // TODO clone方法
 }
 
 export class RenderEdge extends RenderNode {
     public points!: Vec3[];
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.EDGE;
+
+    // TODO clone方法
+}
+
+/**
+ * 文字
+ */
+export class RenderText extends RenderNode {
+    public text: string = ''
+
+    public opacity: number = 1;
+
+    public position: types.IXYZ = Vec3.O()
+
+    public clone() {
+        const copy = super.clone()
+        copy.text = this.text
+        copy.opacity = this.opacity
+        copy.position = new Vec3(this.position)
+        return copy
+    }
 }
