@@ -1,11 +1,16 @@
 // Header for verb for JavaScript
 // Borrowed from browserify, this header supports AMD (define) and common js (require) style modules
 /* eslint-disable */
-(function (f) {
+const __verb = (function (f) {
     if (typeof exports === 'object' && typeof module !== 'undefined') {
         module.exports = f();
+        return module.exports;
     } else if (typeof define === 'function' && define.amd) {
-        define([], f);
+        const v = f();
+        define([], function () {
+            return v;
+        });
+        return v;
     } else {
         var g;
         if (typeof window !== 'undefined') {
@@ -19,6 +24,7 @@
         }
 
         g.verb = f();
+        return g.verb;
     }
 })(function () {
     var verb = {};
@@ -8830,3 +8836,10 @@
 
     return verb;
 });
+
+const verb = __verb;
+const geom = verb.geom;
+const core = verb.core;
+const evalApi = verb.eval;
+
+export { core, evalApi as eval, geom, verb };

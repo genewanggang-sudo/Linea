@@ -1,8 +1,6 @@
 import * as Short from 'short-uuid';
 import { Loader } from '../../loader/loader';
 
-
-
 /**
  * 定义一些工具类方法
  */
@@ -11,14 +9,14 @@ export class BrepUtil {
      * 生成UUID
      */
     public static generateUUID(): string {
-        return Short.uuid();
+        return Short.generate();
     }
 
     /**
      * 生成8位短的UUID
      */
     public static generateShortUUID(): string {
-        return Short.uuid().substring(0, 8);
+        return Short.generate().substring(0, 8);
     }
 
     // value是基础类型或者实现了接口IGeoElement
@@ -26,7 +24,7 @@ export class BrepUtil {
         let dataObj;
         if (map) {
             dataObj = {};
-            // eslint-disable-next-line guard-for-in
+
             for (const k in map) {
                 let value = map[k];
                 try {
@@ -44,7 +42,7 @@ export class BrepUtil {
         let map: any;
         if (dataObj) {
             map = {};
-            // eslint-disable-next-line guard-for-in
+
             for (const k in dataObj) {
                 let value = dataObj[k];
                 try {

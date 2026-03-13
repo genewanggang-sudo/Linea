@@ -846,3 +846,9 @@ export declare module geom {
         constructor(profile: ICurve, rail: ICurve);
     }
 }
+
+export declare const verb: {
+    core: typeof core;
+    eval: typeof eval;
+    geom: typeof geom;
+};
