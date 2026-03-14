@@ -36,13 +36,6 @@ export class GPolygon extends GNode2d {
             render.setNormals(normals);
 
             // TODO 暂时不考虑UV
-            // const uvs = vertices.map(_ => {
-            //     return [_.x, _.y] as types.numberArr2;
-            // });
-            // if (uvs) {
-            //     const faceStyle = this.getStyle().face;
-            //     setUVToRenderMesh(uvs, faceStyle, render);
-            // }
         } catch (e) {
             console.error(e);
             DebugUtil.warn(false, 'invalid gface', 'wg', '2026-03-13');
