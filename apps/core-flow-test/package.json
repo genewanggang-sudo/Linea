@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "core-flow-test",
   "private": true,
   "version": "0.0.0",
@@ -12,9 +12,12 @@
     "@ccpc/canvas": "workspace:*",
     "@ccpc/core": "workspace:*",
     "@ccpc/math": "workspace:*",
-    "@ccpc/platform": "workspace:*"
+    "@ccpc/platform": "workspace:*",
+    "naive-ui": "^2.44.1",
+    "vue": "^3.5.30"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
     "typescript": "5.9.3",
     "vite": "^7.2.4"
   }
