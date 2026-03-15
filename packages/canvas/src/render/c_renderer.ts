@@ -1,8 +1,9 @@
-import { AxesHelper, Group, OrthographicCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three'
+import { AxesHelper, Group, OrthographicCamera, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { DisplayObject, DisplayObjectMgr, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
 import { RenderHub } from './render_hub'
+import { Vec2, Vec3 } from '@ccpc/math'
 
 export class CRenderer implements IRender {
     private _width: number
@@ -142,6 +143,43 @@ export class CRenderer implements IRender {
 
         this._cameraControls.update()
         this._renderer.render(this._scene, this._camera)
+    }
+
+    /**
+     * NDC转屏幕坐标
+     */
+    public NDCToScreen(ndcX: number, ndcY: number) {
+        const screenPos = new Vec2()
+        screenPos.x = (this._width * (ndcX + 1)) / 2
+        screenPos.y = (this._height * (1 - ndcY)) / 2
+        return screenPos
+    }
+
+    /**
+     * 屏幕坐标转NDC
+     */
+    public screenToNDC(screenPos: Vec2) {
+        const pos = new Vec2()
+        pos.x = (screenPos.x / this._width) * 2 - 1
+        pos.y = -(screenPos.y / this._height) * 2 + 1
+        return pos
+    }
+
+    /**
+     * NDC坐标转世界坐标
+     */
+    public NDCToWorld(ndcX: number, ndcY: number) {
+        const ndc = new Vector3(ndcX, ndcY, 0)
+        const worldPos = ndc.unproject(this._camera)
+        return new Vec3(worldPos)
+    }
+
+    /**
+     * 世界坐标转NDC坐标
+     */
+    public worldToNDC(worldPos: Vec3) {
+        const p = new Vector3(worldPos.x, worldPos.y, 0).project(this._camera)
+        return new Vec2(p.x, p.y)
     }
 
     protected _onResize() {
