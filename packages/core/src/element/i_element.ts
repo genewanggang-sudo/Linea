@@ -15,6 +15,8 @@ export interface IElement {
 
     setDoc(doc: IDocument): void
 
+    init(...params: unknown[]): this
+
     getModified(): IModifiedProps[]
 
     commit(): void

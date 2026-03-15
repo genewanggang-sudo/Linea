@@ -1,5 +1,5 @@
 import { DefaultController, IKeyboardEvent, IMouseEvent } from '@ccpc/canvas'
-import { IDocument } from '@ccpc/core'
+import { DebugUtil, GRep, IDocument, TmpElementPainter } from '@ccpc/core'
 import { ActionResult } from './action_result'
 import { app } from '../app/app'
 
@@ -9,7 +9,6 @@ export type ICmdStatus<T = unknown> = {
     finish?: boolean
 }
 
-// TODO 添加一些关于绘制临时对象的逻辑
 export class CmdActionController<T = unknown> extends DefaultController {
 
     /**
@@ -26,11 +25,18 @@ export class CmdActionController<T = unknown> extends DefaultController {
     public action?: CmdActionController<unknown>
 
     /**
+     * 临时元素绘制器
+     */
+    private _tmpElementPainters: Array<TmpElementPainter> = []
+
+    /**
      * !!仅由CmdMgr调用
      */
     public initStatus() {
         this._status.promise = new Promise<T | undefined>(resolve => this._status.resolve = resolve)
         delete this._status.finish
+        const painter = new TmpElementPainter(this.getDoc())
+        this._tmpElementPainters.push(painter)
         return this._status
     }
 
@@ -49,10 +55,14 @@ export class CmdActionController<T = unknown> extends DefaultController {
     }
 
     /**
-     * 刷新视图
+     * 执行动作
      */
-    protected _updateView() {
-        this.getDoc().updateView()
+    public async runAction<T>(action: CmdActionController<ActionResult<T>>) {
+        this.action = action as CmdActionController<unknown>;
+        const actionPromise = action.initStatus().promise
+        await Promise.all([actionPromise, action.execute()])
+        delete this.action
+        return actionPromise
     }
 
     /**
@@ -73,6 +83,68 @@ export class CmdActionController<T = unknown> extends DefaultController {
     public onDestroy() { }
 
     /**
+     * 获取所有临时元素绘制器
+     */
+    public getTmpElementPainters() {
+        return this._tmpElementPainters
+    }
+
+    /**
+     * 获取默认临时元素绘制器
+     */
+    public getBuildInTmpElementPainter() {
+        return this._tmpElementPainters[0]
+    }
+
+    /**
+     * 获取指定的临时元素绘制器
+     */
+    public getTmpElementPainterByIndex(index: number) {
+        if (index < 0 || index >= this._tmpElementPainters.length) {
+            DebugUtil.assert(false, 'index无效', 'wg', '2026-03-15')
+            return
+        }
+        return this._tmpElementPainters[index]
+    }
+
+    /**
+     * 用户创建临时元素绘制器
+     */
+    public applyNewTmpElementPainter() {
+        const painter = new TmpElementPainter(this.getDoc())
+        this._tmpElementPainters.push(painter)
+        return painter
+    }
+
+    /**
+     * 清除用户创建的临时元素绘制器
+     */
+    public clearUsersTmpElementPainters() {
+        for (let i = 1; i < this._tmpElementPainters.length; i += 1) {
+            this._tmpElementPainters[i].destroy()
+        }
+        this._tmpElementPainters.slice(1)
+    }
+
+    /**
+     * 在指定临时元素绘制器上绘制临时元素
+     */
+    public drawTmpGRep(grep: GRep, index: number = 0) {
+        if (index < 0 || index >= this._tmpElementPainters.length) {
+            DebugUtil.assert(false, 'index无效', 'wg', '2026-03-15')
+            return
+        }
+        this._tmpElementPainters[index].drawTmpGRep(grep)
+    }
+
+    /**
+     * 刷新视图
+     */
+    protected _updateView() {
+        this.getDoc().updateView()
+    }
+
+    /**
      * 结束cmd
      */
     protected _resolve(data?: T) {
@@ -80,14 +152,6 @@ export class CmdActionController<T = unknown> extends DefaultController {
         this._status.finish = true
         this._status.resolve(data)
         this.onDestroy()
-    }
-
-    public async runAction<T>(action: CmdActionController<ActionResult<T>>) {
-        this.action = action as CmdActionController<unknown>;
-        const actionPromise = action.initStatus().promise
-        await Promise.all([actionPromise, action.execute()])
-        delete this.action
-        return actionPromise
     }
 
     public onKeyDown(evt: IKeyboardEvent): boolean {
