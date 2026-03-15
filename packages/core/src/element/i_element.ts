@@ -25,6 +25,8 @@ export interface IElement {
 
     getGRep(): GRep
 
+    setGRep(grep: GRep): boolean
+
     isElementVisible(): boolean
 
     isTemporary(): boolean

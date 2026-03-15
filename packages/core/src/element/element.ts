@@ -48,6 +48,13 @@ export class Element implements IElement {
     }
 
     /**
+     * 空构造+初始化
+     */
+    public init(..._params: unknown[]) {
+        return this
+    }
+
+    /**
      * 获取修改的数据
      */
     public getModified(): IModifiedProps[] {
@@ -100,12 +107,27 @@ export class Element implements IElement {
         this._db.C_GRep = new GRep();
     }
 
+    /**
+     * 获取GRep显示对象
+     */
     public getGRep() {
         const grep = this.C_GRep
         if (!grep.elementId.isValid()) {
             grep.elementId = this.id
         }
         return grep
+    }
+
+    /**
+     * 设置GRep显示对象
+     */
+    public setGRep(grep: GRep) {
+        grep.elementId = this.id
+        if (this.C_GRep === grep) {
+            grep.clearRenderNode()
+        }
+        this.C_GRep = grep
+        return true
     }
 
     public isElementVisible() {

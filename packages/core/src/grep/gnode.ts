@@ -124,6 +124,28 @@ export abstract class GNode {
      */
     protected abstract _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderNode
 
+    /**
+     * 清除_renderNode
+     * @param clearChildren 是否清除子节点renderNode
+     * @param clearParent 是否清除父节点renderNode
+     */
+    public clearRenderNode(clearChildren = false, clearParent = false) {
+        delete this._renderNode
+        if (clearParent) {
+            let gnode = this.parent
+            while (gnode) {
+                delete gnode._renderNode
+                gnode = gnode.parent
+            }
+            return
+        }
+        if (clearChildren) {
+            this.getTraverseChildren().forEach(child => {
+                child.clearRenderNode(clearChildren)
+            })
+        }
+    }
+
     public abstract clone(): GNode
 
     protected _copy(another: GNode) {
