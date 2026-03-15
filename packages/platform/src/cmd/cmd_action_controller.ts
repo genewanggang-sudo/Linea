@@ -117,7 +117,7 @@ export class CmdActionController<T = unknown> extends DefaultController {
     }
 
     /**
-     * 清除用户创建的临时元素绘制器
+     * 销毁用户创建的临时元素绘制器
      */
     public clearUsersTmpElementPainters() {
         for (let i = 1; i < this._tmpElementPainters.length; i += 1) {
@@ -135,6 +135,17 @@ export class CmdActionController<T = unknown> extends DefaultController {
             return
         }
         this._tmpElementPainters[index].drawTmpGRep(grep)
+    }
+
+    /**
+     * 清除所有绘制的临时元素
+     */
+    public clearTmp() {
+        for (const painter of this._tmpElementPainters) {
+            if (painter) {
+                painter.clearTmp()
+            }
+        }
     }
 
     /**
