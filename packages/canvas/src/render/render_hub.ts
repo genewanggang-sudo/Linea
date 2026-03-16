@@ -120,7 +120,7 @@ export class RenderHub {
             const text = new Text()
             const position = new Vec3(rNode.position)
             text.text = rNode.text
-            text.fontSize = 12
+            text.fontSize = 16
             text.color = 0xffffff
             text.anchorX = 'center'
             text.anchorY = 'middle'

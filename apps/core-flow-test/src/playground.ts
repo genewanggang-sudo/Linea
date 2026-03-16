@@ -88,6 +88,13 @@ let canvasBootstrapped = false
 let mountNode: HTMLElement | undefined
 let shapeSeed = 1
 
+const engineeringSheetFrame = {
+    minX: -560,
+    maxX: 560,
+    minY: -380,
+    maxY: 380,
+}
+
 function countDistinctPoints(points: Vec2[], eps = 1e-6) {
     const distinct: Vec2[] = []
     for (const point of points) {
@@ -665,6 +672,62 @@ function clearCursor() {
     emitState()
 }
 
+function fitEngineeringDemoView() {
+    if (!mountNode) {
+        return
+    }
+
+    const canvas = app.getCanvas() as unknown as {
+        _renderer?: {
+            _camera?: {
+                left: number
+                right: number
+                top: number
+                bottom: number
+                zoom: number
+                position: { set: (x: number, y: number, z: number) => void, z: number }
+                updateProjectionMatrix: () => void
+            }
+            _cameraControls?: {
+                target: { set: (x: number, y: number, z: number) => void }
+                update: () => void
+            }
+        }
+    }
+
+    const renderer = canvas._renderer
+    const camera = renderer?._camera
+    if (!camera) {
+        return
+    }
+
+    const frameWidth = engineeringSheetFrame.maxX - engineeringSheetFrame.minX
+    const frameHeight = engineeringSheetFrame.maxY - engineeringSheetFrame.minY
+    const viewWidth = camera.right - camera.left
+    const viewHeight = camera.top - camera.bottom
+    const horizontalPadding = 80
+    const topOverlayHeight = 150
+    const bottomPadding = 40
+    const usableHeightScale = Math.max((mountNode.clientHeight - topOverlayHeight - bottomPadding) / mountNode.clientHeight, 0.4)
+    const zoomX = viewWidth / (frameWidth + horizontalPadding * 2)
+    const zoomY = (viewHeight * usableHeightScale) / (frameHeight + 48)
+    const targetY = -28
+
+    camera.zoom = Math.max(Math.min(zoomX, zoomY), 0.01)
+    camera.position.set(0, targetY, camera.position.z)
+    camera.updateProjectionMatrix()
+    renderer?._cameraControls?.target.set(0, targetY, 0)
+    renderer?._cameraControls?.update()
+}
+
+function scheduleFitEngineeringDemoView() {
+    window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+            fitEngineeringDemoView()
+        })
+    })
+}
+
 function bindCanvasEvents() {
     if (!mountNode) {
         return
@@ -677,6 +740,7 @@ function bindCanvasEvents() {
             cancelActiveCommand()
         }
     })
+    window.addEventListener('resize', scheduleFitEngineeringDemoView)
 }
 
 export function subscribePlayground(listener: (state: PlaygroundState) => void) {
@@ -695,6 +759,7 @@ export function subscribePlayground(listener: (state: PlaygroundState) => void) 
 export function bootstrapPlayground(mount: HTMLElement) {
     mountNode = mount
     if (canvasBootstrapped) {
+        scheduleFitEngineeringDemoView()
         return
     }
 
@@ -705,6 +770,7 @@ export function bootstrapPlayground(mount: HTMLElement) {
     bindCanvasEvents()
     canvasBootstrapped = true
     loadEngineeringDemo()
+    scheduleFitEngineeringDemoView()
     emitState()
 }
 
@@ -743,6 +809,7 @@ export function insertRandomPolygon() {
 export function loadEngineeringDemo() {
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
     requestMgr.executeReq(requestMgr.createReq(LoadEngineeringDemoReq), true)
+    scheduleFitEngineeringDemoView()
     resetDrawingStatus('已加载工程图图框与两组投影视图，可继续叠加绘制。')
     setToast('工程图演示已加载')
 }
