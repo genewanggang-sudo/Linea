@@ -198,8 +198,33 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+:global(html),
+:global(body),
+:global(#app) {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+:global(*) {
+  box-sizing: border-box;
+}
+
+:global(.n-layout) {
+  height: 100%;
+  overflow: hidden;
+}
+
+:global(.n-layout-scroll-container) {
+  height: 100%;
+  overflow: hidden;
+}
+
 .shell {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 22%),
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 20%),
@@ -211,6 +236,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 24px;
   padding: 18px 24px;
+  flex: 0 0 auto;
   background: rgba(3, 7, 13, 0.92);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(148, 163, 184, 0.14);
@@ -277,6 +303,8 @@ onBeforeUnmount(() => {
   gap: 16px;
   padding: 12px 24px;
   align-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
 }
 
 .status-alert {
@@ -292,7 +320,9 @@ onBeforeUnmount(() => {
 
 .stage {
   position: relative;
-  height: calc(100vh - 146px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .canvas-mount {

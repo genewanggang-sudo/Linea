@@ -4,7 +4,8 @@ import { BufferAttribute, BufferGeometry, Float32BufferAttribute, Group, Mesh, M
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
-import { RenderMesh } from '../../../core/src/render/render_node'
+import { RenderMesh, RenderText } from '../../../core/src/render/render_node'
+import { Text } from 'troika-three-text'
 import { ThreeUtil } from '../toolkit/three_util'
 
 /**
@@ -113,6 +114,24 @@ export class RenderHub {
             }
             const material = new MeshBasicMaterial({ color: Math.random() * 0xffffff })
             return new Mesh(geo, material)
+        }
+
+        if (rNode instanceof RenderText) {
+            const text = new Text()
+            const position = new Vec3(rNode.position)
+            text.text = rNode.text
+            text.fontSize = 12
+            text.color = 0xffffff
+            text.anchorX = 'center'
+            text.anchorY = 'middle'
+            text.position.set(position.x, position.y, position.z)
+
+            if (rNode.globalMatrix) {
+                text.applyMatrix4(ThreeUtil.mathMatrix4toThreeMatrix4(rNode.globalMatrix))
+            }
+
+            text.sync()
+            return text
         }
 
         return null

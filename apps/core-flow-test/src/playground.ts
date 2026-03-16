@@ -5,6 +5,7 @@ import {
     GPoint2d,
     GPolygon,
     GRep,
+    GText2d,
     RegisterElement,
     Request,
     registerRequest,
@@ -176,6 +177,10 @@ function addCircle(grep: GRep, center: Vec2, radius: number) {
     ))
 }
 
+function addText(grep: GRep, text: string, position: Vec2) {
+    grep.addNode(new GText2d(text, new Plane(), position))
+}
+
 function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
     if (kind === 'line') {
         return points.length >= 2 ? new Ln2(points[0], points[1]) : undefined
@@ -298,19 +303,17 @@ function buildPolygonGRep(polygon: Polygon) {
     return grep
 }
 
+function buildTextGRep(text: string, position: Vec2) {
+    const grep = new GRep()
+    addText(grep, text, position)
+    return grep
+}
+
 function buildEngineeringSheetGRep() {
     const grep = new GRep()
 
     addRect(grep, new Vec2(0, 0), 1120, 760)
     addRect(grep, new Vec2(0, 0), 1080, 720)
-
-    addLine(grep, new Vec2(180, -340), new Vec2(520, -340))
-    addLine(grep, new Vec2(180, -280), new Vec2(520, -280))
-    addLine(grep, new Vec2(180, -220), new Vec2(520, -220))
-    addLine(grep, new Vec2(260, -340), new Vec2(260, -160))
-    addLine(grep, new Vec2(360, -340), new Vec2(360, -160))
-    addLine(grep, new Vec2(430, -340), new Vec2(430, -160))
-    addLine(grep, new Vec2(180, -160), new Vec2(520, -160))
 
     addRect(grep, new Vec2(-180, 60), 220, 150)
     addRect(grep, new Vec2(-180, 60), 150, 90)
@@ -338,6 +341,53 @@ function buildEngineeringSheetGRep() {
     addLine(grep, new Vec2(-105, 135), new Vec2(-10, 205))
     addLine(grep, new Vec2(-255, 135), new Vec2(-80, 295))
     addLine(grep, new Vec2(-180, 135), new Vec2(-10, 295))
+
+    addText(grep, '主视图', new Vec2(-180, -34))
+    addText(grep, '右视图', new Vec2(160, -18))
+    addText(grep, '俯视图', new Vec2(-10, 184))
+
+    // Professional title block at the lower-right corner.
+    const x0 = 180
+    const x1 = 240
+    const x2 = 330
+    const x3 = 420
+    const x4 = 520
+    const y0 = -340
+    const y1 = -300
+    const y2 = -260
+    const y3 = -220
+    const y4 = -160
+
+    addRect(grep, new Vec2((x0 + x4) * 0.5, (y0 + y4) * 0.5), x4 - x0, y4 - y0)
+    addLine(grep, new Vec2(x1, y0), new Vec2(x1, y4))
+    addLine(grep, new Vec2(x2, y0), new Vec2(x2, y4))
+    addLine(grep, new Vec2(x3, y0), new Vec2(x3, y4))
+    addLine(grep, new Vec2(x0, y1), new Vec2(x4, y1))
+    addLine(grep, new Vec2(x0, y2), new Vec2(x4, y2))
+    addLine(grep, new Vec2(x0, y3), new Vec2(x4, y3))
+
+    // Merge the upper-right cells for the drawing title.
+    addLine(grep, new Vec2(x2, y3), new Vec2(x4, y3))
+    addLine(grep, new Vec2(x2, y2), new Vec2(x4, y2))
+    addLine(grep, new Vec2(x2, y1), new Vec2(x4, y1))
+
+    addText(grep, '设计', new Vec2((x0 + x1) * 0.5, (y3 + y4) * 0.5))
+    addText(grep, '校核', new Vec2((x0 + x1) * 0.5, (y2 + y3) * 0.5))
+    addText(grep, '批准', new Vec2((x0 + x1) * 0.5, (y1 + y2) * 0.5))
+    addText(grep, '日期', new Vec2((x0 + x1) * 0.5, (y0 + y1) * 0.5))
+
+    addText(grep, '王工', new Vec2((x1 + x2) * 0.5, (y3 + y4) * 0.5))
+    addText(grep, '李工', new Vec2((x1 + x2) * 0.5, (y2 + y3) * 0.5))
+    addText(grep, '张工', new Vec2((x1 + x2) * 0.5, (y1 + y2) * 0.5))
+    addText(grep, '2026-03-16', new Vec2((x1 + x2) * 0.5, (y0 + y1) * 0.5))
+
+    addText(grep, '支架总成工程图', new Vec2((x2 + x4) * 0.5, (y3 + y4) * 0.5))
+    addText(grep, '材质  Q235-B', new Vec2((x2 + x3) * 0.5, (y2 + y3) * 0.5))
+    addText(grep, '比例  1:2', new Vec2((x3 + x4) * 0.5, (y2 + y3) * 0.5))
+    addText(grep, '单位  mm', new Vec2((x2 + x3) * 0.5, (y1 + y2) * 0.5))
+    addText(grep, '图号  A-1024', new Vec2((x3 + x4) * 0.5, (y1 + y2) * 0.5))
+    addText(grep, '阶段  方案评审', new Vec2((x2 + x3) * 0.5, (y0 + y1) * 0.5))
+    addText(grep, '页次  1 / 1', new Vec2((x3 + x4) * 0.5, (y0 + y1) * 0.5))
 
     return grep
 }

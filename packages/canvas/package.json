@@ -16,7 +16,8 @@
     "dependencies": {
         "@ccpc/core": "workspace:*",
         "@ccpc/math": "workspace:*",
-        "three": "^0.181.1"
+        "three": "^0.181.1",
+        "troika-three-text": "^0.52.4"
     },
     "devDependencies": {
         "@types/three": "^0.181.0"
