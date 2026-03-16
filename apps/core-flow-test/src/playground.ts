@@ -188,6 +188,78 @@ function addText(grep: GRep, text: string, position: Vec2) {
     grep.addNode(new GText2d(text, new Plane(), position))
 }
 
+function getEllipseControlPoints(points: Vec2[]) {
+    if (points.length < 2) {
+        return undefined
+    }
+
+    const center = points[0]
+    const majorPoint = points[1]
+    const majorVector = majorPoint.subtracted(center)
+    const majorRadius = majorVector.getLength()
+    if (majorRadius <= 1e-6) {
+        return undefined
+    }
+
+    const majorDir = majorVector.normalized()
+    const minorDir = new Vec2(-majorDir.y, majorDir.x)
+    const rawMinorPoint = points[2] ?? majorPoint
+    const signedMinorRadius = rawMinorPoint.subtracted(center).dot(minorDir)
+    const minorRadius = Math.abs(signedMinorRadius)
+    if (minorRadius <= 1e-6) {
+        return undefined
+    }
+
+    return {
+        center,
+        majorPoint,
+        majorPointMirror: center.subtracted(majorVector),
+        minorPoint: center.added(minorDir.multiplied(signedMinorRadius)),
+        minorPointMirror: center.added(minorDir.multiplied(-signedMinorRadius)),
+        majorRadius,
+        minorRadius,
+        majorVector,
+    }
+}
+
+function createEllipseCurveFromControls(controls: ReturnType<typeof getEllipseControlPoints>, range?: [number, number]) {
+    if (!controls) {
+        return undefined
+    }
+
+    return new Arc2(
+        new Coord2(controls.center, controls.majorVector),
+        controls.majorRadius,
+        controls.minorRadius,
+        true,
+        range ?? [0, Math.PI * 2],
+    )
+}
+
+function projectPointToEllipse(curve: Arc2, point: Vec2) {
+    return curve.getPtAt(curve.getParamAt(point))
+}
+
+function getEllipseArcControlPoints(points: Vec2[]) {
+    const ellipseControls = getEllipseControlPoints(points.slice(0, 3))
+    const ellipse = createEllipseCurveFromControls(ellipseControls)
+    if (!ellipseControls || !ellipse) {
+        return undefined
+    }
+
+    const rawStartPoint = points[3] ?? ellipseControls.majorPoint
+    const startPoint = projectPointToEllipse(ellipse, rawStartPoint)
+    const rawEndPoint = points[4] ?? startPoint
+    const endPoint = projectPointToEllipse(ellipse, rawEndPoint)
+
+    return {
+        ...ellipseControls,
+        ellipse,
+        startPoint,
+        endPoint,
+    }
+}
+
 function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
     if (kind === 'line') {
         return points.length >= 2 ? new Ln2(points[0], points[1]) : undefined
@@ -209,13 +281,11 @@ function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
     }
 
     if (kind === 'ellipse') {
-        if (points.length < 3) {
+        const controls = getEllipseControlPoints(points)
+        if (!controls) {
             return undefined
         }
-        if (countDistinctPoints(points) < 3) {
-            return undefined
-        }
-        return Arc2.makeEllipseByCenterAndThreePoints(points[0], [points[1], points[2], points[1]])
+        return createEllipseCurveFromControls(controls)
     }
 
     if (kind === 'bspline') {
@@ -225,29 +295,27 @@ function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
         return NurbsCurve2.makeByInterpolationPts(points, Math.min(3, points.length - 1))
     }
 
-    return points.length >= 5 && countDistinctPoints(points) >= 5
-        ? Arc2.makeEllipseByFivePoints(points[0], points[1], points[2], points[3], points[4])
-        : undefined
+    const controls = getEllipseArcControlPoints(points)
+    if (!controls) {
+        return undefined
+    }
+
+    if (points.length < 5) {
+        return controls.ellipse
+    }
+
+    return Arc2.makeEllipseByFivePoints(
+        controls.center,
+        controls.majorPoint,
+        controls.minorPoint,
+        controls.startPoint,
+        controls.endPoint,
+    )
 }
 
 function buildShapeGRep(kind: ShapeKind, points: Vec2[]) {
     const grep = new GRep()
     const plane = new Plane()
-
-    if (kind === 'ellipse' || kind === 'ellipseArc') {
-        if (points.length >= 2) {
-            grep.addNode(new GCurve2d(plane, new Ln2(points[0], points[1])))
-        }
-        if (points.length >= 3) {
-            grep.addNode(new GCurve2d(plane, new Ln2(points[0], points[2])))
-        }
-        if (points.length >= 4) {
-            grep.addNode(new GCurve2d(plane, new Ln2(points[0], points[3])))
-        }
-        if (points.length >= 5) {
-            grep.addNode(new GCurve2d(plane, new Ln2(points[0], points[4])))
-        }
-    }
 
     const curve = createShapeCurve(kind, points)
     if (curve) {
@@ -271,6 +339,46 @@ function buildHelperGRep(points: Vec2[]) {
     return grep
 }
 
+function buildEllipseGuideGRep(points: Vec2[]) {
+    const controls = getEllipseControlPoints(points)
+    if (!controls) {
+        return buildHelperGRep(points)
+    }
+
+    const grep = new GRep()
+    const plane = new Plane()
+    grep.addNode(new GCurve2d(plane, new Ln2(controls.majorPointMirror, controls.majorPoint)))
+    grep.addNode(new GCurve2d(plane, new Ln2(controls.minorPointMirror, controls.minorPoint)))
+    grep.addNode(new GPoint2d(plane, controls.center.clone()))
+    grep.addNode(new GPoint2d(plane, controls.majorPoint.clone()))
+    grep.addNode(new GPoint2d(plane, controls.minorPoint.clone()))
+    return grep
+}
+
+function buildEllipseArcGuideGRep(points: Vec2[]) {
+    const controls = getEllipseArcControlPoints(points)
+    if (!controls) {
+        return buildHelperGRep(points)
+    }
+
+    const grep = new GRep()
+    const plane = new Plane()
+    grep.addNode(new GCurve2d(plane, new Ln2(controls.majorPointMirror, controls.majorPoint)))
+    grep.addNode(new GCurve2d(plane, new Ln2(controls.minorPointMirror, controls.minorPoint)))
+    grep.addNode(new GPoint2d(plane, controls.center.clone()))
+    grep.addNode(new GPoint2d(plane, controls.majorPoint.clone()))
+    grep.addNode(new GPoint2d(plane, controls.minorPoint.clone()))
+    if (points.length >= 4) {
+        grep.addNode(new GCurve2d(plane, new Ln2(controls.center, controls.startPoint)))
+        grep.addNode(new GPoint2d(plane, controls.startPoint.clone()))
+    }
+    if (points.length >= 5) {
+        grep.addNode(new GCurve2d(plane, new Ln2(controls.center, controls.endPoint)))
+        grep.addNode(new GPoint2d(plane, controls.endPoint.clone()))
+    }
+    return grep
+}
+
 function buildShapePreviewGRep(kind: ShapeKind, fixedPoints: Vec2[], cursor?: Vec2) {
     const previewPoints = clonePoints(fixedPoints)
     if (cursor && previewPoints.length < shapePointCount[kind]) {
@@ -279,8 +387,44 @@ function buildShapePreviewGRep(kind: ShapeKind, fixedPoints: Vec2[], cursor?: Ve
 
     const grep = new GRep()
     appendGRep(grep, buildShapeGRep(kind, previewPoints))
-    appendGRep(grep, buildHelperGRep(previewPoints))
+    if (kind === 'ellipse') {
+        appendGRep(grep, buildEllipseGuideGRep(previewPoints))
+    } else if (kind === 'ellipseArc') {
+        appendGRep(grep, buildEllipseArcGuideGRep(previewPoints))
+    } else {
+        appendGRep(grep, buildHelperGRep(previewPoints))
+    }
     return grep
+}
+
+function normalizeShapePoint(kind: ShapeKind, fixedPoints: Vec2[], point: Vec2) {
+    if (kind === 'ellipse') {
+        if (fixedPoints.length !== 2) {
+            return point
+        }
+
+        const controls = getEllipseControlPoints([...fixedPoints, point])
+        return controls?.minorPoint ?? point
+    }
+
+    if (kind === 'ellipseArc') {
+        if (fixedPoints.length === 2) {
+            const controls = getEllipseControlPoints([...fixedPoints, point])
+            return controls?.minorPoint ?? point
+        }
+
+        if (fixedPoints.length >= 3) {
+            const controls = getEllipseArcControlPoints([...fixedPoints, point])
+            if (fixedPoints.length === 3) {
+                return controls?.startPoint ?? point
+            }
+            if (fixedPoints.length === 4) {
+                return controls?.endPoint ?? point
+            }
+        }
+    }
+
+    return point
 }
 
 function createRandomPolygon() {
@@ -508,7 +652,7 @@ class BaseDrawShapeCmd extends Cmd {
             }
 
             const worldPos = this._toFlatWorldPos(actionResult.data.point)
-            this._fixedPoints.push(worldPos)
+            this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
             updateDrawingStatus(this._kind, this._fixedPoints.length)
 
             if (this._fixedPoints.length >= shapePointCount[this._kind]) {
@@ -542,7 +686,7 @@ class BaseDrawShapeCmd extends Cmd {
             return false
         }
 
-        this._fixedPoints.push(worldPos)
+        this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
         updateDrawingStatus(this._kind, this._fixedPoints.length)
 
         if (this._fixedPoints.length >= shapePointCount[this._kind]) {
@@ -574,7 +718,8 @@ class BaseDrawShapeCmd extends Cmd {
 
     private _syncPreview(cursor?: Vec2) {
         const painter = this.getBuildInTmpElementPainter()
-        painter.drawTmpGRep(buildShapePreviewGRep(this._kind, this._fixedPoints, cursor))
+        const previewCursor = cursor ? normalizeShapePoint(this._kind, this._fixedPoints, cursor) : undefined
+        painter.drawTmpGRep(buildShapePreviewGRep(this._kind, this._fixedPoints, previewCursor))
         this.getDoc().cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_UPDATE, [painter.tmpElement])
         this.getDoc().updateView()
     }
