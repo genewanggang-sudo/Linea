@@ -12,7 +12,7 @@ import {
 } from '@ccpc/core'
 import { EN_ModelViewChanged } from '../../../packages/core/src/types/type_define'
 import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, Vec2 } from '@ccpc/math'
-import { app, Cmd, cmdMgr, registerCmd } from '@ccpc/platform'
+import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
 
 export type ShapeKind = 'line' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 export type ToolId = ShapeKind | 'polygon' | 'demo' | 'clear'
@@ -439,6 +439,34 @@ class BaseDrawShapeCmd extends Cmd {
     public override async execute() {
         updateDrawingStatus(this._kind, 0)
         this._syncPreview()
+
+        while (this._fixedPoints.length < shapePointCount[this._kind]) {
+            const actionResult = await this.runAction(new PickPointAction(new PickPointContext({
+                movingCallBack: result => this._syncPreview(this._toFlatWorldPos(result.point)),
+            })))
+
+            if (!actionResult?.isSuccess || !actionResult.data) {
+                this.cancel()
+                return
+            }
+
+            const worldPos = this._toFlatWorldPos(actionResult.data.point)
+            this._fixedPoints.push(worldPos)
+            updateDrawingStatus(this._kind, this._fixedPoints.length)
+
+            if (this._fixedPoints.length >= shapePointCount[this._kind]) {
+                requestMgr.executeReq(
+                    requestMgr.createReq(DrawTestShapeReq, this._kind, clonePoints(this._fixedPoints)),
+                    true,
+                )
+                setToast(`${toolMeta[this._kind].label}已提交`)
+                this._clearPreview()
+                this._resolve()
+                return
+            }
+
+            this._syncPreview(worldPos)
+        }
     }
 
     public override onMouseMove(evt: { pos: Vec2 }) {
@@ -505,6 +533,10 @@ class BaseDrawShapeCmd extends Cmd {
         }
         const world = canvas.screenToWorld(screenPos)
         return new Vec2(world.x, world.y)
+    }
+
+    private _toFlatWorldPos(pos: { x: number, y: number }) {
+        return new Vec2(pos.x, pos.y)
     }
 }
 
