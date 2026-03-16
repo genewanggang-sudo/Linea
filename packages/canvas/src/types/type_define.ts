@@ -70,6 +70,7 @@ export enum EN_KeyboardEvent {
 export type IMouseEvent = {
     type: EN_MouseEvent,
     domEvent: MouseEvent,
+    /**屏幕坐标*/
     pos: Vec2,
     fnKey: FnKey
 }

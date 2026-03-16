@@ -37,7 +37,7 @@ export class App {
     }
 
     public getCanvas() {
-        return this._curCanvas
+        return this._curCanvas!
     }
 
     public createCanvas(container: HTMLElement) {
