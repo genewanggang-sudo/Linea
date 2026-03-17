@@ -1,21 +1,42 @@
+﻿import {
+    ArcElement,
+    BSplineElement,
+    CircleElement,
+    CreateArcRequest,
+    CreateBSplineRequest,
+    CreateCircleRequest,
+    CreateEllipseArcRequest,
+    CreateEllipseRequest,
+    CreateLineRequest,
+    CreatePolylineRequest,
+    CreateRectLineRequest,
+    EllipseArcElement,
+    EllipseElement,
+    LineElement,
+    PolyLineElement,
+    RectLineElement,
+} from '@ccpc/editor_sdk'
 import {
+    IMouseEvent,
     Document,
     Element,
     GCurve2d,
     GPoint2d,
+    GPolycurve,
     GPolygon,
     GRep,
     GText2d,
     RegisterElement,
     Request,
+    TmpElementPainter,
     registerRequest,
     requestMgr,
 } from '@ccpc/core'
 import { EN_ModelViewChanged } from '../../../packages/core/src/types/type_define'
-import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, Vec2 } from '@ccpc/math'
+import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
 
-export type ShapeKind = 'line' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
+export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 export type ToolId = ShapeKind | 'polygon' | 'demo' | 'clear'
 
 export type CursorPoint = {
@@ -38,6 +59,8 @@ export type PlaygroundState = {
 }
 
 export const toolMeta: Record<ToolId, { label: string, accent: string, subtitle: string }> = {
+    polyline: { label: '绘制折线', accent: '#22c55e', subtitle: '依次拾取多个折线点' },
+    rectLine: { label: '绘制矩形', accent: '#f59e0b', subtitle: '通过两个角点生成矩形' },
     line: { label: '绘制直线', accent: '#38bdf8', subtitle: '两点定义线段' },
     circle: { label: '绘制圆', accent: '#60a5fa', subtitle: '圆心加半径点' },
     arc: { label: '绘制圆弧', accent: '#fb923c', subtitle: '三点定义圆弧' },
@@ -45,12 +68,14 @@ export const toolMeta: Record<ToolId, { label: string, accent: string, subtitle:
     ellipseArc: { label: '绘制椭圆弧', accent: '#4ade80', subtitle: '五点拟合椭圆弧' },
     bspline: { label: '绘制 B 样条', accent: '#f472b6', subtitle: '四点插值样条' },
     polygon: { label: '插入轮廓', accent: '#a78bfa', subtitle: '插入随机测试轮廓' },
-    demo: { label: '加载图框', accent: '#fbbf24', subtitle: '完整图框与投影视图' },
+    demo: { label: '加载图框', accent: '#fbbf24', subtitle: '显示工程图图框与投影视图' },
     clear: { label: '清空画布', accent: '#f87171', subtitle: '删除当前测试图形' },
 }
 
 const shapePointCount: Record<ShapeKind, number> = {
     line: 2,
+    polyline: 4,
+    rectLine: 2,
     circle: 2,
     arc: 3,
     ellipse: 3,
@@ -59,6 +84,8 @@ const shapePointCount: Record<ShapeKind, number> = {
 }
 
 const shapeSteps: Record<ShapeKind, string[]> = {
+    polyline: ['点击第 1 个点', '点击第 2 个点', '点击第 3 个点', '点击第 4 个点'],
+    rectLine: ['点击第一个角点', '点击第二个角点'],
     line: ['点击起点', '点击终点'],
     circle: ['点击圆心', '点击半径点'],
     arc: ['点击起点', '点击经过点', '点击终点'],
@@ -157,11 +184,11 @@ function clonePoints(points: Vec2[]) {
 }
 
 function appendGRep(target: GRep, source: GRep) {
-    source.children.forEach(node => target.addNode(node.clone()))
+    source.children.forEach(node => target.addNode(node))
 }
 
 function addLine(grep: GRep, start: Vec2, end: Vec2) {
-    grep.addNode(new GCurve2d(new Plane(), new Ln2(start, end)))
+    grep.addNode(new GCurve2d(Plane.XOY(), new Ln2(start, end)))
 }
 
 function addRect(grep: GRep, center: Vec2, width: number, height: number) {
@@ -179,13 +206,13 @@ function addRect(grep: GRep, center: Vec2, width: number, height: number) {
 
 function addCircle(grep: GRep, center: Vec2, radius: number) {
     grep.addNode(new GCurve2d(
-        new Plane(),
+        Plane.XOY(),
         new Arc2(new Coord2(center, Vec2.X()), radius, radius, true, [0, Math.PI * 2]),
     ))
 }
 
 function addText(grep: GRep, text: string, position: Vec2) {
-    grep.addNode(new GText2d(text, new Plane(), position))
+    grep.addNode(new GText2d(text, Plane.XOY(), position))
 }
 
 function getEllipseControlPoints(points: Vec2[]) {
@@ -315,7 +342,21 @@ function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
 
 function buildShapeGRep(kind: ShapeKind, points: Vec2[]) {
     const grep = new GRep()
-    const plane = new Plane()
+    const plane = Plane.XOY()
+
+    if (kind === 'polyline') {
+        if (points.length >= 2) {
+            grep.addNode(new GPolycurve(plane, new PolyCurve(points)))
+        }
+        return grep
+    }
+
+    if (kind === 'rectLine') {
+        if (points.length >= 2) {
+            grep.addNode(new GPolycurve(plane, Loop.createByRectangle(points[0], points[1])))
+        }
+        return grep
+    }
 
     const curve = createShapeCurve(kind, points)
     if (curve) {
@@ -329,7 +370,7 @@ function buildShapeGRep(kind: ShapeKind, points: Vec2[]) {
 
 function buildHelperGRep(points: Vec2[]) {
     const grep = new GRep()
-    const plane = new Plane()
+    const plane = Plane.XOY()
     for (let i = 0; i < points.length; i += 1) {
         grep.addNode(new GPoint2d(plane, points[i].clone()))
         if (i > 0) {
@@ -346,7 +387,7 @@ function buildEllipseGuideGRep(points: Vec2[]) {
     }
 
     const grep = new GRep()
-    const plane = new Plane()
+    const plane = Plane.XOY()
     grep.addNode(new GCurve2d(plane, new Ln2(controls.majorPointMirror, controls.majorPoint)))
     grep.addNode(new GCurve2d(plane, new Ln2(controls.minorPointMirror, controls.minorPoint)))
     grep.addNode(new GPoint2d(plane, controls.center.clone()))
@@ -362,7 +403,7 @@ function buildEllipseArcGuideGRep(points: Vec2[]) {
     }
 
     const grep = new GRep()
-    const plane = new Plane()
+    const plane = Plane.XOY()
     grep.addNode(new GCurve2d(plane, new Ln2(controls.majorPointMirror, controls.majorPoint)))
     grep.addNode(new GCurve2d(plane, new Ln2(controls.minorPointMirror, controls.minorPoint)))
     grep.addNode(new GPoint2d(plane, controls.center.clone()))
@@ -395,6 +436,92 @@ function buildShapePreviewGRep(kind: ShapeKind, fixedPoints: Vec2[], cursor?: Ve
         appendGRep(grep, buildHelperGRep(previewPoints))
     }
     return grep
+}
+
+function executeCreateShapeRequest(kind: ShapeKind, points: Vec2[]) {
+    if (kind === 'line') {
+        return requestMgr.executeReq(requestMgr.createReq(CreateLineRequest, points[0], points[1]), true)
+    }
+
+    if (kind === 'polyline') {
+        return requestMgr.executeReq(requestMgr.createReq(CreatePolylineRequest, clonePoints(points)), true)
+    }
+
+    if (kind === 'rectLine') {
+        return requestMgr.executeReq(requestMgr.createReq(CreateRectLineRequest, points[0], points[1]), true)
+    }
+
+    if (kind === 'circle') {
+        const radius = points[0].distanceTo(points[1])
+        return requestMgr.executeReq(requestMgr.createReq(CreateCircleRequest, points[0], radius), true)
+    }
+
+    if (kind === 'arc') {
+        const arc = Arc2.makeArcByThreePoints(points[0], points[1], points[2])
+        if (!arc) {
+            return undefined
+        }
+
+        return requestMgr.executeReq(
+            requestMgr.createReq(
+                CreateArcRequest,
+                arc.getCenter(),
+                arc.getRadius(),
+                arc.getStartAngle(),
+                arc.getEndAngle(),
+                arc.isCCW(),
+            ),
+            true,
+        )
+    }
+
+    if (kind === 'ellipse') {
+        const controls = getEllipseControlPoints(points)
+        if (!controls) {
+            return undefined
+        }
+
+        return requestMgr.executeReq(
+            requestMgr.createReq(
+                CreateEllipseRequest,
+                controls.center,
+                controls.majorVector.normalized(),
+                controls.majorRadius,
+                controls.minorRadius,
+            ),
+            true,
+        )
+    }
+
+    if (kind === 'ellipseArc') {
+        const arc = createShapeCurve(kind, points)
+        if (!(arc instanceof Arc2)) {
+            return undefined
+        }
+
+        return requestMgr.executeReq(
+            requestMgr.createReq(
+                CreateEllipseArcRequest,
+                arc.getCenter(),
+                arc.getCoord().getDx(),
+                arc.getA(),
+                arc.getB(),
+                arc.getStartParam(),
+                arc.getEndParam(),
+                arc.isCCW(),
+            ),
+            true,
+        )
+    }
+
+    return requestMgr.executeReq(
+        requestMgr.createReq(
+            CreateBSplineRequest,
+            clonePoints(points),
+            Math.min(3, points.length - 1),
+        ),
+        true,
+    )
 }
 
 function normalizeShapePoint(kind: ShapeKind, fixedPoints: Vec2[], point: Vec2) {
@@ -434,13 +561,13 @@ function createRandomPolygon() {
     const radius = Math.min(width, height) * 0.18
     const loop = new Loop([
         new Ln2(new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5), new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5 + radius), new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5), new Vec2(center.x + width * 0.5, center.y - height * 0.5 + radius), true)!,
+        Arc2.makeArcByStartEndPoints(new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5 + radius), new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5), new Vec2(center.x + width * 0.5, center.y - height * 0.5 + radius), true),
         new Ln2(new Vec2(center.x + width * 0.5, center.y - height * 0.5 + radius), new Vec2(center.x + width * 0.5, center.y + height * 0.5 - radius)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5 - radius), new Vec2(center.x + width * 0.5, center.y + height * 0.5 - radius), new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5), true)!,
+        Arc2.makeArcByStartEndPoints(new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5 - radius), new Vec2(center.x + width * 0.5, center.y + height * 0.5 - radius), new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5), true),
         new Ln2(new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5), new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5 - radius), new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5), new Vec2(center.x - width * 0.5, center.y + height * 0.5 - radius), true)!,
+        Arc2.makeArcByStartEndPoints(new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5 - radius), new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5), new Vec2(center.x - width * 0.5, center.y + height * 0.5 - radius), true),
         new Ln2(new Vec2(center.x - width * 0.5, center.y + height * 0.5 - radius), new Vec2(center.x - width * 0.5, center.y - height * 0.5 + radius)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5 + radius), new Vec2(center.x - width * 0.5, center.y - height * 0.5 + radius), new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5), true)!,
+        Arc2.makeArcByStartEndPoints(new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5 + radius), new Vec2(center.x - width * 0.5, center.y - height * 0.5 + radius), new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5), true),
     ])
 
     const polygon = new Polygon()
@@ -450,7 +577,7 @@ function createRandomPolygon() {
 
 function buildPolygonGRep(polygon: Polygon) {
     const grep = new GRep()
-    grep.addNode(new GPolygon(new Plane(), polygon))
+    grep.addNode(new GPolygon(Plane.XOY(), polygon))
     return grep
 }
 
@@ -543,17 +670,6 @@ function buildEngineeringSheetGRep() {
     return grep
 }
 
-@RegisterElement('test-shape-element')
-class TestShapeElement extends Element {
-    public kind: ShapeKind = 'line'
-
-    public points: Vec2[] = []
-
-    public override markGRepDirty(): void {
-        this.C_GRep = buildShapeGRep(this.kind, this.points)
-    }
-}
-
 @RegisterElement('random-polygon-element')
 class RandomPolygonElement extends Element {
     public polygon: Polygon = new Polygon()
@@ -565,25 +681,6 @@ class RandomPolygonElement extends Element {
 
 @RegisterElement('engineering-sheet-element')
 class EngineeringSheetElement extends Element {
-}
-
-@registerRequest('draw-test-shape')
-class DrawTestShapeReq extends Request {
-    constructor(
-        private readonly _kind: ShapeKind,
-        private readonly _points: Vec2[],
-    ) {
-        super()
-    }
-
-    public execute() {
-        const element = this._doc.create(TestShapeElement)
-        element.name = nextShapeName(this._kind)
-        element.kind = this._kind
-        element.points = clonePoints(this._points)
-        element.markGRepDirty()
-        return element
-    }
 }
 
 @registerRequest('draw-random-polygon')
@@ -617,7 +714,14 @@ class ClearTestShapesReq extends Request {
         const ids = this._doc.elementMgr
             .getAllElements()
             .filter(element =>
-                element instanceof TestShapeElement ||
+                element instanceof LineElement ||
+                element instanceof PolyLineElement ||
+                element instanceof RectLineElement ||
+                element instanceof CircleElement ||
+                element instanceof ArcElement ||
+                element instanceof EllipseElement ||
+                element instanceof EllipseArcElement ||
+                element instanceof BSplineElement ||
                 element instanceof RandomPolygonElement ||
                 element instanceof EngineeringSheetElement)
             .map(element => element.id)
@@ -633,6 +737,8 @@ class BaseDrawShapeCmd extends Cmd {
 
     private _fixedPoints: Vec2[] = []
 
+    private _previewPainter?: TmpElementPainter
+
     constructor(private readonly _kind: ShapeKind) {
         super()
     }
@@ -641,67 +747,19 @@ class BaseDrawShapeCmd extends Cmd {
         updateDrawingStatus(this._kind, 0)
         this._syncPreview()
 
-        while (this._fixedPoints.length < shapePointCount[this._kind]) {
-            const actionResult = await this.runAction(new PickPointAction(new PickPointContext({
+        const actionResult = await this.runAction(new MultiPointPickAction(
+            (screenPos) => this._onPointPicked(this._toWorldPos(screenPos)),
+            new PickPointContext({
                 movingCallBack: result => this._syncPreview(this._toFlatWorldPos(result.point)),
-            })))
+            }),
+        ))
 
-            if (!actionResult?.isSuccess || !actionResult.data) {
-                this.cancel()
-                return
-            }
-
-            const worldPos = this._toFlatWorldPos(actionResult.data.point)
-            this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
-            updateDrawingStatus(this._kind, this._fixedPoints.length)
-
-            if (this._fixedPoints.length >= shapePointCount[this._kind]) {
-                requestMgr.executeReq(
-                    requestMgr.createReq(DrawTestShapeReq, this._kind, clonePoints(this._fixedPoints)),
-                    true,
-                )
-                setToast(`${toolMeta[this._kind].label}已提交`)
-                this._clearPreview()
-                this._resolve()
-                return
-            }
-
-            this._syncPreview(worldPos)
-        }
-    }
-
-    public override onMouseMove(evt: { pos: Vec2 }) {
-        const worldPos = this._toWorldPos(evt.pos)
-        if (!worldPos) {
-            return false
+        if (!actionResult?.isSuccess) {
+            this.cancel()
+            return
         }
 
-        this._syncPreview(worldPos)
-        return true
-    }
-
-    public override onClick(evt: { pos: Vec2 }) {
-        const worldPos = this._toWorldPos(evt.pos)
-        if (!worldPos) {
-            return false
-        }
-
-        this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
-        updateDrawingStatus(this._kind, this._fixedPoints.length)
-
-        if (this._fixedPoints.length >= shapePointCount[this._kind]) {
-            requestMgr.executeReq(
-                requestMgr.createReq(DrawTestShapeReq, this._kind, clonePoints(this._fixedPoints)),
-                true,
-            )
-            setToast(`${toolMeta[this._kind].label}已提交`)
-            this._clearPreview()
-            this._resolve()
-            return true
-        }
-
-        this._syncPreview(worldPos)
-        return true
+        this._resolve()
     }
 
     public override cancel() {
@@ -717,14 +775,19 @@ class BaseDrawShapeCmd extends Cmd {
     }
 
     private _syncPreview(cursor?: Vec2) {
-        const painter = this.getBuildInTmpElementPainter()
         const previewCursor = cursor ? normalizeShapePoint(this._kind, this._fixedPoints, cursor) : undefined
-        painter.drawTmpGRep(buildShapePreviewGRep(this._kind, this._fixedPoints, previewCursor))
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, previewCursor)
+        this._previewPainter?.destroy()
+        this._previewPainter = new TmpElementPainter(this.getDoc())
+        const painter = this._previewPainter
+        painter.drawTmpGRep(grep)
         this.getDoc().cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_UPDATE, [painter.tmpElement])
         this.getDoc().updateView()
     }
 
     private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
         this.clearTmp()
     }
 
@@ -740,12 +803,64 @@ class BaseDrawShapeCmd extends Cmd {
     private _toFlatWorldPos(pos: { x: number, y: number }) {
         return new Vec2(pos.x, pos.y)
     }
+
+    private _onPointPicked(worldPos?: Vec2) {
+        if (!worldPos) {
+            return false
+        }
+
+        this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
+        updateDrawingStatus(this._kind, this._fixedPoints.length)
+
+        if (this._fixedPoints.length >= shapePointCount[this._kind]) {
+            const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
+            setToast(element ? `${toolMeta[this._kind].label}已完成` : `${toolMeta[this._kind].label}创建失败`)
+            this._clearPreview()
+            return true
+        }
+
+        this._syncPreview()
+        return false
+    }
+}
+
+class MultiPointPickAction extends PickPointAction {
+    constructor(
+        private readonly _onPicked: (screenPos: Vec2) => boolean,
+        context?: PickPointContext,
+    ) {
+        super(context)
+    }
+
+    public override onClick(evt: IMouseEvent) {
+        const done = this._onPicked(evt.pos)
+        if (done) {
+            const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
+            this._markSuccess(result)
+        }
+        return true
+    }
+
 }
 
 @registerCmd('draw-line-cmd')
 class DrawLineCmd extends BaseDrawShapeCmd {
     constructor() {
         super('line')
+    }
+}
+
+@registerCmd('draw-polyline-cmd')
+class DrawPolylineCmd extends BaseDrawShapeCmd {
+    constructor() {
+        super('polyline')
+    }
+}
+
+@registerCmd('draw-rect-line-cmd')
+class DrawRectLineCmd extends BaseDrawShapeCmd {
+    constructor() {
+        super('rectLine')
     }
 }
 
@@ -931,6 +1046,10 @@ export async function armTool(kind: ShapeKind) {
     let Ctor: typeof Cmd
     if (kind === 'line') {
         Ctor = DrawLineCmd
+    } else if (kind === 'polyline') {
+        Ctor = DrawPolylineCmd
+    } else if (kind === 'rectLine') {
+        Ctor = DrawRectLineCmd
     } else if (kind === 'circle') {
         Ctor = DrawCircleCmd
     } else if (kind === 'arc') {

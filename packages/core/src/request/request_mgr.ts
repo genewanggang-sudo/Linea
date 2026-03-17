@@ -92,7 +92,7 @@ export class RequestMgr {
         DebugUtil.assert(this._transaction, '请先创建一个 request', 'wg', '2026-03-05')
         this._transaction?.commit()
         this._doc.updateView();
-        // TODO 时间分发
+        // TODO 事件分发
         this._transaction = undefined
 
         return result as R

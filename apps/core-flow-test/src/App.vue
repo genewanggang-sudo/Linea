@@ -29,6 +29,8 @@ const state = reactive<PlaygroundState>({
 
 const tools: Array<{ id: ShapeKind | 'polygon' | 'demo' | 'clear' }> = [
   { id: 'line' },
+  { id: 'polyline' },
+  { id: 'rectLine' },
   { id: 'circle' },
   { id: 'arc' },
   { id: 'ellipse' },
@@ -86,7 +88,7 @@ onBeforeUnmount(() => {
       <div ref="mountRef" class="canvas-mount"></div>
 
       <header class="toolbar">
-        <n-flex :wrap="true" :size="[10, 10]" justify="center">
+        <n-flex class="tool-grid" :wrap="true" :size="[8, 8]" justify="center">
           <n-button
             v-for="tool in tools"
             :key="tool.id"
@@ -152,7 +154,7 @@ onBeforeUnmount(() => {
   left: 16px;
   right: 16px;
   z-index: 3;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-radius: 18px;
   background: rgba(4, 10, 17, 0.72);
   border: 1px solid rgba(100, 116, 139, 0.16);
@@ -160,9 +162,14 @@ onBeforeUnmount(() => {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
 }
 
+.tool-grid {
+  width: 100%;
+}
+
 .tool-button {
-  min-width: 92px;
-  border-radius: 14px;
+  min-width: 76px;
+  padding: 0 10px;
+  border-radius: 12px;
   background: rgba(10, 15, 22, 0.82);
   border: 1px solid rgba(100, 116, 139, 0.14);
 }
@@ -173,7 +180,7 @@ onBeforeUnmount(() => {
 }
 
 .tool-label {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -201,6 +208,11 @@ onBeforeUnmount(() => {
     left: 10px;
     right: 10px;
     padding: 10px;
+  }
+
+  .tool-button {
+    min-width: 68px;
+    padding: 0 8px;
   }
 
   .hint {

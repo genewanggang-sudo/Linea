@@ -3,6 +3,7 @@
         "target": "ES2020",
         "module": "ESNext",
         "moduleResolution": "Bundler",
+        "useDefineForClassFields": true,
         "experimentalDecorators": true,
         "declaration": true,
         "declarationMap": true,
@@ -12,5 +13,7 @@
         "strict": true,
         "skipLibCheck": true
     },
-    "include": ["src"]
+    "include": [
+        "src"
+    ]
 }

@@ -9,6 +9,12 @@ import { ElementId } from '../element/element_id'
  */
 export abstract class GNode {
 
+    public static gId = 0
+    /**
+     * dynamic global incremental
+     */
+    public readonly globalID: number
+
     protected _elementId = ElementId.INVALID
 
     /**父节点*/
@@ -49,6 +55,11 @@ export abstract class GNode {
 
     public set elementId(elementId: ElementId) {
         this._elementId = elementId
+    }
+
+    constructor() {
+        GNode.gId += 1
+        this.globalID = GNode.gId
     }
 
     /**

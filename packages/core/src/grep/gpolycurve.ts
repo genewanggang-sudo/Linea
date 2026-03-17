@@ -1,4 +1,4 @@
-import { DiscreteParam, Plane, PolyCurve } from '@ccpc/math';
+import { alg, DiscreteParam, EN_GEO_TYPE, Plane, PolyCurve } from '@ccpc/math';
 import { GNode2d } from './gnode2d';
 import { RenderEdge } from '../render/render_node';
 
@@ -11,7 +11,10 @@ export class GPolycurve extends GNode2d {
 
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderEdge {
         const render = new RenderEdge()
-        const pts = this.geo.toPath(discreteParams)
+        const pts = alg.DiscreteTopology.discretePolyline(this.geo, discreteParams)
+        if (this.geo.getType() === EN_GEO_TYPE.LOOP && pts.length > 0) {
+            pts.push(pts[0].clone())
+        }
         render.points = pts.map(p => this.plane.getPtAt(p))
         return render
     }

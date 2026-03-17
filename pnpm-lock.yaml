@@ -41,6 +41,9 @@ importers:
       '@ccpc/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@ccpc/editor_sdk':
+        specifier: workspace:*
+        version: link:../../packages/editor_sdk
       '@ccpc/math':
         specifier: workspace:*
         version: link:../../packages/math
