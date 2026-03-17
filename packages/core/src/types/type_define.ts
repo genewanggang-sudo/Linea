@@ -13,3 +13,8 @@ export enum EN_RNODE_TYPE {
     EDGE = 2,
     GROUP = 5,
 }
+
+export enum EN_CoreRequestIds {
+    UNDO = 'core.undo',
+    REDO = 'core.redo'
+}
