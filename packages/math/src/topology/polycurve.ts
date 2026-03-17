@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+
 import { Curve2 } from '../geometry/curve2';
 import { types } from '../type_define/i_types';
 import { Vec2 } from '../base/vec2';
@@ -16,8 +16,6 @@ import { LoopCentroid } from '../algorithm/loop_property/loop-centroid';
 import { GeomUtil } from '../util/geom_util';
 import { DiscreteParam } from '../base/discrete_param';
 import { Geometry2d } from '../geometry/geometry2d';
-
-
 
 /**
  * @author tiansk
@@ -253,10 +251,20 @@ export class PolyCurve extends Geometry2d {
     /**
      * 提取角点
      */
-    public toPath(): Vec2[] {
-        const result = this._curves.map(cv => cv.getStartPt());
-        result.push(this._curves[this._curves.length - 1].getEndPt());
-        return result;
+    public toPath(params = DiscreteParam.NORMAL): Vec2[] {
+        const pts: Vec2[] = [];
+
+        this._curves.forEach((cv, index) => {
+            const curvePts = cv.discrete(params);
+
+            if (index !== this._curves.length - 1) {
+                curvePts.pop();
+            }
+
+            pts.push(...curvePts);
+        });
+
+        return pts;
     }
 
     /**

@@ -1,12 +1,12 @@
-import { Curve2, Plane, Polygon, Vec2 } from '@ccpc/math';
+import { Curve2, Plane, PolyCurve, Polygon, Vec2 } from '@ccpc/math';
 import { GNode } from './gnode';
 
 export abstract class GNode2d extends GNode {
     public plane: Plane;
 
-    public geo: Vec2 | Curve2 | Polygon;
+    public geo: Vec2 | Curve2 | Polygon | PolyCurve;
 
-    constructor(plane: Plane, geo: Vec2 | Curve2 | Polygon) {
+    constructor(plane: Plane, geo: Vec2 | Curve2 | Polygon | PolyCurve) {
         super();
         this.plane = plane.clone();
         this.geo = geo;
