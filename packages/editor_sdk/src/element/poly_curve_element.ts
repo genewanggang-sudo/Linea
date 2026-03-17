@@ -1,21 +1,20 @@
-import { GPolycurve, GRep, RegisterElement } from '@ccpc/core';
-import { PolyCurve, Vec2 } from '@ccpc/math';
-import { CurveElement } from './curve_element';
+import { GPolycurve, GRep } from '@ccpc/core';
+import { PolyCurve } from '@ccpc/math';
+import { PlaneCurveElement } from './plane_curve_element';
 
-@RegisterElement('0c2cc5f4-cc96-4d4d-8599-7a07a97b2bef')
-export class PolyCurveElement extends CurveElement {
-    public points: Vec2[] = []
-
-    public C_Curve!: PolyCurve
-
-    private _updateCurve() {
-        this.C_Curve = new PolyCurve(this.points)
-    }
+/**
+ * 曲线序列
+ */
+export abstract class PolyCurveElement<T extends PolyCurve> extends PlaneCurveElement<T> {
 
     public markGRepDirty(): void {
         this._updateCurve()
+        if (!this.C_Curve) {
+            this.C_GRep = GRep.empty
+            return
+        }
         const grep = new GRep()
-        const gpolycurve = new GPolycurve(this.C_Plane, this.C_Curve)
+        const gpolycurve = new GPolycurve(this.plane, this.C_Curve)
         grep.addNode(gpolycurve)
         this.C_GRep = grep
     }
