@@ -7,21 +7,20 @@ import { GRep } from '../grep/grep';
 
 // TODO 补充dump load方法,统一处理? 每个类单独写?
 export class Element implements IElement {
-
     /**
      * 保存到文档中的序列化Id
      */
     public static serializedId: T_SerializedId;
+
+    public id = ElementId.INVALID
+
+    public name: string = ''
 
     private _db: Record<string, unknown> = {}
 
     private _cache: Record<string, unknown> = {}
 
     private _doc!: IDocument
-
-    public id = ElementId.INVALID
-
-    public name: string = ''
 
     public visible = true;
 

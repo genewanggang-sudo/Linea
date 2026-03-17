@@ -13,6 +13,10 @@
             "import": "./src/index.ts"
         }
     },
+    "dependencies": {
+        "@ccpc/core": "workspace:*",
+        "@ccpc/math": "workspace:*"
+    },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "lint": "eslint . --ext .ts",
