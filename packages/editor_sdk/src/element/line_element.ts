@@ -11,7 +11,6 @@ export class LineElement extends CurveElement {
 
     public end: Vec2 = new Vec2()
 
-    // TODO curve放基类?
     public C_Curve: Ln2 | null = null
 
     private _updateCurve() {
