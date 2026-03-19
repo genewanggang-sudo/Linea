@@ -25,14 +25,8 @@ export class GCurve2d extends GNode2d {
         return this.geo.discrete(params).map(v => this.plane.getPtAt(v));
     }
 
-    // 克隆当前二维曲线节点。
-    // 【与当前实现差异】
-    // 当前完整实现会走统一的 _copy() 链复制更多附加信息。
-    // 当前最小化版本只复制 plane、geo 和矩阵字段。
-    public override clone(cloneGeo?: boolean): GCurve2d {
-        const copy = new GCurve2d(this.plane, cloneGeo ? this.geo.clone() : this.geo);
-        copy._localMatrix = this._localMatrix?.clone();
-        copy._globalMatrix = this._globalMatrix?.clone();
-        return copy;
+    public clone(cloneGeo?: boolean): GCurve2d {
+        const curve2d = new GCurve2d(this.plane, cloneGeo ? this.geo.clone() : this.geo)
+        return curve2d._copyFrom(this)
     }
 }

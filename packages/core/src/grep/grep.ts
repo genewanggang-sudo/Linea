@@ -21,11 +21,13 @@ export class GRep extends GGroup {
         this._elementId = eId
     }
 
-    public clone(): GRep {
-        const copy = new GRep();
-        copy._localMatrix = this._localMatrix?.clone();
-        copy._globalMatrix = this._globalMatrix?.clone();
-        this.children.forEach(child => copy.addNode(child.clone()));
-        return copy;
+    public clone(cloneGeo?: boolean): GRep {
+        return new GRep()._copyFrom(this, cloneGeo)
+    }
+
+    protected _copyFrom(another: GRep, cloneGeo?: boolean) {
+        super._copyFrom(another, cloneGeo)
+        this.elementId = another.elementId
+        return this
     }
 }

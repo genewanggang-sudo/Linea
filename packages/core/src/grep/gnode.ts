@@ -19,12 +19,6 @@ export abstract class GNode {
     public parent?: GNode
 
     /**
-     * 对应的渲染节点
-     * 一旦创建出来, 会复用并在需要时同步矩阵
-     */
-    protected _renderNode?: RenderNode
-
-    /**
      * 相对父节点局部矩阵
      */
     protected _localMatrix?: Matrix4
@@ -33,6 +27,12 @@ export abstract class GNode {
      * 根节点累计到当前的世界矩阵
      */
     protected _globalMatrix?: Matrix4
+
+    /**
+     * 对应的渲染节点
+     * 一旦创建出来, 会复用并在需要时同步矩阵
+     */
+    protected _renderNode?: RenderNode
 
     public get localMatrix(): Matrix4 | undefined {
         return this._localMatrix
@@ -153,9 +153,12 @@ export abstract class GNode {
         }
     }
 
-    public abstract clone(): GNode
+    public abstract clone(cloneGeo?: boolean): GNode
 
-    protected _copy(another: GNode) {
+    /**
+     * 从其它实例复制状态
+     */
+    protected _copyFrom(another: GNode) {
         this._localMatrix = another._localMatrix?.clone()
         this._globalMatrix = another._globalMatrix?.clone()
         return this

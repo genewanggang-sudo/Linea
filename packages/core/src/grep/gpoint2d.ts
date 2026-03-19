@@ -24,11 +24,8 @@ export class GPoint2d extends GNode2d {
         return this.plane.getPtAt(this.geo)
     }
 
-    // TODO GPoint2d的clone方法待修改
     public override clone(cloneGeo?: boolean): GPoint2d {
-        const copy = new GPoint2d(this.plane, cloneGeo ? this.geo.clone() : this.geo);
-        copy._localMatrix = this._localMatrix?.clone();
-        copy._globalMatrix = this._globalMatrix?.clone();
-        return copy;
+        const gPoint = new GPoint2d(this.plane, cloneGeo ? this.geo.clone() : this.geo)
+        return gPoint._copyFrom(this)
     }
 }

@@ -20,6 +20,7 @@ export class GPolycurve extends GNode2d {
     }
 
     public clone(cloneGeo?: boolean) {
-        return new GPolycurve(this.plane, cloneGeo ? this.geo.clone() : this.geo)
+        const polyCurve = new GPolycurve(this.plane, cloneGeo ? this.geo.clone() : this.geo)
+        return polyCurve._copyFrom(this)
     }
 }

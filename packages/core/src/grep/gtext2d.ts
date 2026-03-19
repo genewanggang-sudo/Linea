@@ -23,12 +23,7 @@ export class GText2d extends GNode2d {
     }
 
     public clone(): GText2d {
-        return new GText2d(this.text, this.plane, this.position)._copy(this);
-    }
-
-    protected _copy(another: GText2d): this {
-        super._copy(another);
-        this.position = another.position.clone();
-        return this;
+        const gText = new GText2d(this.text, this.plane.clone(), this.position)
+        return gText
     }
 }

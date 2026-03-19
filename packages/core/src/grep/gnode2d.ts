@@ -14,8 +14,8 @@ export abstract class GNode2d extends GNode {
 
     public abstract clone(): GNode2d;
 
-    protected _copy(another: GNode2d): this {
-        super._copy(another)
+    protected _copyFrom(another: GNode2d): this {
+        super._copyFrom(another)
         return this
     }
 }

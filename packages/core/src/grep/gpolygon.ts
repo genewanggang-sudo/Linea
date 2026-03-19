@@ -43,9 +43,8 @@ export class GPolygon extends GNode2d {
         return render;
     }
 
-    public clone(): GPolygon {
-        const cloned = new GPolygon(this.plane.clone(), this.geo.clone());
-        cloned._copy(this);
-        return cloned;
+    public clone(cloneGeo?: boolean): GPolygon {
+        const gPolygon = new GPolygon(this.plane.clone(), cloneGeo ? this.geo.clone() : this.geo)
+        return gPolygon._copyFrom(this)
     }
 }

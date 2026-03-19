@@ -3,6 +3,9 @@ import { RenderGroup, RenderNode } from '../render/render_node';
 import { GNode } from './gnode';
 
 export class GGroup extends GNode {
+    /**
+     * 子节点
+     */
     protected _children: Array<GNode> = []
 
     public get children() {
@@ -17,6 +20,7 @@ export class GGroup extends GNode {
      * 添加子节点
      */
     public addNode(node: GNode, index?: number) {
+        // TODO 有parent的, 需要从父节点移除
         node.parent = this
         if (index !== undefined) {
             this.children.splice(index, 0, node)
@@ -46,13 +50,16 @@ export class GGroup extends GNode {
         return render;
     }
 
-    // TODO 和实际使用有区别, 待完善
-    public clone(): GGroup {
-        const copy = new GGroup();
-        copy._localMatrix = this._localMatrix?.clone();
-        copy._globalMatrix = this._globalMatrix?.clone();
-        this._children.forEach(child => copy.addNode(child.clone()));
-        return copy;
+    public clone(cloneGeo?: boolean): GGroup {
+        return new GGroup()._copyFrom(this, cloneGeo)
+    }
+
+    protected _copyFrom(another: GGroup, cloneGeo?: boolean): this {
+        super._copyFrom(another)
+        another._children.forEach(child => {
+            this.addNode(child.clone(cloneGeo))
+        })
+        return this
     }
 
 }
