@@ -1,8 +1,10 @@
-// import { ElementId } from '../element/element_id';
+import { ElementId } from '../element/element_id';
 import { GGroup } from './ggroup';
 
 // TODO 补充完整
 export class GRep extends GGroup {
+
+    protected _elementId = ElementId.INVALID
 
     /**
      * 为减少对象的构造，可直接引用GRep.empty,来构造空的grep
@@ -11,18 +13,13 @@ export class GRep extends GGroup {
         return new GRep();
     }
 
-    /**
-     * 关联的element的iD
-     */
-    // private _elementId = ElementId.INVALID;
+    public get elementId() {
+        return this._elementId
+    }
 
-    // public get elementId() {
-    //     return this._elementId
-    // }
-
-    // public set elementId(eId: ElementId) {
-    //     this._elementId = eId
-    // }
+    public set elementId(eId: ElementId) {
+        this._elementId = eId
+    }
 
     public clone(): GRep {
         const copy = new GRep();

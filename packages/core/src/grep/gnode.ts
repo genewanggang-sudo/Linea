@@ -3,6 +3,7 @@ import { RenderNode } from '../render/render_node'
 import { CMathUtil } from '../toolkit/cmath_util'
 import { DebugUtil } from '../toolkit/debug_util'
 import { ElementId } from '../element/element_id'
+import { GRep } from './grep'
 
 /**
  * 表示图形的基本单元, 包括几何数据和显示样式
@@ -15,9 +16,6 @@ export abstract class GNode {
      */
     public readonly globalID: number
 
-    protected _elementId = ElementId.INVALID
-
-    /**父节点*/
     public parent?: GNode
 
     /**
@@ -50,11 +48,9 @@ export abstract class GNode {
 
     public get elementId() {
         const root = this.getRoot()
-        return root._elementId
-    }
-
-    public set elementId(elementId: ElementId) {
-        this._elementId = elementId
+        return root instanceof GRep
+            ? root.elementId
+            : ElementId.INVALID
     }
 
     constructor() {
