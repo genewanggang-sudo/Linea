@@ -20,7 +20,9 @@ export class GGroup extends GNode {
      * 添加子节点
      */
     public addNode(node: GNode, index?: number) {
-        // TODO 有parent的, 需要从父节点移除
+        if (node.parent) {
+            node.removeFromParent()
+        }
         node.parent = this
         if (index !== undefined) {
             this.children.splice(index, 0, node)
@@ -28,6 +30,17 @@ export class GGroup extends GNode {
             this._children.push(node)
         }
         return node
+    }
+
+    /**
+     * 移除子节点
+     */
+    public removeNode(node: GNode) {
+        const index = this.children.findIndex(_ => _ === node)
+        if (index < 0) return false
+        node.parent = undefined
+        this.children.splice(index, 1)
+        return true
     }
 
     /**

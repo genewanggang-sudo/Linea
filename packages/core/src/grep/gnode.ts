@@ -4,6 +4,7 @@ import { CMathUtil } from '../toolkit/cmath_util'
 import { DebugUtil } from '../toolkit/debug_util'
 import { ElementId } from '../element/element_id'
 import { GRep } from './grep'
+import { GGroup } from './ggroup'
 
 /**
  * 表示图形的基本单元, 包括几何数据和显示样式
@@ -34,6 +35,13 @@ export abstract class GNode {
      */
     protected _renderNode?: RenderNode
 
+    public get elementId() {
+        const root = this.getRoot()
+        return root instanceof GRep
+            ? root.elementId
+            : ElementId.INVALID
+    }
+
     public get localMatrix(): Matrix4 | undefined {
         return this._localMatrix
     }
@@ -44,13 +52,6 @@ export abstract class GNode {
 
     public get globalMatrix() {
         return this._globalMatrix
-    }
-
-    public get elementId() {
-        const root = this.getRoot()
-        return root instanceof GRep
-            ? root.elementId
-            : ElementId.INVALID
     }
 
     constructor() {
@@ -153,6 +154,18 @@ export abstract class GNode {
         }
     }
 
+    /**
+     * 从父节点移除
+     */
+    public removeFromParent() {
+        if (!this.parent || !(this.parent instanceof GGroup)) return false
+        return this.parent.removeNode(this)
+    }
+
+    /**
+     * 克隆
+     * @param cloneGeo 是否深拷贝底层几何对象
+     */
     public abstract clone(cloneGeo?: boolean): GNode
 
     /**
