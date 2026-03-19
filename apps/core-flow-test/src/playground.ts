@@ -66,7 +66,7 @@ export const toolMeta: Record<ToolId, { label: string, accent: string, subtitle:
     arc: { label: '绘制圆弧', accent: '#fb923c', subtitle: '三点定义圆弧' },
     ellipse: { label: '绘制椭圆', accent: '#34d399', subtitle: '中心加长短轴点' },
     ellipseArc: { label: '绘制椭圆弧', accent: '#4ade80', subtitle: '五点拟合椭圆弧' },
-    bspline: { label: '绘制 B 样条', accent: '#f472b6', subtitle: '四点插值样条' },
+    bspline: { label: '绘制 B 样条', accent: '#f472b6', subtitle: '四点控制点样条' },
     polygon: { label: '插入轮廓', accent: '#a78bfa', subtitle: '插入随机测试轮廓' },
     demo: { label: '加载图框', accent: '#fbbf24', subtitle: '显示工程图图框与投影视图' },
     clear: { label: '清空画布', accent: '#f87171', subtitle: '删除当前测试图形' },
@@ -80,6 +80,11 @@ const shapePointCount: Record<ShapeKind, number> = {
     arc: 3,
     ellipse: 3,
     ellipseArc: 5,
+    bspline: 4,
+}
+
+const minShapePointCount: Record<ShapeKind, number> = {
+    ...shapePointCount,
     bspline: 4,
 }
 
@@ -162,11 +167,15 @@ function resetDrawingStatus(detail = defaultDetail) {
 
 function updateDrawingStatus(kind: ShapeKind, fixedPoints: number) {
     const steps = shapeSteps[kind]
-    const nextStep = steps[Math.min(fixedPoints, steps.length - 1)]
+    const nextStep = kind === 'bspline'
+        ? `继续点击控制点，当前 ${fixedPoints} 个，右键完成`
+        : steps[Math.min(fixedPoints, steps.length - 1)]
     state.drawing = {
         activeTool: kind,
         title: toolMeta[kind].label,
-        detail: `${nextStep}，已固定 ${fixedPoints}/${steps.length} 个点。`,
+        detail: kind === 'bspline'
+            ? `${nextStep}。`
+            : `${nextStep}，已固定 ${fixedPoints}/${steps.length} 个点。`,
         steps,
         fixedPoints,
     }
@@ -319,7 +328,7 @@ function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
         if (points.length < 2 || countDistinctPoints(points) < 2) {
             return undefined
         }
-        return NurbsCurve2.makeByInterpolationPts(points, Math.min(3, points.length - 1))
+        return NurbsCurve2.makeByControlPoints(points, Math.min(3, points.length - 1))
     }
 
     const controls = getEllipseArcControlPoints(points)
@@ -422,7 +431,7 @@ function buildEllipseArcGuideGRep(points: Vec2[]) {
 
 function buildShapePreviewGRep(kind: ShapeKind, fixedPoints: Vec2[], cursor?: Vec2) {
     const previewPoints = clonePoints(fixedPoints)
-    if (cursor && previewPoints.length < shapePointCount[kind]) {
+    if (cursor && (kind === 'bspline' || previewPoints.length < shapePointCount[kind])) {
         previewPoints.push(cursor.clone())
     }
 
@@ -749,6 +758,7 @@ class BaseDrawShapeCmd extends Cmd {
 
         const actionResult = await this.runAction(new MultiPointPickAction(
             (screenPos) => this._onPointPicked(this._toWorldPos(screenPos)),
+            () => this._onRightClick(),
             new PickPointContext({
                 movingCallBack: result => this._syncPreview(this._toFlatWorldPos(result.point)),
             }),
@@ -812,14 +822,31 @@ class BaseDrawShapeCmd extends Cmd {
         this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
         updateDrawingStatus(this._kind, this._fixedPoints.length)
 
-        if (this._fixedPoints.length >= shapePointCount[this._kind]) {
+        if (this._kind !== 'bspline' && this._fixedPoints.length >= shapePointCount[this._kind]) {
             const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
-            setToast(element ? `${toolMeta[this._kind].label}已完成` : `${toolMeta[this._kind].label}创建失败`)
-            this._clearPreview()
-            return true
+            setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
+            this._fixedPoints = []
+            updateDrawingStatus(this._kind, 0)
+            this._syncPreview()
+            return false
         }
 
         this._syncPreview()
+        return false
+    }
+
+    private _onRightClick() {
+        if (this._fixedPoints.length === 0) {
+            return true
+        }
+        if (this._kind === 'bspline' && this._fixedPoints.length >= minShapePointCount[this._kind]) {
+            const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
+            setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
+            this._fixedPoints = []
+            updateDrawingStatus(this._kind, 0)
+            this._syncPreview()
+            return false
+        }
         return false
     }
 }
@@ -827,6 +854,7 @@ class BaseDrawShapeCmd extends Cmd {
 class MultiPointPickAction extends PickPointAction {
     constructor(
         private readonly _onPicked: (screenPos: Vec2) => boolean,
+        private readonly _onRightClicked: () => boolean,
         context?: PickPointContext,
     ) {
         super(context)
@@ -837,6 +865,13 @@ class MultiPointPickAction extends PickPointAction {
         if (done) {
             const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
             this._markSuccess(result)
+        }
+        return true
+    }
+
+    public override onRClick(_evt: IMouseEvent) {
+        if (this._onRightClicked()) {
+            this.cancel()
         }
         return true
     }
