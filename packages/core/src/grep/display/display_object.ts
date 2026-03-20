@@ -1,6 +1,6 @@
-import type { GRep } from './grep'
-import { dirtyProp } from '../display/dirty_prop'
-import { StateObject } from '../display/state_object'
+import type { GRep } from '../grep'
+import { dirtyProp } from '../../display/dirty_prop'
+import { StateObject } from '../../display/state_object'
 
 export interface IDisplayRenderData {
     gRep?: GRep

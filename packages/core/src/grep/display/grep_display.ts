@@ -1,5 +1,5 @@
-import type { GRep } from './grep'
-import { dirtyProp } from '../display/dirty_prop'
+import type { GRep } from '../grep'
+import { dirtyProp } from '../../display/dirty_prop'
 import type { IDisplayRenderData } from './display_object'
 import { DisplayObject } from './display_object'
 
