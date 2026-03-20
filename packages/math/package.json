@@ -39,6 +39,6 @@
         "poly2tri": "^1.5.0",
         "priorityqueuejs": "^2.0.0",
         "quadtree-lib": "^1.0.9",
-        "short-uuid": "^6.0.3"
+        "uuid": "^10.0.0"
     }
 }

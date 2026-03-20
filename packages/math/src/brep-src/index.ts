@@ -1,5 +1,4 @@
 // Brep算法库
-import * as Short from 'short-uuid';
 import * as alg from './algorithm';
 import * as Continuous from './continuous';
 
@@ -17,4 +16,3 @@ export { BrepBody } from './brep/brep_body';
 export { BrepUtil } from './util/util';
 export { alg };
 export { Continuous };
-export { Short };

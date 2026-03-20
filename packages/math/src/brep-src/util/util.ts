@@ -1,4 +1,4 @@
-import * as Short from 'short-uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { Loader } from '../../loader/loader';
 
 /**
@@ -9,14 +9,14 @@ export class BrepUtil {
      * 生成UUID
      */
     public static generateUUID(): string {
-        return Short.generate();
+        return uuidv4();
     }
 
     /**
      * 生成8位短的UUID
      */
     public static generateShortUUID(): string {
-        return Short.generate().substring(0, 8);
+        return uuidv4().replace(/-/g, '').substring(0, 8);
     }
 
     // value是基础类型或者实现了接口IGeoElement

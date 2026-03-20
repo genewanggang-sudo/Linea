@@ -3,6 +3,9 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
     plugins: [vue()],
+    server: {
+        host: '0.0.0.0',
+    },
     define: {
         global: 'globalThis',
     },

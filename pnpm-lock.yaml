@@ -152,9 +152,9 @@ importers:
       quadtree-lib:
         specifier: ^1.0.9
         version: 1.0.9
-      short-uuid:
-        specifier: ^6.0.3
-        version: 6.0.3
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^4.0.18
@@ -918,9 +918,6 @@ packages:
     resolution: {integrity: sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==}
     engines: {node: '>=8'}
 
-  any-base@1.1.0:
-    resolution: {integrity: sha512-uMgjozySS8adZZYePpaWs8cxB9/kdzmpX6SgJZ+wbz1K5eYk5QMYDVJaZKhxyIHUdnnJkfR7SVgStgH7LkGUyg==}
-
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
@@ -1392,10 +1389,6 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
-
-  short-uuid@6.0.3:
-    resolution: {integrity: sha512-UMZ3rYOoid307EqWsPTnoBUSOB51Fi28vUMPigUsSCmbaSvslyf/SlXZWOn4btj8tokhBTBkPFKVKKlIolEG1w==}
-    engines: {node: '>=14.17.0'}
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
@@ -2256,8 +2249,6 @@ snapshots:
     dependencies:
       color-convert: 2.0.1
 
-  any-base@1.1.0: {}
-
   argparse@2.0.1: {}
 
   assertion-error@2.0.1: {}
@@ -2760,10 +2751,6 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
-
-  short-uuid@6.0.3:
-    dependencies:
-      any-base: 1.1.0
 
   siginfo@2.0.0: {}
 
