@@ -1,9 +1,9 @@
-import { AxesHelper, Group, OrthographicCamera, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three'
+import { AxesHelper, Group, OrthographicCamera, Raycaster, Scene, SRGBColorSpace, Vector2, Vector3, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { DisplayObject, DisplayObjectMgr, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
 import { RenderHub } from './render_hub'
-import { Vec2, Vec3 } from '@ccpc/math'
+import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
 
 export class CRenderer implements IRender {
     private _width: number
@@ -180,6 +180,20 @@ export class CRenderer implements IRender {
     public worldToNDC(worldPos: Vec3) {
         const p = new Vector3(worldPos.x, worldPos.y, 0).project(this._camera)
         return new Vec2(p.x, p.y)
+    }
+
+    /**
+     * 生成相机射线
+     */
+    public generateCameraRay(screenPos: Vec2) {
+        const raycaster = new Raycaster()
+        const ndc = this.screenToNDC(screenPos)
+        const pos = new Vector2(ndc.x, ndc.y)
+        raycaster.setFromCamera(pos, this._camera)
+        const { ray } = raycaster
+        const lineRay = new Ln3(ray.origin, ray.direction, [0, 1])
+        lineRay.extend(CONST.MODEL_MAX_LENGTH * 100, true)
+        return lineRay
     }
 
     protected _onResize() {
