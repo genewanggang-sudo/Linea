@@ -8,7 +8,7 @@ export class PickUtil {
      */
     // TODO 考虑容差
     public static pickGNode(ccanvas: CCanvas, screenPos: Vec2) {
-        this.pickGNodes(ccanvas, screenPos)
+        return this.pickGNodes(ccanvas, screenPos)[0]
     }
 
     public static pickGNodes(ccanvas: CCanvas, screenPos: Vec2) {

@@ -21,6 +21,7 @@ import {
     Document,
     Element,
     GCurve2d,
+    GNode,
     GPoint2d,
     GPolycurve,
     GPolygon,
@@ -135,6 +136,24 @@ function countDistinctPoints(points: Vec2[], eps = 1e-6) {
         }
     }
     return distinct.length
+}
+
+function getCanvasWorkPlaneApi() {
+    return app.getCanvas() as unknown as {
+        screenToWorkPlane: (pos: Vec2) => { x: number, y: number, z: number }
+    }
+}
+
+function getCanvasPickApi() {
+    return app.getCanvas() as unknown as {
+        pick: (x: number, y: number) => GNode[]
+    }
+}
+
+function describePickedNodes(nodes: GNode[]) {
+    const labels = nodes.slice(0, 3).map(node => node.constructor.name)
+    const prefix = `选中 ${labels.join(', ')}`
+    return nodes.length > 3 ? `${prefix} 等 ${nodes.length} 个对象` : prefix
 }
 
 function emitState() {
@@ -806,7 +825,9 @@ class BaseDrawShapeCmd extends Cmd {
         if (!canvas) {
             return undefined
         }
-        const world = canvas.screenToWorld(screenPos)
+        const world = (canvas as unknown as {
+            screenToWorkPlane: (pos: Vec2) => { x: number, y: number, z: number }
+        }).screenToWorkPlane(screenPos)
         return new Vec2(world.x, world.y)
     }
 
@@ -950,14 +971,9 @@ function updateCursorFromPointer(evt: PointerEvent) {
         return
     }
 
-    const canvas = app.getCanvas()
-    if (!canvas) {
-        return
-    }
-
     const rect = mountNode.getBoundingClientRect()
     const localPos = new Vec2(evt.clientX - rect.left, evt.clientY - rect.top)
-    const world = canvas.screenToWorld(localPos)
+    const world = getCanvasWorkPlaneApi().screenToWorkPlane(localPos)
     state.cursorWorld = { x: world.x, y: world.y }
     emitState()
 }
@@ -1029,6 +1045,7 @@ function bindCanvasEvents() {
     }
 
     mountNode.addEventListener('pointermove', updateCursorFromPointer)
+    mountNode.addEventListener('click', handleCanvasPick)
     mountNode.addEventListener('pointerleave', clearCursor)
     window.addEventListener('keydown', evt => {
         if (evt.key === 'Escape') {
@@ -1036,6 +1053,26 @@ function bindCanvasEvents() {
         }
     })
     window.addEventListener('resize', scheduleFitEngineeringDemoView)
+}
+
+function handleCanvasPick(evt: MouseEvent) {
+    if (!mountNode) {
+        return
+    }
+
+    const rect = mountNode.getBoundingClientRect()
+    const x = evt.clientX - rect.left
+    const y = evt.clientY - rect.top
+    const result = getCanvasPickApi().pick(x, y)
+
+    console.log('pick', {
+        screen: { x, y },
+        result,
+    })
+
+    if (result.length > 0) {
+        setToast(describePickedNodes(result))
+    }
 }
 
 export function subscribePlayground(listener: (state: PlaygroundState) => void) {

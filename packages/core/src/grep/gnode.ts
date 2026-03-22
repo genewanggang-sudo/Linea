@@ -75,6 +75,7 @@ export abstract class GNode {
         if (!this._renderNode) {
             this._renderNode = this._toRenderNodeWithoutMatrix(discreteParams)
         }
+        this._renderNode.gnode = this
         if (this._globalMatrix) {
             this._renderNode.copyWorldMatrix(this._globalMatrix)
         }

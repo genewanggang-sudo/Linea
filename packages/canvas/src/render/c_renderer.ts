@@ -6,6 +6,8 @@ import { RenderHub } from './render_hub'
 import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
 
 export class CRenderer implements IRender {
+    private static readonly PICK_TOLERANCE = 16
+
     private _width: number
 
     private _height: number
@@ -194,6 +196,7 @@ export class CRenderer implements IRender {
         const raycaster = new Raycaster()
         const ndc = this.screenToNDC(new Vec2(screenX, screenY))
         raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), this._camera)
+        raycaster.params.Line2 = { threshold: CRenderer.PICK_TOLERANCE }
         const intersects = raycaster.intersectObjects(this._scene.children, true)
         const result: GNode[] = []
         const seen = new Set<number>()
@@ -226,7 +229,10 @@ export class CRenderer implements IRender {
         this._camera.top = vh / 2
         this._camera.bottom = -vh / 2
         this._camera.updateProjectionMatrix()
+
     }
+
+    // TODO 同步线宽，需要修改
 
     // TODO 补充完整
     public destroy() {
