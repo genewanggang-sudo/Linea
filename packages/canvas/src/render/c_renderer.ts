@@ -1,7 +1,7 @@
 import { AxesHelper, Group, OrthographicCamera, Raycaster, Scene, SRGBColorSpace, Vector2, Vector3, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
-import { DisplayObject, DisplayObjectMgr, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
+import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
 import { RenderHub } from './render_hub'
 import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
 
@@ -100,19 +100,10 @@ export class CRenderer implements IRender {
     }
 
     /**
-     * 移除显示对象
-     */
-    private _removeDisplayById(did: number) {
-        this._removeGrepByDisplayId(did)
-    }
-
-    /**
      * 根据显示对象添加GRep
      */
     private _addGrepByDisplay(display: DisplayObject, gRep: GRep) {
         const dId = display.id
-        console.log('==========');
-        console.log(gRep);
         const group = this._renderHub.addGrep(gRep)
         this._scene.add(group)
         this._didToObject.set(dId, group)
@@ -127,15 +118,15 @@ export class CRenderer implements IRender {
         if (!group) return false
         this._didToObject.delete(dId)
         group.removeFromParent();
-        // TODO 内存释放
+        // TODO 内存释放,优先级提高
     }
 
     public render = () => {
         requestAnimationFrame(this.render)
 
         const { update, remove } = DisplayObjectMgr.instance().onBeforeRender()
-        remove.forEach(id => {
-            this._removeDisplayById(id);
+        remove.forEach(dId => {
+            this._removeGrepByDisplayId(dId)
         });
         update.forEach(renderData => {
             this._updateDisplayByRenderData(renderData);
@@ -196,6 +187,32 @@ export class CRenderer implements IRender {
         return lineRay
     }
 
+    /**
+     * 根据屏幕坐标拾取
+     */
+    public pick(screenX: number, screenY: number): GNode[] {
+        const raycaster = new Raycaster()
+        const ndc = this.screenToNDC(new Vec2(screenX, screenY))
+        raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), this._camera)
+        const intersects = raycaster.intersectObjects(this._scene.children, true)
+        const result: GNode[] = []
+        const seen = new Set<number>()
+
+        for (const hit of intersects) {
+            const gnode = this._renderHub.getGNodesByObject3d(hit.object)
+            if (!gnode) continue
+            if (seen.has(gnode.globalID)) continue
+
+            seen.add(gnode.globalID)
+            result.push(gnode)
+        }
+        return result
+    }
+
+    /**
+     * 监听画布大小变化
+     */
+    // TODO 需要重写
     protected _onResize() {
         this._width = this._container.clientWidth
         this._height = this._container.clientHeight

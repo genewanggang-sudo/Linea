@@ -1,4 +1,4 @@
-import { GRep, RenderEdge, RenderGroup, RenderNode, RenderPoint } from '@ccpc/core'
+import { GNode, GRep, RenderEdge, RenderGroup, RenderNode, RenderPoint } from '@ccpc/core'
 import { Vec3 } from '@ccpc/math'
 import { BufferAttribute, BufferGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, Object3D, Points, PointsMaterial } from 'three'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
@@ -14,6 +14,11 @@ import { ThreeUtil } from '../toolkit/three_util'
 export class RenderHub {
 
     /**
+     * 渲染对象和GNode的映射
+     */
+    private _objectGNodeMap = new WeakMap<Object3D, GNode>
+
+    /**
      * 添加GRep
      */
     public addGrep(grep: GRep) {
@@ -25,6 +30,7 @@ export class RenderHub {
             const obj = this._buildLeafObject3d(node)
             if (obj) {
                 group.add(obj)
+                this._objectGNodeMap.set(obj, node.gnode)
             }
         }
 
@@ -36,6 +42,19 @@ export class RenderHub {
      */
     public removeGRep(_eId: number) {
 
+    }
+
+    /**
+     * 根据渲染对象查GNode
+     */
+    public getGNodesByObject3d(obj: Object3D) {
+        let cur: Object3D | null = obj
+        while (cur) {
+            const gnode = this._objectGNodeMap.get(cur)
+            if (gnode) return gnode
+            cur = cur.parent
+        }
+        return undefined
     }
 
     /**

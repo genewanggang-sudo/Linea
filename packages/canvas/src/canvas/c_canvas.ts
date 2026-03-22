@@ -1,4 +1,4 @@
-import { ModelView } from '@ccpc/core'
+import { GNode, ModelView } from '@ccpc/core'
 import { ICCanvas } from './i_c_canvas'
 import { CRenderer } from '../render/c_renderer'
 import { MouseInteractor } from '../controller/mouse_interactor'
@@ -28,6 +28,20 @@ export class CCanvas implements ICCanvas {
 
     public get container() {
         return this._container
+    }
+
+    /**
+     * 开启事件监听
+     */
+    public startListening() {
+        this._mouseInteractor.startListening()
+    }
+
+    /**
+     * 停止监听
+     */
+    public stopListening() {
+        this._mouseInteractor.stopListening()
     }
 
     /**
@@ -95,18 +109,8 @@ export class CCanvas implements ICCanvas {
         return this._renderer.generateCameraRay(screenPos)
     }
 
-    /**
-     * 开启事件监听
-     */
-    public startListening() {
-        this._mouseInteractor.startListening()
-    }
-
-    /**
-     * 停止监听
-     */
-    public stopListening() {
-        this._mouseInteractor.stopListening()
+    public pick(screenX: number, screenY: number): GNode[] {
+        return this._renderer.pick(screenX, screenY)
     }
 
     // TODO 补充完整
