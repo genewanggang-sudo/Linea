@@ -28,7 +28,7 @@ export class CRenderer implements IRender {
     /**
      * displayId到Group映射
      */
-    private _didMap = new Map<number, Group>()
+    private _didToObject = new Map<number, Group>()
 
     // TODO 相关逻辑移动到canvas
     private _resizeObserver: ResizeObserver
@@ -88,7 +88,7 @@ export class CRenderer implements IRender {
         const display = DisplayObjectMgr.instance().getDisplay(id);
         if (display) {
             if (gRep) {
-                const obj = this._didMap.get(display.id);
+                const obj = this._didToObject.get(display.id);
                 if (obj) {
                     this._removeGrepByDisplayId(id);
                     this._addGrepByDisplay(display, gRep);
@@ -115,7 +115,7 @@ export class CRenderer implements IRender {
         console.log(gRep);
         const group = this._renderHub.addGrep(gRep)
         this._scene.add(group)
-        this._didMap.set(dId, group)
+        this._didToObject.set(dId, group)
         group.visible = display.testVisible()
     }
 
@@ -123,9 +123,9 @@ export class CRenderer implements IRender {
      * 根据显示对象移除GRep
      */
     private _removeGrepByDisplayId(dId: number) {
-        const group = this._didMap.get(dId)
+        const group = this._didToObject.get(dId)
         if (!group) return false
-        this._didMap.delete(dId)
+        this._didToObject.delete(dId)
         group.removeFromParent();
         // TODO 内存释放
     }
