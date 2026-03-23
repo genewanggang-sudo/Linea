@@ -1,10 +1,16 @@
 import { IElement } from '../element/i_element'
+import { IHighLight } from '../types/i_high_light'
+import { ISelection } from '../types/i_selection'
 import { EN_ModelViewChanged } from '../types/type_define'
 /**
  * 缓存视图层发生的变化
  */
 export class ModelChangedCache {
     public container = new Map<EN_ModelViewChanged, Set<number>>()
+
+    public highLight?: IHighLight
+
+    public selection?: ISelection
 
     constructor() {
         const arr = [
@@ -21,8 +27,8 @@ export class ModelChangedCache {
         for (const set of this.container.values()) {
             if (set.size) return true
         }
-        // TODO 暂不考虑selection
-        return false;
+
+        return this.selection || this.highLight
     }
 
     /**
@@ -52,12 +58,27 @@ export class ModelChangedCache {
     }
 
     /**
+     * 缓存高亮
+     */
+    public cacheHighLight(highLight: IHighLight) {
+        this.highLight = highLight
+    }
+
+    /**
+     * 缓存选择集
+     */
+    public cacheSelection(selection: ISelection) {
+        this.selection = selection
+    }
+
+    /**
      * 清空缓存
      */
     public clear() {
         for (const set of this.container.values()) {
             set.clear();
         }
-        // TODO selection
+        delete this.highLight
+        delete this.selection
     }
 }

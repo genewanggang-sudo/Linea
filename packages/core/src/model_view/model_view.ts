@@ -117,6 +117,5 @@ export class ModelView {
             this._eid2didMap.delete(eId)
             this._renderDirty = true
         }
-
     }
 }

@@ -1,6 +1,7 @@
 export { Element as CElement } from './element/element'
 export { Element } from './element/element'
 export { RegisterElement } from './element/element_decorator'
+export { ElementId } from './element/element_id'
 export type { IElement } from './element/i_element'
 export { TmpElement } from './element/tmp_element/tmp_element'
 export { TmpElementPainter } from './element/tmp_element/tmp_element_painter'
