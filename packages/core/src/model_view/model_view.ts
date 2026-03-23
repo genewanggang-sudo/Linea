@@ -37,6 +37,8 @@ export class ModelView {
 
         this._renderDirty = false
         this._updateElements()
+        this._updateSelection()
+        this._updateHighLight()
 
         if (this._renderDirty) {
             this.iRender.updateView()
@@ -117,5 +119,28 @@ export class ModelView {
             this._eid2didMap.delete(eId)
             this._renderDirty = true
         }
+    }
+
+    /**
+     * 刷新选择集
+     */
+    private _updateSelection() {
+        const { selection } = this.cacheForView
+        if (!selection) return
+
+        const greps = this._toGReps()
+        // TODO完善方法
+        this.iRender.clearSelection()
+        this._renderDirty = true
+        if (!greps.length) return
+        this.iRender.drawSelections(greps)
+    }
+
+    private _updateHighLight() {
+
+    }
+
+    private _toGReps() {
+
     }
 }
