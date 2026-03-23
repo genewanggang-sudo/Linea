@@ -22,6 +22,7 @@ export class GPoint2d extends GNode2d {
     protected _toRenderNodeWithoutMatrix(): RenderNode {
         const render = new RenderPoint();
         render.point = this.plane.getPtAt(this.geo)
+        render.style = StyleUtils.getPointStyle(this.getStyle())
         return render;
     }
 

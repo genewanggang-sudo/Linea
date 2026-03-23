@@ -17,6 +17,8 @@
     RectLineElement,
 } from '@ccpc/editor_sdk'
 import {
+    EN_AnchorX,
+    EN_AnchorY,
     IMouseEvent,
     Document,
     Element,
@@ -38,7 +40,7 @@ import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 }
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
 
 export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
-export type ToolId = ShapeKind | 'polygon' | 'demo' | 'clear'
+export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
 
 export type CursorPoint = {
     x: number
@@ -70,6 +72,7 @@ export const toolMeta: Record<ToolId, { label: string, accent: string, subtitle:
     bspline: { label: '绘制 B 样条', accent: '#f472b6', subtitle: '四点控制点样条' },
     polygon: { label: '插入轮廓', accent: '#a78bfa', subtitle: '插入随机测试轮廓' },
     demo: { label: '加载图框', accent: '#fbbf24', subtitle: '显示工程图图框与投影视图' },
+    styleDemo: { label: '样式测试', accent: '#22d3ee', subtitle: '验证 style 机制链路' },
     clear: { label: '清空画布', accent: '#f87171', subtitle: '删除当前测试图形' },
 }
 
@@ -698,6 +701,244 @@ function buildEngineeringSheetGRep() {
     return grep
 }
 
+function assertStyle(title: string, condition: boolean, payload?: unknown) {
+    console.assert(condition, `[style-demo] ${title}`, payload)
+    if (!condition) {
+        console.error(`[style-demo] ${title}`, payload)
+    }
+}
+
+function buildStyleDemoGRep() {
+    const grep = new GRep()
+
+    addText(grep, 'Style Mechanism Demo', new Vec2(-420, 310))
+    addText(grep, 'default', new Vec2(-360, 230))
+    addText(grep, 'local style', new Vec2(-40, 230))
+    addText(grep, 'inherit', new Vec2(290, 230))
+
+    const pointDefault = new GPoint2d(Plane.XOY(), new Vec2(-360, 140))
+    const pointLocal = new GPoint2d(Plane.XOY(), new Vec2(-40, 140))
+    pointLocal.setStyle({
+        point: {
+            color: '#ef4444',
+            size: 16,
+            opacity: 0.45,
+        },
+    })
+    const pointParent = new GRep().setStyle({
+        point: {
+            color: '#06b6d4',
+            size: 20,
+            opacity: 0.55,
+        },
+    })
+    pointParent.addNode(new GPoint2d(Plane.XOY(), new Vec2(290, 140)))
+    grep.addNode(pointDefault)
+    grep.addNode(pointLocal)
+    grep.addNode(pointParent)
+
+    const lineDefault = new GCurve2d(Plane.XOY(), new Ln2(new Vec2(-420, 40), new Vec2(-300, 40)))
+    const lineLocal = new GCurve2d(Plane.XOY(), new Ln2(new Vec2(-100, 40), new Vec2(20, 40)))
+    lineLocal.setStyle({
+        line: {
+            color: '#22c55e',
+            width: 6,
+            opacity: 0.4,
+        },
+    })
+    const lineParent = new GRep().setStyle({
+        line: {
+            color: '#f59e0b',
+            width: 10,
+            opacity: 0.65,
+        },
+    })
+    lineParent.addNode(new GCurve2d(Plane.XOY(), new Ln2(new Vec2(230, 40), new Vec2(350, 40))))
+    grep.addNode(lineDefault)
+    grep.addNode(lineLocal)
+    grep.addNode(lineParent)
+
+    const polygonDefault = new GPolygon(Plane.XOY(), Polygon.createByRectangle(new Vec2(-420, -130), new Vec2(-300, -40)))
+    const polygonLocal = new GPolygon(Plane.XOY(), Polygon.createByRectangle(new Vec2(-100, -130), new Vec2(20, -40)))
+    polygonLocal.setStyle({
+        face: {
+            color: '#3b82f6',
+            opacity: 0.42,
+        },
+    })
+    const polygonParent = new GRep().setStyle({
+        face: {
+            color: '#8b5cf6',
+            opacity: 0.58,
+        },
+    })
+    polygonParent.addNode(new GPolygon(Plane.XOY(), Polygon.createByRectangle(new Vec2(230, -130), new Vec2(350, -40))))
+    grep.addNode(polygonDefault)
+    grep.addNode(polygonLocal)
+    grep.addNode(polygonParent)
+
+    const textDefault = new GText2d('Default text', Plane.XOY(), new Vec2(-360, -245))
+    const textLocal = new GText2d('Styled text', Plane.XOY(), new Vec2(-40, -245))
+    textLocal.setStyle({
+        text: {
+            color: '#f97316',
+            fontSize: 28,
+            anchorX: EN_AnchorX.Left,
+            anchorY: EN_AnchorY.Top,
+        },
+    })
+    const textParent = new GRep().setStyle({
+        text: {
+            color: '#14b8a6',
+            fontSize: 24,
+            anchorX: EN_AnchorX.Right,
+            anchorY: EN_AnchorY.Bottom,
+        },
+    })
+    textParent.addNode(new GText2d('Inherited text', Plane.XOY(), new Vec2(290, -245)))
+    grep.addNode(textDefault)
+    grep.addNode(textLocal)
+    grep.addNode(textParent)
+
+    const pointLocalStyle = pointLocal.toRenderNode().style.point
+    assertStyle('point local style applied', pointLocalStyle?.color === '#ef4444'
+        && pointLocalStyle?.size === 16
+        && pointLocalStyle?.opacity === 0.45, pointLocalStyle)
+
+    const pointInheritedStyle = pointParent.children[0].toRenderNode().style.point
+    assertStyle('point inherited style applied', pointInheritedStyle?.color === '#06b6d4'
+        && pointInheritedStyle?.size === 20
+        && pointInheritedStyle?.opacity === 0.55, pointInheritedStyle)
+
+    const lineLocalStyle = lineLocal.toRenderNode().style.line
+    assertStyle('line local style applied', lineLocalStyle?.color === '#22c55e'
+        && lineLocalStyle?.width === 6
+        && lineLocalStyle?.opacity === 0.4, lineLocalStyle)
+
+    const lineInheritedStyle = lineParent.children[0].toRenderNode().style.line
+    assertStyle('line inherited style applied', lineInheritedStyle?.color === '#f59e0b'
+        && lineInheritedStyle?.width === 10
+        && lineInheritedStyle?.opacity === 0.65, lineInheritedStyle)
+
+    const faceLocalStyle = polygonLocal.toRenderNode().style.face
+    assertStyle('face local style applied', faceLocalStyle?.color === '#3b82f6'
+        && faceLocalStyle?.opacity === 0.42, faceLocalStyle)
+
+    const faceInheritedStyle = polygonParent.children[0].toRenderNode().style.face
+    assertStyle('face inherited style applied', faceInheritedStyle?.color === '#8b5cf6'
+        && faceInheritedStyle?.opacity === 0.58, faceInheritedStyle)
+
+    const textLocalStyle = textLocal.toRenderNode().style.text
+    assertStyle('text local style applied', textLocalStyle?.color === '#f97316'
+        && textLocalStyle?.fontSize === 28
+        && textLocalStyle?.anchorX === EN_AnchorX.Left
+        && textLocalStyle?.anchorY === EN_AnchorY.Top, textLocalStyle)
+
+    const textInheritedStyle = textParent.children[0].toRenderNode().style.text
+    assertStyle('text inherited style applied', textInheritedStyle?.color === '#14b8a6'
+        && textInheritedStyle?.fontSize === 24
+        && textInheritedStyle?.anchorX === EN_AnchorX.Right
+        && textInheritedStyle?.anchorY === EN_AnchorY.Bottom, textInheritedStyle)
+
+    addText(grep, 'Anchor Probe', new Vec2(-420, -340))
+
+    const anchorCenter = new Vec2(260, -350)
+    const guideColor = '#64748b'
+    const guideLineStyle = {
+        line: {
+            color: guideColor,
+            width: 1,
+            opacity: 0.75,
+        },
+    }
+    const guidePointStyle = {
+        point: {
+            color: '#e2e8f0',
+            size: 6,
+            opacity: 1,
+        },
+    }
+    const guideTextStyle = {
+        text: {
+            color: '#94a3b8',
+            fontSize: 14,
+        },
+    }
+
+    const horizontalGuide = new GCurve2d(Plane.XOY(), new Ln2(
+        new Vec2(anchorCenter.x - 170, anchorCenter.y),
+        new Vec2(anchorCenter.x + 170, anchorCenter.y),
+    ))
+    horizontalGuide.setStyle(guideLineStyle)
+    grep.addNode(horizontalGuide)
+
+    const verticalGuide = new GCurve2d(Plane.XOY(), new Ln2(
+        new Vec2(anchorCenter.x, anchorCenter.y - 120),
+        new Vec2(anchorCenter.x, anchorCenter.y + 120),
+    ))
+    verticalGuide.setStyle(guideLineStyle)
+    grep.addNode(verticalGuide)
+
+    const centerPoint = new GPoint2d(Plane.XOY(), anchorCenter.clone())
+    centerPoint.setStyle(guidePointStyle)
+    grep.addNode(centerPoint)
+
+    const centerLabel = new GText2d('cross = shared anchor point', Plane.XOY(), new Vec2(anchorCenter.x - 150, anchorCenter.y + 132))
+    centerLabel.setStyle(guideTextStyle)
+    grep.addNode(centerLabel)
+
+    const anchorSpecs: Array<{
+        label: string
+        pos: Vec2
+        anchorX: EN_AnchorX
+        anchorY: EN_AnchorY
+        color: string
+    }> = [
+        {
+            label: 'Left / Top',
+            pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
+            anchorX: EN_AnchorX.Left,
+            anchorY: EN_AnchorY.Top,
+            color: '#f97316',
+        },
+        {
+            label: 'Center / Middle',
+            pos: new Vec2(anchorCenter.x, anchorCenter.y),
+            anchorX: EN_AnchorX.Center,
+            anchorY: EN_AnchorY.Middle,
+            color: '#22c55e',
+        },
+        {
+            label: 'Right / Bottom',
+            pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
+            anchorX: EN_AnchorX.Right,
+            anchorY: EN_AnchorY.Bottom,
+            color: '#38bdf8',
+        },
+    ]
+
+    anchorSpecs.forEach(spec => {
+        const probe = new GText2d(spec.label, Plane.XOY(), spec.pos)
+        probe.setStyle({
+            text: {
+                color: spec.color,
+                fontSize: 20,
+                anchorX: spec.anchorX,
+                anchorY: spec.anchorY,
+            },
+        })
+        grep.addNode(probe)
+
+        const probeStyle = probe.toRenderNode().style.text
+        assertStyle(`anchor probe ${spec.label}`, probeStyle?.anchorX === spec.anchorX
+            && probeStyle?.anchorY === spec.anchorY
+            && probeStyle?.color === spec.color
+            && probeStyle?.fontSize === 20, probeStyle)
+    })
+
+    return grep
+}
+
 @RegisterElement('random-polygon-element')
 class RandomPolygonElement extends Element {
     public polygon: Polygon = new Polygon()
@@ -709,6 +950,10 @@ class RandomPolygonElement extends Element {
 
 @RegisterElement('engineering-sheet-element')
 class EngineeringSheetElement extends Element {
+}
+
+@RegisterElement('style-demo-element')
+class StyleDemoElement extends Element {
 }
 
 @registerRequest('draw-random-polygon')
@@ -736,6 +981,16 @@ class LoadEngineeringDemoReq extends Request {
     }
 }
 
+@registerRequest('load-style-demo')
+class LoadStyleDemoReq extends Request {
+    public execute() {
+        const element = this._doc.create(StyleDemoElement)
+        element.name = nextShapeName('styleDemo')
+        element.setGRep(buildStyleDemoGRep())
+        return element
+    }
+}
+
 @registerRequest('clear-test-shapes')
 class ClearTestShapesReq extends Request {
     public execute() {
@@ -751,7 +1006,8 @@ class ClearTestShapesReq extends Request {
                 element instanceof EllipseArcElement ||
                 element instanceof BSplineElement ||
                 element instanceof RandomPolygonElement ||
-                element instanceof EngineeringSheetElement)
+                element instanceof EngineeringSheetElement ||
+                element instanceof StyleDemoElement)
             .map(element => element.id)
 
         if (ids.length > 0) {
@@ -1148,6 +1404,14 @@ export function loadEngineeringDemo() {
     scheduleFitEngineeringDemoView()
     resetDrawingStatus('已加载工程图图框与两组投影视图，可继续叠加绘制。')
     setToast('工程图演示已加载')
+}
+
+export function loadStyleDemo() {
+    requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
+    requestMgr.executeReq(requestMgr.createReq(LoadStyleDemoReq), true)
+    scheduleFitEngineeringDemoView()
+    resetDrawingStatus('已加载 style 机制验证场景，控制台包含运行时断言结果。')
+    setToast('样式机制测试已加载')
 }
 
 export function clearAllShapes() {

@@ -35,6 +35,7 @@ export class GText2d extends GNode2d {
 
     public clone(): GText2d {
         const gText = new GText2d(this.text, this.plane.clone(), this.position)
+        gText._copyFrom(this)
         return gText
     }
 }

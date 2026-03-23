@@ -7,6 +7,7 @@ import {
   clearAllShapes,
   insertRandomPolygon,
   loadEngineeringDemo,
+  loadStyleDemo,
   subscribePlayground,
   toolMeta,
   type PlaygroundState,
@@ -27,7 +28,7 @@ const state = reactive<PlaygroundState>({
   },
 })
 
-const tools: Array<{ id: ShapeKind | 'polygon' | 'demo' | 'clear' }> = [
+const tools: Array<{ id: ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear' }> = [
   { id: 'line' },
   { id: 'polyline' },
   { id: 'rectLine' },
@@ -38,6 +39,7 @@ const tools: Array<{ id: ShapeKind | 'polygon' | 'demo' | 'clear' }> = [
   { id: 'bspline' },
   { id: 'polygon' },
   { id: 'demo' },
+  { id: 'styleDemo' },
   { id: 'clear' },
 ]
 
@@ -54,13 +56,17 @@ function applySnapshot(snapshot: PlaygroundState) {
   state.drawing = snapshot.drawing
 }
 
-function handleToolClick(id: ShapeKind | 'polygon' | 'demo' | 'clear') {
+function handleToolClick(id: ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear') {
   if (id === 'polygon') {
     insertRandomPolygon()
     return
   }
   if (id === 'demo') {
     loadEngineeringDemo()
+    return
+  }
+  if (id === 'styleDemo') {
+    loadStyleDemo()
     return
   }
   if (id === 'clear') {
