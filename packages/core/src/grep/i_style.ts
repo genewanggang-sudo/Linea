@@ -18,25 +18,32 @@ export enum EN_AnchorY {
 }
 
 export type IPointStyle = Partial<{
-    color: number | string
-    opacity: number
+    color: number | string,
+    opacity: number,
     size: number
 }>
 
 export type ILineStyle = Partial<{
-    opacity: number
-    color: number | string
+    opacity: number,
+    color: number | string,
     width: number
 }>
 
 export type IFaceStyle = Partial<{
-    opacity: number
-    color: number | string
+    opacity: number,
+    color: number | string,
 }>
 
 export type ITextStyle = Partial<{
-    color: number | string
-    fontSize: number
-    anchorX: EN_AnchorX
+    color: number | string,
+    fontSize: number,
+    anchorX: EN_AnchorX,
     anchorY: EN_AnchorY
+}>
+
+export type IStyle = Partial<{
+    point: IPointStyle,
+    line: ILineStyle,
+    face: IFaceStyle,
+    text: ITextStyle
 }>

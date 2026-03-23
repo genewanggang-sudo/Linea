@@ -1,6 +1,8 @@
 import { Plane, Vec2 } from '@ccpc/math';
 import { GNode2d } from './gnode2d'
 import { RenderNode, RenderText } from '../render/render_node';
+import { IStyle } from './i_style';
+import { StyleUtils } from './style_utils';
 export class GText2d extends GNode2d {
     public position: Vec2 = Vec2.O();
 
@@ -15,10 +17,19 @@ export class GText2d extends GNode2d {
         }
     }
 
+    public setStyle(style: IStyle) {
+        super.setStyle(style)
+        if (this._renderNode) {
+            this._renderNode.style = StyleUtils.getTextStyle(this.getStyle())
+        }
+        return this
+    }
+
     protected _toRenderNodeWithoutMatrix(): RenderNode {
         const render = new RenderText();
         render.text = this.text;
         render.position = this.position.toXYZ();
+        render.style = StyleUtils.getTextStyle(this.getStyle())
         return render;
     }
 

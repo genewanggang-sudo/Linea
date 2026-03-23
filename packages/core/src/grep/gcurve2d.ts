@@ -2,12 +2,22 @@ import { Curve2, DiscreteParam, Plane } from '@ccpc/math';
 import type { types } from '@ccpc/math'
 import { GNode2d } from './gnode2d';
 import { RenderEdge, RenderNode } from '../render/render_node';
+import { IStyle } from './i_style';
+import { StyleUtils } from './style_utils';
 
 export class GCurve2d extends GNode2d {
     public declare geo: Curve2;
 
     constructor(plane: Plane, geo: Curve2) {
         super(plane, geo);
+    }
+
+    public setStyle(style: IStyle) {
+        super.setStyle(style)
+        if (this._renderNode) {
+            this._renderNode.style = StyleUtils.getLineStyle(this.getStyle())
+        }
+        return this
     }
 
     // 将二维曲线离散成顺序点列，再映射到所在平面，生成对应的 RenderEdge。
@@ -17,6 +27,7 @@ export class GCurve2d extends GNode2d {
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderNode {
         const render = new RenderEdge();
         render.points = this.geo.discrete(discreteParams).map(p => this.plane.getPtAt(p))
+        render.style = StyleUtils.getLineStyle(this.getStyle())
         return render
     }
 

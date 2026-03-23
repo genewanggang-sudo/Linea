@@ -2,6 +2,7 @@ import { EN_RNODE_TYPE } from '../types/type_define';
 import { Matrix4, types, Vec3 } from '@ccpc/math'
 import { IConstructor } from '../types/type_guard';
 import { GNode } from '../grep/gnode';
+import { IStyle } from '../grep/i_style';
 /**
  * 渲染对象，所有的几何对象都要离散为此数据结构
  */
@@ -9,6 +10,8 @@ export class RenderNode {
     public parent?: RenderGroup;
 
     public gnode!: GNode;
+
+    public style: IStyle = {}
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.UNKOWN;
 

@@ -1,6 +1,8 @@
 import { types, Plane, Vec2 } from '@ccpc/math';
 import { GNode2d } from './gnode2d';
 import { RenderNode, RenderPoint } from '../render/render_node';
+import { IStyle } from './i_style';
+import { StyleUtils } from './style_utils';
 
 export class GPoint2d extends GNode2d {
     public declare geo: Vec2;
@@ -9,10 +11,14 @@ export class GPoint2d extends GNode2d {
         super(plane, geo);
     }
 
-    // 将二维点映射到所在平面，并生成对应的 RenderPoint。
-    // 【与当前实现差异】
-    // 当前完整实现里这里还会同步点样式。
-    // 当前最小化版本未保留 style 体系，因此这里只保留点坐标转换。
+    public setStyle(style: IStyle) {
+        super.setStyle(style)
+        if (this._renderNode) {
+            this._renderNode.style = StyleUtils.getPointStyle(this.getStyle())
+        }
+        return this
+    }
+
     protected _toRenderNodeWithoutMatrix(): RenderNode {
         const render = new RenderPoint();
         render.point = this.plane.getPtAt(this.geo)

@@ -5,6 +5,7 @@ import { DebugUtil } from '../toolkit/debug_util'
 import { ElementId } from '../element/element_id'
 import { GRep } from './grep'
 import { GGroup } from './ggroup'
+import { IStyle } from './i_style'
 
 /**
  * 表示图形的基本单元, 包括几何数据和显示样式
@@ -35,6 +36,11 @@ export abstract class GNode {
      */
     protected _renderNode?: RenderNode
 
+    /**
+     * 渲染节点样式
+     */
+    protected _style: IStyle = {}
+
     public get elementId() {
         const root = this.getRoot()
         return root instanceof GRep
@@ -57,6 +63,23 @@ export abstract class GNode {
     constructor() {
         GNode.gId += 1
         this.globalID = GNode.gId
+    }
+
+    /**
+     * set local style only (without mixing with parent style)
+     */
+    public setStyle(style: IStyle) {
+        this._style = Object.assign(this._style, style)
+        return this
+    }
+
+    /**
+     * get final style mixing child and parent
+     */
+    public getStyle() {
+        const style = this._style
+        const pStyle: IStyle = this.parent ? this.parent.getStyle() : {}
+        return Object.assign(pStyle, style)
     }
 
     /**
@@ -173,6 +196,7 @@ export abstract class GNode {
      * 从其它实例复制状态
      */
     protected _copyFrom(another: GNode) {
+        this._style = { ...another._style }
         this._localMatrix = another._localMatrix?.clone()
         this._globalMatrix = another._globalMatrix?.clone()
         return this
