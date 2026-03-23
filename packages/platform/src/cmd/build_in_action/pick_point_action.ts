@@ -67,7 +67,7 @@ export class PickPointAction extends Action<IPickResult> {
 
     protected _getPickPointResult(screenPos: Vec2) {
         const canvas = this.getCanvas()
-        const point = canvas.screenToWorld(screenPos)
+        const point = canvas.screenToWorkPlane(screenPos)
         const res: IPickResult = {
             point,
         }
