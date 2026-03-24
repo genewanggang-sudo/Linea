@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
 import { RenderHub } from './render_hub'
 import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
+import { ActiveSelectionOp } from './active_selection_op'
 
 export class CRenderer extends IRender {
     private static readonly PICK_TOLERANCE = 16
@@ -18,6 +19,8 @@ export class CRenderer extends IRender {
 
     private _scene: Scene
 
+    private _activeScene: Scene
+
     private _camera: OrthographicCamera
 
     private _cameraControls: OrbitControls
@@ -26,6 +29,8 @@ export class CRenderer extends IRender {
      * 数据转换器
      */
     private _renderHub: RenderHub
+
+    private _activeSelectionOp: ActiveSelectionOp
 
     /**
      * displayId到Group映射
@@ -55,6 +60,7 @@ export class CRenderer extends IRender {
         this._resizeObserver.observe(this._container)
 
         this._scene = new Scene()
+        this._activeScene = new Scene()
 
         const aspect = this._width / this._height
         const vh = 500
@@ -67,12 +73,12 @@ export class CRenderer extends IRender {
         this._cameraControls.enablePan = true
 
         this._renderHub = new RenderHub()
+        this._activeSelectionOp = new ActiveSelectionOp(this._activeScene)
 
         // TODO 测试代码
         this._scene.add(new AxesHelper(30))
 
         this.render()
-
     }
 
     /**
@@ -80,23 +86,23 @@ export class CRenderer extends IRender {
      */
     public updateView(): void {
         // TODO 添加renderState控制
-        console.log('updateView not implemented.')
+        // 当前 render loop 持续执行，这里先保留空实现
     }
 
     /**
      * 根据渲染数据更新显示对象
      */
     private _updateDisplayByRenderData(renderData: IMgrDisplayRenderData) {
-        const { id, gRep } = renderData;
-        const display = DisplayObjectMgr.instance().getDisplay(id);
+        const { id, gRep } = renderData
+        const display = DisplayObjectMgr.instance().getDisplay(id)
         if (display) {
             if (gRep) {
-                const obj = this._didToObject.get(display.id);
+                const obj = this._didToObject.get(display.id)
                 if (obj) {
-                    this._removeGrepByDisplayId(id);
-                    this._addGrepByDisplay(display, gRep);
+                    this._removeGrepByDisplayId(id)
+                    this._addGrepByDisplay(display, gRep)
                 } else {
-                    this._addGrepByDisplay(display, gRep);
+                    this._addGrepByDisplay(display, gRep)
                 }
             }
         }
@@ -120,7 +126,7 @@ export class CRenderer extends IRender {
         const group = this._didToObject.get(dId)
         if (!group) return false
         this._didToObject.delete(dId)
-        group.removeFromParent();
+        group.removeFromParent()
         // TODO 内存释放,优先级提高
     }
 
@@ -130,13 +136,15 @@ export class CRenderer extends IRender {
         const { update, remove } = DisplayObjectMgr.instance().onBeforeRender()
         remove.forEach(dId => {
             this._removeGrepByDisplayId(dId)
-        });
+        })
         update.forEach(renderData => {
-            this._updateDisplayByRenderData(renderData);
-        });
+            this._updateDisplayByRenderData(renderData)
+        })
 
         this._cameraControls.update()
         this._renderer.render(this._scene, this._camera)
+        this._renderer.clearDepth()
+        this._renderer.render(this._activeScene, this._camera)
     }
 
     /**
@@ -213,18 +221,26 @@ export class CRenderer extends IRender {
         return result
     }
 
-    public drawSelections(_greps: GRep[]): void {
-        throw new Error('Method not implemented.')
+    public override clearActive(): void {
+        this._activeSelectionOp.clearActive()
     }
 
-    public drawActives(_greps: GRep[]): void {
-        throw new Error('Method not implemented.')
+    public override clearSelection(): void {
+        this._activeSelectionOp.clearSelection()
+    }
+
+    public drawSelections(greps: GRep[]): void {
+        this._activeSelectionOp.drawSelections(greps)
+    }
+
+    public drawActives(greps: GRep[]): void {
+        this._activeSelectionOp.drawActives(greps)
     }
 
     /**
      * 监听画布大小变化
      */
-    // TODO 需要重写
+    // TODO 需要重构
     protected _onResize() {
         this._width = this._container.clientWidth
         this._height = this._container.clientHeight
