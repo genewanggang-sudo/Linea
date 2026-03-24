@@ -1,6 +1,7 @@
 import { CCanvas, IProcessEvent } from '@ccpc/canvas';
 import { DebugUtil, IDocument } from '@ccpc/core';
 import { cmdMgr } from '../cmd/cmd_mgr';
+import { editorMgr } from '../cmd/editor_mgr';
 import { Selection } from '../selection/selection';
 import { HighLight } from '../selection/high_light';
 
@@ -62,7 +63,7 @@ export class App {
      * 创建画布
      */
     public createCanvas(container: HTMLElement) {
-        const evtProcess: Array<IProcessEvent> = [this._cmdMgr]
+        const evtProcess: Array<IProcessEvent> = [this._cmdMgr, editorMgr]
         const cCanvas = new CCanvas(container, evtProcess)
         this._curCanvas = cCanvas
         if (this._curDoc) this._curCanvas.resetModelView(this._curDoc.modelView)

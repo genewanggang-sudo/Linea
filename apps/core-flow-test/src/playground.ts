@@ -19,6 +19,7 @@
 import {
     EN_AnchorX,
     EN_AnchorY,
+    EN_ModelViewChanged,
     Document,
     Element,
     GCurve2d,
@@ -35,11 +36,8 @@ import {
     requestMgr,
 } from '@ccpc/core'
 import type { IMouseEvent } from '@ccpc/canvas'
-import { EN_ModelViewChanged } from '../../../packages/core/src/types/type_define'
 import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
-import { HighLight } from '../../../packages/platform/src/selection/high_light'
-import { Selection } from '../../../packages/platform/src/selection/selection'
 
 export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
@@ -149,29 +147,15 @@ function getCanvasWorkPlaneApi() {
     }
 }
 
-function getCanvasPickApi() {
-    return app.getCanvas() as unknown as {
-        pick: (x: number, y: number) => GNode[]
-    }
-}
-
-function getTopPickedGNode(nodes: GNode[]) {
-    return nodes[0]
-}
-
-function canHandleSelectionState() {
-    return !!mountNode && !!activeDoc && !cmdMgr.getCurrentCmd()
-}
-
 function syncHighLight(gnode?: GNode) {
     if (!activeDoc) {
         return
     }
 
     if (!gnode) {
-        HighLight.instance().clear()
+        app.highLight.clear()
     } else {
-        HighLight.instance().reset([gnode])
+        app.highLight.reset([gnode])
     }
     activeDoc.updateView()
 }
@@ -182,41 +166,11 @@ function syncSelection(gnode?: GNode) {
     }
 
     if (!gnode) {
-        Selection.instance().clear()
+        app.selection.clear()
     } else {
-        Selection.instance().reset([gnode])
+        app.selection.reset([gnode])
     }
     activeDoc.updateView()
-}
-
-function isMultiSelectEvent(evt: MouseEvent) {
-    return evt.ctrlKey || evt.metaKey
-}
-
-function toggleSelection(gnode?: GNode) {
-    if (!activeDoc) {
-        return
-    }
-
-    const selection = Selection.instance()
-    if (!gnode) {
-        activeDoc.updateView()
-        return
-    }
-
-    const selected = selection.getSelectedGNodes().includes(gnode)
-    if (selected) {
-        selection.delete([gnode])
-    } else {
-        selection.add([gnode])
-    }
-    activeDoc.updateView()
-}
-
-function describePickedNodes(nodes: GNode[]) {
-    const labels = nodes.slice(0, 3).map(node => node.constructor.name)
-    const prefix = `选中 ${labels.join(', ')}`
-    return nodes.length > 3 ? `${prefix} 等 ${nodes.length} 个对象` : prefix
 }
 
 function emitState() {
@@ -727,12 +681,6 @@ function buildPolygonGRep(polygon: Polygon) {
     return grep
 }
 
-function buildTextGRep(text: string, position: Vec2) {
-    const grep = new GRep()
-    addText(grep, text, position)
-    return grep
-}
-
 function buildEngineeringSheetGRep() {
     const grep = new GRep()
 
@@ -1026,28 +974,28 @@ function buildStyleDemoGRep() {
         anchorY: EN_AnchorY
         color: string
     }> = [
-            {
-                label: 'Left / Top',
-                pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
-                anchorX: EN_AnchorX.Left,
-                anchorY: EN_AnchorY.Top,
-                color: '#f97316',
-            },
-            {
-                label: 'Center / Middle',
-                pos: new Vec2(anchorCenter.x, anchorCenter.y),
-                anchorX: EN_AnchorX.Center,
-                anchorY: EN_AnchorY.Middle,
-                color: '#22c55e',
-            },
-            {
-                label: 'Right / Bottom',
-                pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
-                anchorX: EN_AnchorX.Right,
-                anchorY: EN_AnchorY.Bottom,
-                color: '#38bdf8',
-            },
-        ]
+        {
+            label: 'Left / Top',
+            pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
+            anchorX: EN_AnchorX.Left,
+            anchorY: EN_AnchorY.Top,
+            color: '#f97316',
+        },
+        {
+            label: 'Center / Middle',
+            pos: new Vec2(anchorCenter.x, anchorCenter.y),
+            anchorX: EN_AnchorX.Center,
+            anchorY: EN_AnchorY.Middle,
+            color: '#22c55e',
+        },
+        {
+            label: 'Right / Bottom',
+            pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
+            anchorX: EN_AnchorX.Right,
+            anchorY: EN_AnchorY.Bottom,
+            color: '#38bdf8',
+        },
+    ]
 
     anchorSpecs.forEach(spec => {
         const probe = new GText2d(spec.label, Plane.XOY(), spec.pos)
@@ -1346,6 +1294,7 @@ class DrawBSplineCmd extends BaseDrawShapeCmd {
 @registerCmd('clear-shapes-cmd')
 class ClearShapesCmd extends Cmd {
     public override async execute() {
+        await Promise.resolve()
         if (!activeDoc) {
             return
         }
@@ -1364,23 +1313,11 @@ function updateCursorFromPointer(evt: PointerEvent) {
     const world = getCanvasWorkPlaneApi().screenToWorkPlane(localPos)
     state.cursorWorld = { x: world.x, y: world.y }
     emitState()
-
-    if (!canHandleSelectionState()) {
-        return
-    }
-
-    syncHighLight(getTopPickedGNode(getCanvasPickApi().pick(localPos.x, localPos.y)))
 }
 
 function clearCursor() {
     state.cursorWorld = null
     emitState()
-
-    if (!canHandleSelectionState()) {
-        return
-    }
-
-    syncHighLight()
 }
 
 function fitEngineeringDemoView() {
@@ -1445,45 +1382,8 @@ function bindCanvasEvents() {
     }
 
     mountNode.addEventListener('pointermove', updateCursorFromPointer)
-    mountNode.addEventListener('click', handleCanvasPick)
     mountNode.addEventListener('pointerleave', clearCursor)
     window.addEventListener('resize', scheduleFitEngineeringDemoView)
-}
-
-function handleCanvasPick(evt: MouseEvent) {
-    if (!mountNode) {
-        return
-    }
-
-    const rect = mountNode.getBoundingClientRect()
-    const x = evt.clientX - rect.left
-    const y = evt.clientY - rect.top
-    const result = getCanvasPickApi().pick(x, y)
-
-    console.log('pick', {
-        screen: { x, y },
-        result,
-    })
-
-    if (canHandleSelectionState()) {
-        const gnode = getTopPickedGNode(result)
-        if (isMultiSelectEvent(evt)) {
-            toggleSelection(gnode)
-        } else {
-            syncSelection(gnode)
-        }
-        syncHighLight(gnode)
-    }
-
-    if (result.length > 0) {
-        if (isMultiSelectEvent(evt)) {
-            setToast(`已更新多选，当前 ${Selection.instance().getSelectedGNodes().length} 个对象`)
-        } else {
-            setToast(describePickedNodes(result))
-        }
-    } else if (canHandleSelectionState()) {
-        setToast(isMultiSelectEvent(evt) ? '未命中对象，保留当前多选' : '已清空当前选中')
-    }
 }
 
 export function subscribePlayground(listener: (state: PlaygroundState) => void) {
