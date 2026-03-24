@@ -1,26 +1,26 @@
 import { Vec2, Vec3 } from '@ccpc/math';
 import { Action } from '../action';
 import { IMouseEvent } from '@ccpc/canvas';
-
-export type IPickResult = {
-    point: Vec3
-}
+import type { PickFilter } from './pick_filter';
+import type { IPickedResult } from './i_picked_result';
+import { PickUtil } from './pick_util';
 
 export type IPickContextParam = {
-    movingCallBack?: (pos: IPickResult) => void
+    movingCallBack?: (pos: IPickedResult) => void
+    pickFilter?: PickFilter
 }
 
 /**
  * 取点的Action
  */
-export class PickPointAction extends Action<IPickResult> {
+export class PickPointAction extends Action<IPickedResult> {
     private _context: PickPointContext
 
-    private _currentPickResult?: IPickResult
+    private _currentPickResult?: IPickedResult
 
     private _currentMousePos = Vec2.O()
 
-    private _lastPickedResult?: IPickResult
+    private _lastPickedResult?: IPickedResult
 
     constructor(context = new PickPointContext()) {
         super()
@@ -67,9 +67,11 @@ export class PickPointAction extends Action<IPickResult> {
 
     protected _getPickPointResult(screenPos: Vec2) {
         const canvas = this.getCanvas()
+        const pickedGNode = PickUtil.pickGNode(canvas, screenPos, this._context.getPickFilter())
         const point = canvas.screenToWorkPlane(screenPos)
-        const res: IPickResult = {
+        const res: IPickedResult = {
             point,
+            pickedGNodes: pickedGNode ? [pickedGNode] : undefined,
         }
         return res
     }
@@ -83,27 +85,39 @@ export class PickPointContext {
 
     protected _currentPos: Vec3
 
-    protected _movingCallBack?: (pos: IPickResult) => void
+    protected _movingCallBack?: (pos: IPickedResult) => void
 
-    protected _clickCallBack?: (pos: IPickResult) => void
+    protected _clickCallBack?: (pos: IPickedResult) => void
+
+    protected _pickFilter?: PickFilter
 
     constructor(param?: IPickContextParam) {
         this._movingCallBack = param?.movingCallBack
+        this._pickFilter = param?.pickFilter
         this._currentPos = Vec3.O()
     }
 
-    public movePoint(p: IPickResult) {
+    public movePoint(p: IPickedResult) {
         if (this._movingCallBack) {
             this._movingCallBack(p)
         }
         this._currentPos = p.point
     }
 
-    public setClickCallBack(clickCallBack: (pos: IPickResult) => void) {
+    public setClickCallBack(clickCallBack: (pos: IPickedResult) => void) {
         this._clickCallBack = clickCallBack
     }
 
     public getClickCallback() {
         return this._clickCallBack
+    }
+
+    public getPickFilter() {
+        return this._pickFilter
+    }
+
+    public setPickFilter(filter?: PickFilter) {
+        this._pickFilter = filter
+        return this
     }
 }
