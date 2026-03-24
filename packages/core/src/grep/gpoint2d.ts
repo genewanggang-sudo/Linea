@@ -1,6 +1,7 @@
 import { types, Plane, Vec2 } from '@ccpc/math';
 import { GNode2d } from './gnode2d';
 import { RenderNode, RenderPoint } from '../render/render_node';
+import { GNODE_TYPE } from './gnode_type';
 import { IStyle } from './i_style';
 import { StyleUtils } from './style_utils';
 
@@ -17,6 +18,10 @@ export class GPoint2d extends GNode2d {
             this._renderNode.style = StyleUtils.getPointStyle(this.getStyle())
         }
         return this
+    }
+
+    public override getType(): GNODE_TYPE {
+        return GNODE_TYPE.GPoint2d
     }
 
     protected _toRenderNodeWithoutMatrix(): RenderNode {

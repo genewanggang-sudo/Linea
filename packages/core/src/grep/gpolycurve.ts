@@ -1,6 +1,7 @@
 import { alg, DiscreteParam, EN_GEO_TYPE, Plane, PolyCurve } from '@ccpc/math';
 import { GNode2d } from './gnode2d';
 import { RenderEdge } from '../render/render_node';
+import { GNODE_TYPE } from './gnode_type';
 import { IStyle } from './i_style';
 import { StyleUtils } from './style_utils';
 
@@ -17,6 +18,10 @@ export class GPolycurve extends GNode2d {
             this._renderNode.style = StyleUtils.getLineStyle(this.getStyle())
         }
         return this
+    }
+
+    public override getType(): GNODE_TYPE {
+        return GNODE_TYPE.GPolycurve
     }
 
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderEdge {

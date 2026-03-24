@@ -2,6 +2,7 @@ import { Curve2, DiscreteParam, Plane } from '@ccpc/math';
 import type { types } from '@ccpc/math'
 import { GNode2d } from './gnode2d';
 import { RenderEdge, RenderNode } from '../render/render_node';
+import { GNODE_TYPE } from './gnode_type';
 import { IStyle } from './i_style';
 import { StyleUtils } from './style_utils';
 
@@ -18,6 +19,10 @@ export class GCurve2d extends GNode2d {
             this._renderNode.style = StyleUtils.getLineStyle(this.getStyle())
         }
         return this
+    }
+
+    public override getType(): GNODE_TYPE {
+        return GNODE_TYPE.GCurve2d
     }
 
     // 将二维曲线离散成顺序点列，再映射到所在平面，生成对应的 RenderEdge。

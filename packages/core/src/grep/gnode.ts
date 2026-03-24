@@ -5,6 +5,7 @@ import { DebugUtil } from '../toolkit/debug_util'
 import { ElementId } from '../element/element_id'
 import { GRep } from './grep'
 import { GGroup } from './ggroup'
+import { GNODE_TYPE } from './gnode_type'
 import { IStyle } from './i_style'
 
 /**
@@ -156,6 +157,10 @@ export abstract class GNode {
      */
     public getTraverseChildren(): Array<GNode> {
         return []
+    }
+
+    public getType(): GNODE_TYPE {
+        return GNODE_TYPE.INVALID
     }
 
     /**

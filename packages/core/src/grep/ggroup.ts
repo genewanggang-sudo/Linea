@@ -1,6 +1,7 @@
 import { DiscreteParam } from '@ccpc/math';
 import { RenderGroup, RenderNode } from '../render/render_node';
 import { GNode } from './gnode';
+import { GNODE_TYPE } from './gnode_type';
 
 export class GGroup extends GNode {
     /**
@@ -52,6 +53,10 @@ export class GGroup extends GNode {
 
     public getTraverseChildren(): GNode[] {
         return [...this._children];
+    }
+
+    public override getType(): GNODE_TYPE {
+        return GNODE_TYPE.GGroup
     }
 
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderNode {

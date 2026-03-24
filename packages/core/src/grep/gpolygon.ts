@@ -2,6 +2,7 @@ import { alg, DiscreteParam, Plane, Polygon, Vec3 } from '@ccpc/math';
 import { GNode2d } from './gnode2d';
 import { RenderMesh, RenderNode } from '../render/render_node';
 import { DebugUtil } from '../toolkit/debug_util';
+import { GNODE_TYPE } from './gnode_type';
 import { IStyle } from './i_style';
 import { StyleUtils } from './style_utils';
 
@@ -18,6 +19,10 @@ export class GPolygon extends GNode2d {
             this._renderNode.style = StyleUtils.getFaceStyle(this.getStyle())
         }
         return this
+    }
+
+    public override getType(): GNODE_TYPE {
+        return GNODE_TYPE.GPolygon
     }
 
     protected _toRenderNodeWithoutMatrix(discreteParams?: DiscreteParam): RenderNode {

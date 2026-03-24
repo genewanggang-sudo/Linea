@@ -1,5 +1,6 @@
 import { ElementId } from '../element/element_id';
 import { GGroup } from './ggroup';
+import { GNODE_TYPE } from './gnode_type';
 
 // TODO 补充完整
 export class GRep extends GGroup {
@@ -19,6 +20,10 @@ export class GRep extends GGroup {
 
     public set elementId(eId: ElementId) {
         this._elementId = eId
+    }
+
+    public override getType(): GNODE_TYPE {
+        return GNODE_TYPE.GRep
     }
 
     public clone(cloneGeo?: boolean): GRep {
