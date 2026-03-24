@@ -8,15 +8,32 @@ export class PickUtil {
      * 返回pick结果,是否从场景中拾取[gnode]
      */
     // TODO 考虑容差
-    public static pickGNode(ccanvas: CCanvas, screenPos: Vec2, pickFilter?: PickFilter) {
-        return this.pickGNodes(ccanvas, screenPos, pickFilter)[0]
+    public static pickGNode(
+        ccanvas: CCanvas,
+        screenPos: Vec2,
+        pickFilter?: PickFilter,
+        forSnap?: boolean,
+    ) {
+        return this.pickGNodes(ccanvas, screenPos, pickFilter, forSnap)[0]
     }
 
-    public static pickGNodes(ccanvas: CCanvas, screenPos: Vec2, pickFilter?: PickFilter) {
+    public static pickGNodes(
+        ccanvas: CCanvas,
+        screenPos: Vec2,
+        pickFilter?: PickFilter,
+        forSnap?: boolean,
+    ) {
         const gNodes = ccanvas.pick(screenPos.x, screenPos.y)
         if (!gNodes.length) return []
 
         let pickedNodes = gNodes
+        if (forSnap) {
+            pickedNodes = pickedNodes.filter(_ => _.canSnap)
+        } else {
+            pickedNodes = pickedNodes.filter(_ => _.canPick)
+        }
+        if (!pickedNodes.length) return []
+
         if (pickFilter) {
             pickedNodes = pickedNodes.filter(gnode => {
                 return pickFilter.isEnable(gnode, screenPos)
