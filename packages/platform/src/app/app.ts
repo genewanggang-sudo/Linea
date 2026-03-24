@@ -1,16 +1,27 @@
 import { CCanvas, IProcessEvent } from '@ccpc/canvas';
 import { DebugUtil, IDocument } from '@ccpc/core';
 import { cmdMgr } from '../cmd/cmd_mgr';
+import { Selection } from '../selection/selection';
+import { HighLight } from '../selection/high_light';
 
 // TODO app补充完整, 高亮选中等
 export class App {
+    private static _instance: App
+
     private _curDoc?: IDocument
 
     private _curCanvas?: CCanvas
 
     private _cmdMgr = cmdMgr
 
-    private static _instance: App
+    public selection: Selection
+
+    public highLight: HighLight
+
+    constructor() {
+        this.selection = Selection.instance()
+        this.highLight = HighLight.instance()
+    }
 
     public static instance() {
         if (!this._instance) {
@@ -27,19 +38,29 @@ export class App {
     public start(doc: IDocument) {
         this._curDoc = doc
         doc.isMainDoc = true
+        this.selection.setDoc(doc)
+        this.highLight.setDoc(doc)
     }
 
     public stop() {
+        this.highLight.clear()
+        this.selection.clear()
         this._curCanvas?.destroy()
         this._curDoc?.destroy()
         delete this._curCanvas
         delete this._curDoc
     }
 
+    /**
+     * 获取画布
+     */
     public getCanvas() {
         return this._curCanvas!
     }
 
+    /**
+     * 创建画布
+     */
     public createCanvas(container: HTMLElement) {
         const evtProcess: Array<IProcessEvent> = [this._cmdMgr]
         const cCanvas = new CCanvas(container, evtProcess)

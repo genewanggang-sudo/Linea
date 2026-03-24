@@ -20,9 +20,9 @@ export class KeyboardInteractor {
     }
 
     public stopListening() {
-        window.addEventListener(EN_NativeKeyboardEvent.KEY_DOWN, this._onKeyDown);
-        window.addEventListener(EN_NativeKeyboardEvent.KEY_UP, this._onKeyUp);
-        window.addEventListener(EN_NativeKeyboardEvent.KEY_DOWN, this._onKeyPress);
+        window.removeEventListener(EN_NativeKeyboardEvent.KEY_DOWN, this._onKeyDown);
+        window.removeEventListener(EN_NativeKeyboardEvent.KEY_UP, this._onKeyUp);
+        window.removeEventListener(EN_NativeKeyboardEvent.KEY_DOWN, this._onKeyPress);
     }
 
     private _onKeyDown = (e: KeyboardEvent) => {
