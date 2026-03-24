@@ -189,6 +189,30 @@ function syncSelection(gnode?: GNode) {
     activeDoc.updateView()
 }
 
+function isMultiSelectEvent(evt: MouseEvent) {
+    return evt.ctrlKey || evt.metaKey
+}
+
+function toggleSelection(gnode?: GNode) {
+    if (!activeDoc) {
+        return
+    }
+
+    const selection = Selection.instance()
+    if (!gnode) {
+        activeDoc.updateView()
+        return
+    }
+
+    const selected = selection.getSelectedGNodes().includes(gnode)
+    if (selected) {
+        selection.delete([gnode])
+    } else {
+        selection.add([gnode])
+    }
+    activeDoc.updateView()
+}
+
 function describePickedNodes(nodes: GNode[]) {
     const labels = nodes.slice(0, 3).map(node => node.constructor.name)
     const prefix = `选中 ${labels.join(', ')}`
@@ -1448,14 +1472,22 @@ function handleCanvasPick(evt: MouseEvent) {
 
     if (canHandleSelectionState()) {
         const gnode = getTopPickedGNode(result)
-        syncSelection(gnode)
+        if (isMultiSelectEvent(evt)) {
+            toggleSelection(gnode)
+        } else {
+            syncSelection(gnode)
+        }
         syncHighLight(gnode)
     }
 
     if (result.length > 0) {
-        setToast(describePickedNodes(result))
+        if (isMultiSelectEvent(evt)) {
+            setToast(`已更新多选，当前 ${Selection.instance().getSelectedGNodes().length} 个对象`)
+        } else {
+            setToast(describePickedNodes(result))
+        }
     } else if (canHandleSelectionState()) {
-        setToast('已清空当前选中')
+        setToast(isMultiSelectEvent(evt) ? '未命中对象，保留当前多选' : '已清空当前选中')
     }
 }
 
@@ -1534,7 +1566,7 @@ export function loadEngineeringDemo() {
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
     requestMgr.executeReq(requestMgr.createReq(LoadEngineeringDemoReq), true)
     scheduleFitEngineeringDemoView()
-    resetDrawingStatus('已加载工程图图框与两组投影视图，可继续叠加绘制。')
+    resetDrawingStatus('已加载工程图图框与两组投影视图，可继续叠加绘制。按住 Ctrl 可追加选中多个对象。')
     setToast('工程图演示已加载')
 }
 
@@ -1544,7 +1576,7 @@ export function loadStyleDemo() {
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
     requestMgr.executeReq(requestMgr.createReq(LoadStyleDemoReq), true)
     scheduleFitEngineeringDemoView()
-    resetDrawingStatus('已加载 style 机制验证场景，控制台包含运行时断言结果。')
+    resetDrawingStatus('已加载 style 机制验证场景，控制台包含运行时断言结果。按住 Ctrl 可追加选中多个对象。')
     setToast('样式机制测试已加载')
 }
 

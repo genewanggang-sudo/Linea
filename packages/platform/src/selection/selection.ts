@@ -120,7 +120,7 @@ export class Selection {
                 const index = this._selectedIds.findIndex(_ => _ === numIds[i])
                 if (index > -1) {
                     success = true
-                    this._selectedIds.splice(i, 1)
+                    this._selectedIds.splice(index, 1)
                 }
             }
 
