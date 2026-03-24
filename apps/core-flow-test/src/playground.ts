@@ -38,6 +38,8 @@ import {
 import { EN_ModelViewChanged } from '../../../packages/core/src/types/type_define'
 import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
+import { HighLight } from '../../../packages/platform/src/selection/high_light'
+import { Selection } from '../../../packages/platform/src/selection/selection'
 
 export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
@@ -153,6 +155,40 @@ function getCanvasPickApi() {
     }
 }
 
+function getTopPickedGNode(nodes: GNode[]) {
+    return nodes[0]
+}
+
+function canHandleSelectionState() {
+    return !!mountNode && !!activeDoc && !cmdMgr.getCurrentCmd()
+}
+
+function syncHighLight(gnode?: GNode) {
+    if (!activeDoc) {
+        return
+    }
+
+    if (!gnode) {
+        HighLight.instance().clear()
+    } else {
+        HighLight.instance().reset([gnode])
+    }
+    activeDoc.updateView()
+}
+
+function syncSelection(gnode?: GNode) {
+    if (!activeDoc) {
+        return
+    }
+
+    if (!gnode) {
+        Selection.instance().clear()
+    } else {
+        Selection.instance().reset([gnode])
+    }
+    activeDoc.updateView()
+}
+
 function describePickedNodes(nodes: GNode[]) {
     const labels = nodes.slice(0, 3).map(node => node.constructor.name)
     const prefix = `选中 ${labels.join(', ')}`
@@ -244,6 +280,61 @@ function addCircle(grep: GRep, center: Vec2, radius: number) {
 
 function addText(grep: GRep, text: string, position: Vec2) {
     grep.addNode(new GText2d(text, Plane.XOY(), position))
+}
+
+function addStyledText(grep: GRep, text: string, position: Vec2, fontSize = 16, color = '#d7e3f4') {
+    const node = new GText2d(text, Plane.XOY(), position)
+    node.setStyle({
+        text: {
+            color,
+            fontSize,
+        },
+    })
+    grep.addNode(node)
+}
+
+function addFilledRect(grep: GRep, lb: Vec2, rt: Vec2, color: string, opacity = 0.18) {
+    const face = new GPolygon(Plane.XOY(), Polygon.createByRectangle(lb, rt))
+    face.setStyle({
+        face: {
+            color,
+            opacity,
+        },
+    })
+    grep.addNode(face)
+}
+
+function addStyledLine(grep: GRep, start: Vec2, end: Vec2, color: string, width = 2, opacity = 1) {
+    const node = new GCurve2d(Plane.XOY(), new Ln2(start, end))
+    node.setStyle({
+        line: {
+            color,
+            width,
+            opacity,
+        },
+    })
+    grep.addNode(node)
+}
+
+function addCenterMark(grep: GRep, center: Vec2, radius: number) {
+    addCircle(grep, center, radius)
+    addStyledLine(grep, new Vec2(center.x - radius - 18, center.y), new Vec2(center.x + radius + 18, center.y), '#cbd5e1', 1.2, 0.85)
+    addStyledLine(grep, new Vec2(center.x, center.y - radius - 18), new Vec2(center.x, center.y + radius + 18), '#cbd5e1', 1.2, 0.85)
+}
+
+function addHatchRect(grep: GRep, lb: Vec2, rt: Vec2, spacing = 14, color = '#cbd5e1') {
+    const width = rt.x - lb.x
+    const height = rt.y - lb.y
+    for (let offset = -height; offset <= width; offset += spacing) {
+        const startX = Math.max(lb.x, lb.x + offset)
+        const startY = Math.max(lb.y, lb.y - offset)
+        const endX = Math.min(rt.x, lb.x + offset + height)
+        const endY = Math.min(rt.y, lb.y - offset + width)
+        if (endX - startX < 1 || endY - startY < 1) {
+            continue
+        }
+        addStyledLine(grep, new Vec2(startX, startY), new Vec2(endX, endY), color, 1, 0.75)
+    }
 }
 
 function getEllipseControlPoints(points: Vec2[]) {
@@ -624,36 +715,53 @@ function buildEngineeringSheetGRep() {
     addRect(grep, new Vec2(0, 0), 1120, 760)
     addRect(grep, new Vec2(0, 0), 1080, 720)
 
-    addRect(grep, new Vec2(-180, 60), 220, 150)
-    addRect(grep, new Vec2(-180, 60), 150, 90)
-    addCircle(grep, new Vec2(-180, 60), 24)
-    addLine(grep, new Vec2(-290, 60), new Vec2(-70, 60))
-    addLine(grep, new Vec2(-180, -15), new Vec2(-180, 135))
-    addLine(grep, new Vec2(-255, 105), new Vec2(-255, 15))
-    addLine(grep, new Vec2(-105, 105), new Vec2(-105, 15))
+    // Main view
+    addRect(grep, new Vec2(-220, 20), 256, 210)
+    addRect(grep, new Vec2(-220, 20), 164, 116)
+    addRect(grep, new Vec2(-272, 60), 60, 34)
+    addRect(grep, new Vec2(-272, -20), 60, 34)
+    addLine(grep, new Vec2(-348, 20), new Vec2(-92, 20))
+    addLine(grep, new Vec2(-220, -86), new Vec2(-220, 124))
+    addLine(grep, new Vec2(-302, 78), new Vec2(-138, 78))
+    addLine(grep, new Vec2(-302, -38), new Vec2(-138, -38))
+    addLine(grep, new Vec2(-302, -20), new Vec2(-302, 60))
+    addLine(grep, new Vec2(-138, -20), new Vec2(-138, 60))
+    addCenterMark(grep, new Vec2(-220, 20), 28)
+    addStyledLine(grep, new Vec2(-156, 120), new Vec2(-156, -82), '#fbbf24', 1.2, 0.9)
+    addStyledLine(grep, new Vec2(-284, 120), new Vec2(-284, -82), '#fbbf24', 1.2, 0.9)
+    addStyledText(grep, 'A', new Vec2(-284, 136), 16, '#fbbf24')
+    addStyledText(grep, 'A', new Vec2(-156, 136), 16, '#fbbf24')
 
-    addRect(grep, new Vec2(160, 60), 180, 120)
-    addRect(grep, new Vec2(160, 60), 120, 70)
-    addCircle(grep, new Vec2(160, 60), 24)
-    addLine(grep, new Vec2(70, 120), new Vec2(250, 120))
-    addLine(grep, new Vec2(70, 0), new Vec2(250, 0))
+    // Top view
+    addRect(grep, new Vec2(-220, 248), 164, 120)
+    addRect(grep, new Vec2(-220, 248), 92, 74)
+    addLine(grep, new Vec2(-302, 216), new Vec2(-138, 216))
+    addLine(grep, new Vec2(-302, 280), new Vec2(-138, 280))
+    addLine(grep, new Vec2(-262, 188), new Vec2(-262, 308))
+    addLine(grep, new Vec2(-178, 188), new Vec2(-178, 308))
+    addCenterMark(grep, new Vec2(-220, 248), 22)
 
-    addRect(grep, new Vec2(-10, 250), 140, 90)
-    addCircle(grep, new Vec2(-10, 250), 24)
-    addLine(grep, new Vec2(-80, 205), new Vec2(60, 205))
-    addLine(grep, new Vec2(-80, 295), new Vec2(60, 295))
+    // Right view
+    addRect(grep, new Vec2(120, 34), 196, 180)
+    addRect(grep, new Vec2(120, 34), 132, 92)
+    addLine(grep, new Vec2(22, 84), new Vec2(218, 84))
+    addLine(grep, new Vec2(22, -16), new Vec2(218, -16))
+    addLine(grep, new Vec2(70, -56), new Vec2(70, 124))
+    addLine(grep, new Vec2(170, -56), new Vec2(170, 124))
+    addCenterMark(grep, new Vec2(120, 34), 24)
 
-    addLine(grep, new Vec2(-70, 135), new Vec2(70, 120))
-    addLine(grep, new Vec2(-70, -15), new Vec2(70, 0))
-    addLine(grep, new Vec2(-70, 60), new Vec2(70, 60))
-    addLine(grep, new Vec2(-180, 135), new Vec2(-80, 205))
-    addLine(grep, new Vec2(-105, 135), new Vec2(-10, 205))
-    addLine(grep, new Vec2(-255, 135), new Vec2(-80, 295))
-    addLine(grep, new Vec2(-180, 135), new Vec2(-10, 295))
+    // Section A-A
+    addRect(grep, new Vec2(120, 248), 218, 140)
+    addFilledRect(grep, new Vec2(31, 198), new Vec2(209, 298), '#94a3b8', 0.12)
+    addHatchRect(grep, new Vec2(31, 198), new Vec2(209, 298), 14, '#cbd5e1')
+    addRect(grep, new Vec2(87, 248), 36, 64)
+    addRect(grep, new Vec2(153, 248), 36, 64)
+    addLine(grep, new Vec2(31, 248), new Vec2(209, 248))
+    addStyledText(grep, '剖面 A-A', new Vec2(120, 160), 16)
 
-    addText(grep, '主视图', new Vec2(-180, -34))
-    addText(grep, '右视图', new Vec2(160, -18))
-    addText(grep, '俯视图', new Vec2(-10, 184))
+    addStyledText(grep, '主视图', new Vec2(-220, -118), 16)
+    addStyledText(grep, '俯视图', new Vec2(-220, 166), 16)
+    addStyledText(grep, '右视图', new Vec2(120, -98), 16)
 
     // Professional title block at the lower-right corner.
     const x0 = 180
@@ -1232,11 +1340,23 @@ function updateCursorFromPointer(evt: PointerEvent) {
     const world = getCanvasWorkPlaneApi().screenToWorkPlane(localPos)
     state.cursorWorld = { x: world.x, y: world.y }
     emitState()
+
+    if (!canHandleSelectionState()) {
+        return
+    }
+
+    syncHighLight(getTopPickedGNode(getCanvasPickApi().pick(localPos.x, localPos.y)))
 }
 
 function clearCursor() {
     state.cursorWorld = null
     emitState()
+
+    if (!canHandleSelectionState()) {
+        return
+    }
+
+    syncHighLight()
 }
 
 function fitEngineeringDemoView() {
@@ -1326,8 +1446,16 @@ function handleCanvasPick(evt: MouseEvent) {
         result,
     })
 
+    if (canHandleSelectionState()) {
+        const gnode = getTopPickedGNode(result)
+        syncSelection(gnode)
+        syncHighLight(gnode)
+    }
+
     if (result.length > 0) {
         setToast(describePickedNodes(result))
+    } else if (canHandleSelectionState()) {
+        setToast('已清空当前选中')
     }
 }
 
@@ -1353,6 +1481,8 @@ export function bootstrapPlayground(mount: HTMLElement) {
 
     const doc = new Document()
     activeDoc = doc
+    Selection.instance().setDoc(doc)
+    HighLight.instance().setDoc(doc)
     app.start(doc)
     app.createCanvas(mount)
     bindCanvasEvents()
@@ -1399,6 +1529,8 @@ export function insertRandomPolygon() {
 }
 
 export function loadEngineeringDemo() {
+    syncSelection()
+    syncHighLight()
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
     requestMgr.executeReq(requestMgr.createReq(LoadEngineeringDemoReq), true)
     scheduleFitEngineeringDemoView()
@@ -1407,6 +1539,8 @@ export function loadEngineeringDemo() {
 }
 
 export function loadStyleDemo() {
+    syncSelection()
+    syncHighLight()
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
     requestMgr.executeReq(requestMgr.createReq(LoadStyleDemoReq), true)
     scheduleFitEngineeringDemoView()
@@ -1415,6 +1549,8 @@ export function loadStyleDemo() {
 }
 
 export function clearAllShapes() {
+    syncSelection()
+    syncHighLight()
     void cmdMgr.sendCmd(ClearShapesCmd)
 }
 
