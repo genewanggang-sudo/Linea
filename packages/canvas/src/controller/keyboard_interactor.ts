@@ -1,15 +1,15 @@
 import { EN_KeyboardEvent, EN_NativeKeyboardEvent } from '../types/type_define';
 import { FnKey } from './fn_key';
-import { IKeyboardController } from './i_keyboard_controller';
+import { IProcessKeyboardEvent } from './i_keyboard_controller';
 
 /**
  * 键盘事件监听器
  */
 export class KeyboardInteractor {
     /**键盘事件处理器*/
-    private _mouseControllers: Array<IKeyboardController> = [];
+    private _mouseControllers: Array<IProcessKeyboardEvent> = [];
 
-    constructor(controllers: Array<IKeyboardController>) {
+    constructor(controllers: Array<IProcessKeyboardEvent>) {
         this._mouseControllers = controllers;
     }
 

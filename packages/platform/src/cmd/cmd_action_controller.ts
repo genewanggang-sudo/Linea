@@ -166,7 +166,7 @@ export class CmdActionController<T = unknown> extends DefaultController {
     }
 
     public onKeyDown(evt: IKeyboardEvent): boolean {
-        if (evt.domEvent.key === 'esc') {
+        if (evt.domEvent.key === 'Escape') {
             this.cancel()
             return true
         }

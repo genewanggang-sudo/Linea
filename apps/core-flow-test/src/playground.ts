@@ -1447,11 +1447,6 @@ function bindCanvasEvents() {
     mountNode.addEventListener('pointermove', updateCursorFromPointer)
     mountNode.addEventListener('click', handleCanvasPick)
     mountNode.addEventListener('pointerleave', clearCursor)
-    window.addEventListener('keydown', evt => {
-        if (evt.key === 'Escape') {
-            cancelActiveCommand()
-        }
-    })
     window.addEventListener('resize', scheduleFitEngineeringDemoView)
 }
 

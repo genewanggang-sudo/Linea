@@ -5,6 +5,7 @@ import { MouseInteractor } from '../controller/mouse_interactor'
 import { IProcessEvent } from '../controller/i_process_event'
 import { WorkPlane } from './work_plane'
 import { alg, CONST, Ln3, Plane, Vec2, Vec3 } from '@ccpc/math'
+import { KeyboardInteractor } from '../controller/keyboard_interactor'
 
 // TODO 先简单分层,canvas中只持有renderer
 export class CCanvas implements ICCanvas {
@@ -20,9 +21,15 @@ export class CCanvas implements ICCanvas {
      */
     private _mouseInteractor: MouseInteractor
 
+    /**
+     * 键盘事件监听器
+     */
+    private _keyboardInteractor: KeyboardInteractor
+
     constructor(container: HTMLElement, evtProcess: Array<IProcessEvent>) {
         this._container = container
         this._mouseInteractor = new MouseInteractor(this, this._container, evtProcess)
+        this._keyboardInteractor = new KeyboardInteractor(evtProcess)
         this._renderer = new CRenderer(this._container)
     }
 
@@ -35,6 +42,7 @@ export class CCanvas implements ICCanvas {
      */
     public startListening() {
         this._mouseInteractor.startListening()
+        this._keyboardInteractor.startListening()
     }
 
     /**
@@ -42,6 +50,7 @@ export class CCanvas implements ICCanvas {
      */
     public stopListening() {
         this._mouseInteractor.stopListening()
+        this._keyboardInteractor.stopListening()
     }
 
     /**
