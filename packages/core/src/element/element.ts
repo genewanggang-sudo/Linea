@@ -126,7 +126,7 @@ export class Element implements IElement {
 
         const cloned = grep.clone()
         cloned.traverse(gnode => {
-            gnode.setStyle(StyleUtils.defaultSelectionStyle)
+            gnode.setStyle(StyleUtils.mergeStateStyle(gnode.getStyle(), StyleUtils.defaultSelectionStyle))
         })
         return cloned
     }
@@ -139,7 +139,7 @@ export class Element implements IElement {
 
         const cloned = grep.clone()
         cloned.traverse(gnode => {
-            gnode.setStyle(StyleUtils.defaultActiveStyle)
+            gnode.setStyle(StyleUtils.mergeStateStyle(gnode.getStyle(), StyleUtils.defaultActiveStyle))
         })
         return cloned
     }

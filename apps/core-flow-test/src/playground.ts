@@ -19,7 +19,6 @@
 import {
     EN_AnchorX,
     EN_AnchorY,
-    IMouseEvent,
     Document,
     Element,
     GCurve2d,
@@ -35,6 +34,7 @@ import {
     registerRequest,
     requestMgr,
 } from '@ccpc/core'
+import type { IMouseEvent } from '@ccpc/canvas'
 import { EN_ModelViewChanged } from '../../../packages/core/src/types/type_define'
 import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
@@ -1002,28 +1002,28 @@ function buildStyleDemoGRep() {
         anchorY: EN_AnchorY
         color: string
     }> = [
-        {
-            label: 'Left / Top',
-            pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
-            anchorX: EN_AnchorX.Left,
-            anchorY: EN_AnchorY.Top,
-            color: '#f97316',
-        },
-        {
-            label: 'Center / Middle',
-            pos: new Vec2(anchorCenter.x, anchorCenter.y),
-            anchorX: EN_AnchorX.Center,
-            anchorY: EN_AnchorY.Middle,
-            color: '#22c55e',
-        },
-        {
-            label: 'Right / Bottom',
-            pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
-            anchorX: EN_AnchorX.Right,
-            anchorY: EN_AnchorY.Bottom,
-            color: '#38bdf8',
-        },
-    ]
+            {
+                label: 'Left / Top',
+                pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
+                anchorX: EN_AnchorX.Left,
+                anchorY: EN_AnchorY.Top,
+                color: '#f97316',
+            },
+            {
+                label: 'Center / Middle',
+                pos: new Vec2(anchorCenter.x, anchorCenter.y),
+                anchorX: EN_AnchorX.Center,
+                anchorY: EN_AnchorY.Middle,
+                color: '#22c55e',
+            },
+            {
+                label: 'Right / Bottom',
+                pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
+                anchorX: EN_AnchorX.Right,
+                anchorY: EN_AnchorY.Bottom,
+                color: '#38bdf8',
+            },
+        ]
 
     anchorSpecs.forEach(spec => {
         const probe = new GText2d(spec.label, Plane.XOY(), spec.pos)

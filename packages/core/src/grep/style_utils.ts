@@ -26,6 +26,15 @@ export class StyleUtils {
         text: { color: 0xff4500 },
     }
 
+    public static mergeStateStyle(base: IStyle = {}, state: IStyle = {}): IStyle {
+        return {
+            point: { ...base.point, ...state.point },
+            line: { ...base.line, ...state.line },
+            face: { ...base.face, ...state.face },
+            text: { ...base.text, ...state.text },
+        }
+    }
+
     private static _isValidNumber(value: unknown): value is number {
         return typeof value === 'number' && Number.isFinite(value)
     }

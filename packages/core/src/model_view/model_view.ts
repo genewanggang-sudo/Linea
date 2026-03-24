@@ -174,7 +174,8 @@ export class ModelView {
             const gMat = gnode.globalMatrix?.clone()
             const cloned = gnode.clone()
             cloned.setLocalMatrix(gMat)
-            cloned.setStyle(isSelection ? StyleUtils.defaultSelectionStyle : StyleUtils.defaultActiveStyle)
+            const stateStyle = isSelection ? StyleUtils.defaultSelectionStyle : StyleUtils.defaultActiveStyle
+            cloned.setStyle(StyleUtils.mergeStateStyle(cloned.getStyle(), stateStyle))
             grep.addNode(cloned)
         })
         grep.updateGlobalMatrix()
