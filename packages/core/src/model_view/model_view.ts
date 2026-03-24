@@ -8,6 +8,8 @@ import { NullRender } from '../render/null_render'
 import { DebugUtil } from '../toolkit/debug_util'
 import { EN_ModelViewChanged } from '../types/type_define'
 import { ModelChangedCache } from './model_changed_cache'
+import { GNode } from '../grep/gnode'
+import { StyleUtils } from '../grep/style_utils'
 
 /**
  * 模型层视图，不依赖具体 UI。
@@ -128,19 +130,55 @@ export class ModelView {
         const { selection } = this.cacheForView
         if (!selection) return
 
-        const greps = this._toGReps()
-        // TODO完善方法
+        const greps = this._toGReps(selection.getSelectedElements(), selection.getSelectedGNodes(), true)
         this.iRender.clearSelection()
         this._renderDirty = true
         if (!greps.length) return
+        // TODO displayid
         this.iRender.drawSelections(greps)
     }
 
+    /**
+     * 刷新高亮集合
+     */
     private _updateHighLight() {
+        const { highLight } = this.cacheForView;
+        if (!highLight) return
+        const elements = highLight.getActiveElements()
+        const gnodes = highLight.getActiveGNodes()
 
+        this.iRender.clearActive();
+        this._renderDirty = true;
+
+        const greps = this._toGReps(elements, gnodes, false);
+        if (!greps.length) {
+            return;
+        }
+        this.iRender.drawActives(greps);
     }
 
-    private _toGReps() {
+    /**
+     * 高亮选中对象转grep
+     */
+    private _toGReps(elements: IElement[], gnodes: GNode[], isSelection: boolean) {
+        const greps: GRep[] = []
+        elements.forEach(_ => {
+            const grep = isSelection ? _.getGRepWhenSelected() : _.getGRepWhenActive();
+            if (grep.isEmpty()) return
+            greps.push(grep)
+        })
 
+        // 将一组选中的GNode,组装成一个GRep
+        const grep = new GRep()
+        gnodes.forEach(gnode => {
+            const gMat = gnode.globalMatrix?.clone()
+            const cloned = gnode.clone()
+            cloned.setLocalMatrix(gMat)
+            cloned.setStyle(isSelection ? StyleUtils.defaultSelectionStyle : StyleUtils.defaultActiveStyle)
+            grep.addNode(cloned)
+        })
+        grep.updateGlobalMatrix()
+        greps.push(grep)
+        return greps
     }
 }

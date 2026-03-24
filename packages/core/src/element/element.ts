@@ -4,6 +4,7 @@ import type { IDocument } from '../document/i_document'
 import { DebugUtil } from '../toolkit/debug_util';
 import { Document } from '../document/document';
 import { GRep } from '../grep/grep';
+import { StyleUtils } from '../grep/style_utils';
 
 // TODO 补充dump load方法,统一处理? 每个类单独写?
 export class Element implements IElement {
@@ -115,6 +116,28 @@ export class Element implements IElement {
             grep.elementId = this.id
         }
         return grep
+    }
+
+    public getGRepWhenSelected(): GRep {
+        const grep = this.getGRep()
+        if (!grep || grep.isEmpty()) {
+            return new GRep()
+        }
+
+        const cloned = grep.clone()
+        cloned.setStyle(StyleUtils.defaultSelectionStyle)
+        return cloned
+    }
+
+    public getGRepWhenActive(): GRep {
+        const grep = this.getGRep()
+        if (!grep || grep.isEmpty()) {
+            return new GRep()
+        }
+
+        const cloned = grep.clone()
+        cloned.setStyle(StyleUtils.defaultActiveStyle)
+        return cloned
     }
 
     /**

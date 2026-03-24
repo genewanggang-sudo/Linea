@@ -1,8 +1,20 @@
-import { DebugUtil } from '../toolkit/debug_util';
+import { GRep } from '../grep/grep';
 import { IRender } from './i_render';
 
 export class NullRender implements IRender {
+    public drawActives(_greps: GRep[]): void {
+        throw new Error('Method not implemented.');
+    }
+    public clearActive(): void {
+        throw new Error('Method not implemented.');
+    }
+    public clearSelection(): void {
+        throw new Error('Method not implemented.');
+    }
+    public drawSelections(_greps: GRep[]): void {
+        throw new Error('Method not implemented.');
+    }
     public updateView(): void {
-        DebugUtil.warn(false, 'NullRender中的updateView方法未实现', 'wg', '2026-03-10')
+        throw new Error('Method not implemented.');
     }
 }

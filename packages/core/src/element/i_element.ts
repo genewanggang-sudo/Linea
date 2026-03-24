@@ -27,6 +27,16 @@ export interface IElement {
 
     getGRep(): GRep
 
+    /**
+     * 获取选中GRep
+     */
+    getGRepWhenSelected(): GRep
+
+    /**
+     * 获取高亮GRep
+     */
+    getGRepWhenActive(): GRep
+
     setGRep(grep: GRep): boolean
 
     isElementVisible(): boolean

@@ -5,7 +5,7 @@ import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IR
 import { RenderHub } from './render_hub'
 import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
 
-export class CRenderer implements IRender {
+export class CRenderer extends IRender {
     private static readonly PICK_TOLERANCE = 16
 
     private _width: number
@@ -36,6 +36,7 @@ export class CRenderer implements IRender {
     private _resizeObserver: ResizeObserver
 
     constructor(_container: HTMLElement) {
+        super()
         this._container = _container
         this._width = this._container.clientWidth
         this._height = this._container.clientHeight
@@ -212,6 +213,14 @@ export class CRenderer implements IRender {
         return result
     }
 
+    public drawSelections(_greps: GRep[]): void {
+        throw new Error('Method not implemented.')
+    }
+
+    public drawActives(_greps: GRep[]): void {
+        throw new Error('Method not implemented.')
+    }
+
     /**
      * 监听画布大小变化
      */
@@ -229,10 +238,7 @@ export class CRenderer implements IRender {
         this._camera.top = vh / 2
         this._camera.bottom = -vh / 2
         this._camera.updateProjectionMatrix()
-
     }
-
-    // TODO 同步线宽，需要修改
 
     // TODO 补充完整
     public destroy() {

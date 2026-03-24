@@ -24,7 +24,7 @@ export type { IFaceStyle, ILineStyle, IPointStyle, IStyle, ITextStyle } from './
 export { GrepDisplay } from './grep/display/grep_display'
 export { GRep } from './grep/grep'
 export { ModelView } from './model_view/model_view'
-export type { IRender } from './render/i_render'
+export { IRender } from './render/i_render'
 export { RenderEdge, RenderGroup, RenderMesh, RenderNode, RenderPoint, RenderText } from './render/render_node'
 export { Request } from './request/request'
 export type { IRequest } from './request/i_request'

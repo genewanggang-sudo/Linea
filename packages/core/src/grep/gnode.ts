@@ -105,6 +105,13 @@ export abstract class GNode {
     }
 
     /**
+     * 设置局部坐标变换
+     */
+    public setLocalMatrix(mat?: Matrix4) {
+        this._localMatrix = mat?.clone()
+    }
+
+    /**
      * 从当前节点的树根计算整棵子树的世界矩阵
      */
     public updateGlobalMatrix() {

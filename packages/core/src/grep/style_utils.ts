@@ -12,6 +12,20 @@ export class StyleUtils {
     private static default_text_anchorX = EN_AnchorX.Center
     private static default_text_anchorY = EN_AnchorY.Middle
 
+    public static defaultActiveStyle: IStyle = {
+        point: { color: 0xff6800 },
+        line: { color: 0xff6800 },
+        face: { color: 0xff6800 },
+        text: { color: 0xff6800 },
+    }
+
+    public static defaultSelectionStyle: IStyle = {
+        point: { color: 0xff4500 },
+        line: { color: 0xff4500 },
+        face: { color: 0xff4500 },
+        text: { color: 0xff4500 },
+    }
+
     private static _isValidNumber(value: unknown): value is number {
         return typeof value === 'number' && Number.isFinite(value)
     }
