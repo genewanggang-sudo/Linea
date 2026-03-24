@@ -1508,8 +1508,6 @@ export function bootstrapPlayground(mount: HTMLElement) {
 
     const doc = new Document()
     activeDoc = doc
-    Selection.instance().setDoc(doc)
-    HighLight.instance().setDoc(doc)
     app.start(doc)
     app.createCanvas(mount)
     bindCanvasEvents()
