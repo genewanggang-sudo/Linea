@@ -42,6 +42,10 @@ export abstract class GNode {
      */
     protected _style: IStyle = {}
 
+    protected _canPick = true
+
+    protected _canSnap = true
+
     public get elementId() {
         const root = this.getRoot()
         return root instanceof GRep
@@ -81,6 +85,24 @@ export abstract class GNode {
         const style = this._style
         const pStyle: IStyle = this.parent ? this.parent.getStyle() : {}
         return Object.assign(pStyle, style)
+    }
+
+    public get canPick() {
+        if (!this._canPick) return false
+        return this.parent ? this.parent.canPick : true
+    }
+
+    public set canPick(canPick: boolean) {
+        this._canPick = canPick
+    }
+
+    public get canSnap() {
+        if (!this._canSnap) return false
+        return this.parent ? this.parent.canSnap : true
+    }
+
+    public set canSnap(canSnap: boolean) {
+        this._canSnap = canSnap
     }
 
     /**
@@ -211,6 +233,8 @@ export abstract class GNode {
         this._style = { ...another._style }
         this._localMatrix = another._localMatrix?.clone()
         this._globalMatrix = another._globalMatrix?.clone()
+        this._canPick = another._canPick
+        this._canSnap = another._canSnap
         return this
     }
 
