@@ -33,6 +33,8 @@ export class TmpElementPainter {
      * 绘制临时元素
      */
     public drawTmpGRep(grep: GRep) {
+        grep.canPick = false
+        grep.canSnap = false
         this.tmpElement.setGRep(grep)
         this._tmpGRepRemoved = false
     }
