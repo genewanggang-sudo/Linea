@@ -49,6 +49,7 @@ export class CRenderer extends IRender {
         this._renderer = new WebGLRenderer({
             antialias: true,
         })
+        this._renderer.autoClear = false
         this._renderer.setPixelRatio(window.devicePixelRatio)
         this._renderer.setClearColor(canvasConfig.common.color_background)
         this._renderer.outputColorSpace = SRGBColorSpace
@@ -142,6 +143,7 @@ export class CRenderer extends IRender {
         })
 
         this._cameraControls.update()
+        this._renderer.clear()
         this._renderer.render(this._scene, this._camera)
         this._renderer.clearDepth()
         this._renderer.render(this._activeScene, this._camera)
