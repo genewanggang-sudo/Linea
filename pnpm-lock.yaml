@@ -184,6 +184,15 @@ importers:
         specifier: workspace:*
         version: link:../math
 
+  packages/snap:
+    dependencies:
+      '@ccpc/core':
+        specifier: workspace:*
+        version: link:../core
+      '@ccpc/math':
+        specifier: workspace:*
+        version: link:../math
+
 packages:
 
   '@babel/helper-string-parser@7.27.1':
