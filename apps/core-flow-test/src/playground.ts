@@ -19,7 +19,6 @@
 import {
     EN_AnchorX,
     EN_AnchorY,
-    EN_ModelViewChanged,
     Document,
     Element,
     GCurve2d,
@@ -38,6 +37,7 @@ import {
 import type { IMouseEvent } from '@ccpc/canvas'
 import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
+import type { IPickedResult } from '@ccpc/platform'
 
 export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
@@ -472,9 +472,23 @@ function buildHelperGRep(points: Vec2[]) {
     const grep = new GRep()
     const plane = Plane.XOY()
     for (let i = 0; i < points.length; i += 1) {
-        grep.addNode(new GPoint2d(plane, points[i].clone()))
+        const point = new GPoint2d(plane, points[i].clone())
+        point.setStyle({
+            point: {
+                color: 0xffffff,
+                size: 8,
+            },
+        })
+        grep.addNode(point)
         if (i > 0) {
-            grep.addNode(new GCurve2d(plane, new Ln2(points[i - 1], points[i])))
+            const line = new GCurve2d(plane, new Ln2(points[i - 1], points[i]))
+            line.setStyle({
+                line: {
+                    color: 0xffffff,
+                    width: 2,
+                },
+            })
+            grep.addNode(line)
         }
     }
     return grep
@@ -974,28 +988,28 @@ function buildStyleDemoGRep() {
         anchorY: EN_AnchorY
         color: string
     }> = [
-        {
-            label: 'Left / Top',
-            pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
-            anchorX: EN_AnchorX.Left,
-            anchorY: EN_AnchorY.Top,
-            color: '#f97316',
-        },
-        {
-            label: 'Center / Middle',
-            pos: new Vec2(anchorCenter.x, anchorCenter.y),
-            anchorX: EN_AnchorX.Center,
-            anchorY: EN_AnchorY.Middle,
-            color: '#22c55e',
-        },
-        {
-            label: 'Right / Bottom',
-            pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
-            anchorX: EN_AnchorX.Right,
-            anchorY: EN_AnchorY.Bottom,
-            color: '#38bdf8',
-        },
-    ]
+            {
+                label: 'Left / Top',
+                pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
+                anchorX: EN_AnchorX.Left,
+                anchorY: EN_AnchorY.Top,
+                color: '#f97316',
+            },
+            {
+                label: 'Center / Middle',
+                pos: new Vec2(anchorCenter.x, anchorCenter.y),
+                anchorX: EN_AnchorX.Center,
+                anchorY: EN_AnchorY.Middle,
+                color: '#22c55e',
+            },
+            {
+                label: 'Right / Bottom',
+                pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
+                anchorX: EN_AnchorX.Right,
+                anchorY: EN_AnchorY.Bottom,
+                color: '#38bdf8',
+            },
+        ]
 
     anchorSpecs.forEach(spec => {
         const probe = new GText2d(spec.label, Plane.XOY(), spec.pos)
@@ -1096,34 +1110,71 @@ class ClearTestShapesReq extends Request {
     }
 }
 
-class BaseDrawShapeCmd extends Cmd {
+@registerCmd('draw-line-cmd')
+class DrawLineCmd extends Cmd {
     public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'line'
+
+    private readonly _previewPainterIndex = 1
 
     private _fixedPoints: Vec2[] = []
 
-    private _previewPainter?: TmpElementPainter
-
-    constructor(private readonly _kind: ShapeKind) {
-        super()
-    }
+    private _currentPoint?: Vec2
 
     public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        this.clearUsersTmpElementPainters()
+        this.applyNewTmpElementPainter()
         updateDrawingStatus(this._kind, 0)
-        this._syncPreview()
+        this._renderPreview()
 
-        const actionResult = await this.runAction(new MultiPointPickAction(
-            (screenPos) => this._onPointPicked(this._toWorldPos(screenPos)),
-            () => this._onRightClick(),
-            new PickPointContext({
-                movingCallBack: result => this._syncPreview(this._toFlatWorldPos(result.point)),
-            }),
-        ))
-
-        if (!actionResult?.isSuccess) {
+        const firstAction = new PickPointAction(new PickPointContext({
+            movingCallBack: result => {
+                this._currentPoint = new Vec2(result.point.x, result.point.y)
+                this._renderPreview()
+            },
+        }))
+        firstAction.getPickContext().highlightPickedGNodes = true
+        const firstPick = await this.runAction(firstAction)
+        if (!firstPick?.isSuccess || !firstPick.data) {
             this.cancel()
             return
         }
 
+        const firstPoint = new Vec2(firstPick.data.point.x, firstPick.data.point.y)
+        this._fixedPoints = [firstPoint]
+        this._currentPoint = firstPoint.clone()
+        updateDrawingStatus(this._kind, 1)
+        const snapContext = firstAction.getSnapContext()
+        snapContext.previousPoint = firstPoint.clone()
+        this._renderPreview()
+
+        const secondAction = new PickPointAction(new PickPointContext({
+            snapContext,
+            movingCallBack: result => {
+                this._currentPoint = new Vec2(result.point.x, result.point.y)
+                this._renderPreview()
+            },
+        }))
+        secondAction.getPickContext().highlightPickedGNodes = true
+        const secondPick = await this.runAction(secondAction)
+        if (!secondPick?.isSuccess || !secondPick.data) {
+            this.cancel()
+            return
+        }
+
+        const secondPoint = new Vec2(secondPick.data.point.x, secondPick.data.point.y)
+        this._fixedPoints.push(secondPoint)
+        this._currentPoint = secondPoint.clone()
+
+        const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
+        setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
         this._resolve()
     }
 
@@ -1135,159 +1186,860 @@ class BaseDrawShapeCmd extends Cmd {
 
     public override onDestroy() {
         this._clearPreview()
-        this.getTmpElementPainters().forEach(painter => painter.destroy())
+        this.clearUsersTmpElementPainters()
         resetDrawingStatus()
     }
 
-    private _syncPreview(cursor?: Vec2) {
-        const previewCursor = cursor ? normalizeShapePoint(this._kind, this._fixedPoints, cursor) : undefined
-        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, previewCursor)
-        this._previewPainter?.destroy()
-        this._previewPainter = new TmpElementPainter(this.getDoc())
-        const painter = this._previewPainter
-        painter.drawTmpGRep(grep)
-        this.getDoc().cacheForViewElementChanged(EN_ModelViewChanged.ELEMENT_UPDATE, [painter.tmpElement])
+    private _renderPreview() {
+        const grep = new GRep()
+        const plane = Plane.XOY()
+        if (this._fixedPoints.length === 0 && this._currentPoint) {
+            grep.addNode(new GPoint2d(plane, this._currentPoint.clone()))
+        } else if (this._fixedPoints.length >= 1) {
+            grep.addNode(new GPoint2d(plane, this._fixedPoints[0].clone()))
+            if (this._currentPoint) {
+                grep.addNode(new GCurve2d(plane, new Ln2(this._fixedPoints[0], this._currentPoint)))
+                grep.addNode(new GPoint2d(plane, this._currentPoint.clone()))
+            }
+        }
+        this.drawTmpGRep(grep, this._previewPainterIndex)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+}
+
+@registerCmd('draw-polyline-cmd')
+class DrawPolylineCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'polyline'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        let snapContext: ReturnType<PickPointAction['getSnapContext']> | undefined
+        while (this._fixedPoints.length < shapePointCount[this._kind]) {
+            const pick = await this._pickPoint(snapContext)
+            if (!pick) {
+                this.cancel()
+                return
+            }
+
+            const point = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(pick.point.x, pick.point.y))
+            this._fixedPoints.push(point)
+            this._currentPoint = point.clone()
+            snapContext = pick.snapContext
+            this._updateSnapContext(snapContext)
+            updateDrawingStatus(this._kind, this._fixedPoints.length)
+            this._renderPreview()
+        }
+
+        const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
+        setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
         this.getDoc().updateView()
     }
 
     private _clearPreview() {
         this._previewPainter?.destroy()
         this._previewPainter = undefined
+        this._currentPoint = undefined
         this.clearTmp()
     }
 
-    private _toWorldPos(screenPos: Vec2) {
-        const canvas = this.getCanvas()
-        if (!canvas) {
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
+    }
+
+    private async _pickPoint(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        let picked: IPickedResult | undefined
+        const pickContext = new PickPointContext({
+            snapContext,
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+            clickCallBack: result => {
+                picked = result
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const action = new PickPointAction(pickContext)
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess || !picked) {
             return undefined
         }
-        const world = (canvas as unknown as {
-            screenToWorkPlane: (pos: Vec2) => { x: number, y: number, z: number }
-        }).screenToWorkPlane(screenPos)
-        return new Vec2(world.x, world.y)
-    }
 
-    private _toFlatWorldPos(pos: { x: number, y: number }) {
-        return new Vec2(pos.x, pos.y)
-    }
-
-    private _onPointPicked(worldPos?: Vec2) {
-        if (!worldPos) {
-            return false
+        return {
+            point: picked.point.clone(),
+            snapContext: action.getSnapContext(),
         }
-
-        this._fixedPoints.push(normalizeShapePoint(this._kind, this._fixedPoints, worldPos))
-        updateDrawingStatus(this._kind, this._fixedPoints.length)
-
-        if (this._kind !== 'bspline' && this._fixedPoints.length >= shapePointCount[this._kind]) {
-            const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
-            setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
-            this._fixedPoints = []
-            updateDrawingStatus(this._kind, 0)
-            this._syncPreview()
-            return false
-        }
-
-        this._syncPreview()
-        return false
-    }
-
-    private _onRightClick() {
-        if (this._fixedPoints.length === 0) {
-            return true
-        }
-        if (this._kind === 'bspline' && this._fixedPoints.length >= minShapePointCount[this._kind]) {
-            const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
-            setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
-            this._fixedPoints = []
-            updateDrawingStatus(this._kind, 0)
-            this._syncPreview()
-            return false
-        }
-        return false
-    }
-}
-
-class MultiPointPickAction extends PickPointAction {
-    constructor(
-        private readonly _onPicked: (screenPos: Vec2) => boolean,
-        private readonly _onRightClicked: () => boolean,
-        context?: PickPointContext,
-    ) {
-        super(context)
-    }
-
-    public override onClick(evt: IMouseEvent) {
-        const done = this._onPicked(evt.pos)
-        if (done) {
-            const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
-            this._markSuccess(result)
-        }
-        return true
-    }
-
-    public override onRClick(_evt: IMouseEvent) {
-        if (this._onRightClicked()) {
-            this.cancel()
-        }
-        return true
-    }
-
-}
-
-@registerCmd('draw-line-cmd')
-class DrawLineCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('line')
-    }
-}
-
-@registerCmd('draw-polyline-cmd')
-class DrawPolylineCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('polyline')
     }
 }
 
 @registerCmd('draw-rect-line-cmd')
-class DrawRectLineCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('rectLine')
+class DrawRectLineCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'rectLine'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        let snapContext: ReturnType<PickPointAction['getSnapContext']> | undefined
+        while (this._fixedPoints.length < shapePointCount[this._kind]) {
+            const pick = await this._pickPoint(snapContext)
+            if (!pick) {
+                this.cancel()
+                return
+            }
+
+            const point = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(pick.point.x, pick.point.y))
+            this._fixedPoints.push(point)
+            this._currentPoint = point.clone()
+            snapContext = pick.snapContext
+            this._updateSnapContext(snapContext)
+            updateDrawingStatus(this._kind, this._fixedPoints.length)
+            this._renderPreview()
+        }
+
+        const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
+        setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
+    }
+
+    private async _pickPoint(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        let picked: IPickedResult | undefined
+        const pickContext = new PickPointContext({
+            snapContext,
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+            clickCallBack: result => {
+                picked = result
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const action = new PickPointAction(pickContext)
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess || !picked) {
+            return undefined
+        }
+
+        return {
+            point: picked.point.clone(),
+            snapContext: action.getSnapContext(),
+        }
     }
 }
 
 @registerCmd('draw-circle-cmd')
-class DrawCircleCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('circle')
+class DrawCircleCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'circle'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        let snapContext: ReturnType<PickPointAction['getSnapContext']> | undefined
+        while (this._fixedPoints.length < shapePointCount[this._kind]) {
+            const pick = await this._pickPoint(snapContext)
+            if (!pick) {
+                this.cancel()
+                return
+            }
+
+            const point = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(pick.point.x, pick.point.y))
+            this._fixedPoints.push(point)
+            this._currentPoint = point.clone()
+            snapContext = pick.snapContext
+            this._updateSnapContext(snapContext)
+            updateDrawingStatus(this._kind, this._fixedPoints.length)
+            this._renderPreview()
+        }
+
+        const element = executeCreateShapeRequest(this._kind, this._fixedPoints)
+        setToast(element ? `${toolMeta[this._kind].label}已完成，可继续绘制` : `${toolMeta[this._kind].label}创建失败`)
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
+    }
+
+    private async _pickPoint(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        let picked: IPickedResult | undefined
+        const pickContext = new PickPointContext({
+            snapContext,
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+            clickCallBack: result => {
+                picked = result
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const action = new PickPointAction(pickContext)
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess || !picked) {
+            return undefined
+        }
+
+        return {
+            point: picked.point.clone(),
+            snapContext: action.getSnapContext(),
+        }
     }
 }
 
 @registerCmd('draw-arc-cmd')
-class DrawArcCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('arc')
+class DrawArcCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'arc'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        const pickContext = new PickPointContext({
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const cmd = this
+        const action = new class extends PickPointAction {
+            public override onClick(evt: IMouseEvent) {
+                const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
+                const worldPos = new Vec2(result.point.x, result.point.y)
+                cmd._fixedPoints.push(normalizeShapePoint(cmd._kind, cmd._fixedPoints, worldPos))
+                cmd._currentPoint = cmd._fixedPoints[cmd._fixedPoints.length - 1].clone()
+                cmd._updateSnapContext(this.getSnapContext())
+                updateDrawingStatus(cmd._kind, cmd._fixedPoints.length)
+
+                if (cmd._fixedPoints.length >= shapePointCount[cmd._kind]) {
+                    const element = executeCreateShapeRequest(cmd._kind, cmd._fixedPoints)
+                    setToast(element ? `${toolMeta[cmd._kind].label}已完成，可继续绘制` : `${toolMeta[cmd._kind].label}创建失败`)
+                    cmd._fixedPoints = []
+                    cmd._currentPoint = undefined
+                    updateDrawingStatus(cmd._kind, 0)
+                }
+
+                cmd._renderPreview()
+                return true
+            }
+
+            public override onMouseMove(evt: IMouseEvent): boolean {
+                const handled = super.onMouseMove(evt)
+                const painter = this.getBuildInTmpElementPainter()
+                if (painter) {
+                    this.getDoc().updateView()
+                }
+                return handled
+            }
+
+            public override onRClick(_evt: IMouseEvent) {
+                if (cmd._fixedPoints.length === 0) {
+                    this.cancel()
+                }
+                return true
+            }
+        }(pickContext)
+
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess) {
+            this.cancel()
+            return
+        }
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
     }
 }
 
 @registerCmd('draw-ellipse-cmd')
-class DrawEllipseCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('ellipse')
+class DrawEllipseCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'ellipse'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        const pickContext = new PickPointContext({
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const cmd = this
+        const action = new class extends PickPointAction {
+            public override onClick(evt: IMouseEvent) {
+                const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
+                const worldPos = new Vec2(result.point.x, result.point.y)
+                cmd._fixedPoints.push(normalizeShapePoint(cmd._kind, cmd._fixedPoints, worldPos))
+                cmd._currentPoint = cmd._fixedPoints[cmd._fixedPoints.length - 1].clone()
+                cmd._updateSnapContext(this.getSnapContext())
+                updateDrawingStatus(cmd._kind, cmd._fixedPoints.length)
+
+                if (cmd._fixedPoints.length >= shapePointCount[cmd._kind]) {
+                    const element = executeCreateShapeRequest(cmd._kind, cmd._fixedPoints)
+                    setToast(element ? `${toolMeta[cmd._kind].label}已完成，可继续绘制` : `${toolMeta[cmd._kind].label}创建失败`)
+                    cmd._fixedPoints = []
+                    cmd._currentPoint = undefined
+                    updateDrawingStatus(cmd._kind, 0)
+                }
+
+                cmd._renderPreview()
+                return true
+            }
+
+            public override onMouseMove(evt: IMouseEvent): boolean {
+                const handled = super.onMouseMove(evt)
+                const painter = this.getBuildInTmpElementPainter()
+                if (painter) {
+                    this.getDoc().updateView()
+                }
+                return handled
+            }
+
+            public override onRClick(_evt: IMouseEvent) {
+                if (cmd._fixedPoints.length === 0) {
+                    this.cancel()
+                }
+                return true
+            }
+        }(pickContext)
+
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess) {
+            this.cancel()
+            return
+        }
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
     }
 }
 
 @registerCmd('draw-ellipse-arc-cmd')
-class DrawEllipseArcCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('ellipseArc')
+class DrawEllipseArcCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'ellipseArc'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        const pickContext = new PickPointContext({
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const cmd = this
+        const action = new class extends PickPointAction {
+            public override onClick(evt: IMouseEvent) {
+                const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
+                const worldPos = new Vec2(result.point.x, result.point.y)
+                cmd._fixedPoints.push(normalizeShapePoint(cmd._kind, cmd._fixedPoints, worldPos))
+                cmd._currentPoint = cmd._fixedPoints[cmd._fixedPoints.length - 1].clone()
+                cmd._updateSnapContext(this.getSnapContext())
+                updateDrawingStatus(cmd._kind, cmd._fixedPoints.length)
+
+                if (cmd._fixedPoints.length >= shapePointCount[cmd._kind]) {
+                    const element = executeCreateShapeRequest(cmd._kind, cmd._fixedPoints)
+                    setToast(element ? `${toolMeta[cmd._kind].label}已完成，可继续绘制` : `${toolMeta[cmd._kind].label}创建失败`)
+                    cmd._fixedPoints = []
+                    cmd._currentPoint = undefined
+                    updateDrawingStatus(cmd._kind, 0)
+                }
+
+                cmd._renderPreview()
+                return true
+            }
+
+            public override onMouseMove(evt: IMouseEvent): boolean {
+                const handled = super.onMouseMove(evt)
+                const painter = this.getBuildInTmpElementPainter()
+                if (painter) {
+                    this.getDoc().updateView()
+                }
+                return handled
+            }
+
+            public override onRClick(_evt: IMouseEvent) {
+                if (cmd._fixedPoints.length === 0) {
+                    this.cancel()
+                }
+                return true
+            }
+        }(pickContext)
+
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess) {
+            this.cancel()
+            return
+        }
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
     }
 }
 
 @registerCmd('draw-bspline-cmd')
-class DrawBSplineCmd extends BaseDrawShapeCmd {
-    constructor() {
-        super('bspline')
+class DrawBSplineCmd extends Cmd {
+    public override executeImmediately = false
+
+    private readonly _kind: ShapeKind = 'bspline'
+
+    private _fixedPoints: Vec2[] = []
+
+    private _currentPoint?: Vec2
+
+    private _previewPainter?: TmpElementPainter
+
+    public override async execute() {
+        this._fixedPoints = []
+        this._currentPoint = undefined
+        updateDrawingStatus(this._kind, 0)
+        this._renderPreview()
+
+        const pickContext = new PickPointContext({
+            movingCallBack: result => {
+                this._currentPoint = normalizeShapePoint(this._kind, this._fixedPoints, new Vec2(result.point.x, result.point.y))
+                this._renderPreview()
+            },
+        })
+        pickContext.highlightPickedGNodes = true
+
+        const cmd = this
+        const action = new class extends PickPointAction {
+            public override onClick(evt: IMouseEvent) {
+                const result = this.getCurrentResult() ?? this._getPickPointResult(evt.pos)
+                const worldPos = new Vec2(result.point.x, result.point.y)
+                cmd._fixedPoints.push(normalizeShapePoint(cmd._kind, cmd._fixedPoints, worldPos))
+                cmd._currentPoint = cmd._fixedPoints[cmd._fixedPoints.length - 1].clone()
+                cmd._updateSnapContext(this.getSnapContext())
+                updateDrawingStatus(cmd._kind, cmd._fixedPoints.length)
+                cmd._renderPreview()
+                return true
+            }
+
+            public override onMouseMove(evt: IMouseEvent): boolean {
+                const handled = super.onMouseMove(evt)
+                const painter = this.getBuildInTmpElementPainter()
+                if (painter) {
+                    this.getDoc().updateView()
+                }
+                return handled
+            }
+
+            public override onRClick(_evt: IMouseEvent) {
+                if (cmd._fixedPoints.length === 0) {
+                    this.cancel()
+                    return true
+                }
+                if (cmd._fixedPoints.length >= minShapePointCount[cmd._kind]) {
+                    const element = executeCreateShapeRequest(cmd._kind, cmd._fixedPoints)
+                    setToast(element ? `${toolMeta[cmd._kind].label}已完成，可继续绘制` : `${toolMeta[cmd._kind].label}创建失败`)
+                    cmd._fixedPoints = []
+                    cmd._currentPoint = undefined
+                    updateDrawingStatus(cmd._kind, 0)
+                    cmd._renderPreview()
+                }
+                return true
+            }
+        }(pickContext)
+
+        const actionResult = await this.runAction(action)
+        if (!actionResult?.isSuccess) {
+            this.cancel()
+            return
+        }
+        this._resolve()
+    }
+
+    public override cancel() {
+        setToast(`${toolMeta[this._kind].label}已取消`)
+        this._clearPreview()
+        super.cancel()
+    }
+
+    public override onDestroy() {
+        this._clearPreview()
+        this.getBuildInTmpElementPainter()?.destroy()
+        resetDrawingStatus()
+    }
+
+    private _renderPreview() {
+        const grep = buildShapePreviewGRep(this._kind, this._fixedPoints, this._currentPoint)
+        if (!this._previewPainter) {
+            this._previewPainter = new TmpElementPainter(this.getDoc())
+        }
+        this._previewPainter.drawTmpGRep(grep)
+        this.getDoc().updateView()
+    }
+
+    private _clearPreview() {
+        this._previewPainter?.destroy()
+        this._previewPainter = undefined
+        this._currentPoint = undefined
+        this.clearTmp()
+    }
+
+    private _updateSnapContext(snapContext?: ReturnType<PickPointAction['getSnapContext']>) {
+        const currentPoint = this._fixedPoints[this._fixedPoints.length - 1]
+        if (!currentPoint || !snapContext) {
+            return
+        }
+        snapContext.previousPoint = currentPoint.clone()
+        if (!snapContext.firstPoint) {
+            snapContext.firstPoint = currentPoint.clone()
+        }
+        if (this._fixedPoints.length < 2) {
+            return
+        }
+        const previousPoint = this._fixedPoints[this._fixedPoints.length - 2]
+        if (!currentPoint.equals(previousPoint)) {
+            snapContext.previousLineDir = currentPoint.subtracted(previousPoint).normalize()
+        }
     }
 }
 

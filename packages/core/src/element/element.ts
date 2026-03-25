@@ -13,13 +13,13 @@ export class Element implements IElement {
      */
     public static serializedId: T_SerializedId;
 
-    public id = ElementId.INVALID
-
-    public name: string = ''
-
     private _db: Record<string, unknown> = {}
 
     private _cache: Record<string, unknown> = {}
+
+    public id = ElementId.INVALID
+
+    public name: string = ''
 
     private _doc!: IDocument
 

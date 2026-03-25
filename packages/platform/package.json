@@ -16,7 +16,8 @@
     "dependencies": {
         "@ccpc/canvas": "workspace:*",
         "@ccpc/core": "workspace:*",
-        "@ccpc/math": "workspace:*"
+        "@ccpc/math": "workspace:*",
+        "@ccpc/snap": "workspace:*"
     },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",

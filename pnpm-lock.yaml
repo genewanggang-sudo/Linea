@@ -183,6 +183,9 @@ importers:
       '@ccpc/math':
         specifier: workspace:*
         version: link:../math
+      '@ccpc/snap':
+        specifier: workspace:*
+        version: link:../snap
 
   packages/snap:
     dependencies:

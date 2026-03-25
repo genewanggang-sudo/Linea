@@ -123,7 +123,7 @@ export class CmdActionController<T = unknown> extends DefaultController {
         for (let i = 1; i < this._tmpElementPainters.length; i += 1) {
             this._tmpElementPainters[i].destroy()
         }
-        this._tmpElementPainters.slice(1)
+        this._tmpElementPainters.splice(1)
     }
 
     /**
