@@ -8,10 +8,15 @@ import type { EN_SNAP_TYPE } from './snap_type'
  * 吸附结果基类
  */
 export class SnapResult implements ISnapResult {
+    /**吸附类型*/
     private _snapType: EN_SNAP_TYPE
 
+    /**吸附到的GNodes*/
     private _snappedGNodes: GNode[]
 
+    /**
+     * 实际吸附到的几何对象
+     */
     private _snappedObjects: (Curve2 | Vec2)[]
 
     constructor(snapType: EN_SNAP_TYPE) {
