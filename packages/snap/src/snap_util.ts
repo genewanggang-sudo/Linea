@@ -1,4 +1,5 @@
-import { Curve2, Plane, Vec2, alg } from '@ccpc/math'
+import { GCurve2d, GNODE_TYPE, GPolygon, GPolycurve, type GNode } from '@ccpc/core'
+import { Curve2, Vec2, alg } from '@ccpc/math'
 
 import { PtSnap } from './point_snap_result'
 import { SnapSetting } from './snap_setting'
@@ -42,10 +43,29 @@ export class SnapUtil {
         return ptSnap
     }
 
-    /**
-     * 判断吸附结果是否有效
-     */
-    public static isSnapResultValid(_snapPlane: Plane | undefined, _pt: Vec2) {
-        return true
+    public static curveIntersectGNode(curve: Curve2, gnode: GNode) {
+        let curves: Curve2[] = []
+        if (gnode.getType() === GNODE_TYPE.GCurve2d) {
+            curves = [(gnode as GCurve2d).geo]
+        } else if (gnode.getType() === GNODE_TYPE.GPolycurve) {
+            curves = (gnode as GPolycurve).geo.getAllCurves()
+        } else if (gnode.getType() === GNODE_TYPE.GPolygon) {
+            curves = (gnode as GPolygon).geo.getAllCurves()
+        }
+
+        const res: Array<{
+            pt: Vec2;
+            c: Curve2;
+        }> = []
+        curves.forEach(c => {
+            const intersects = alg.X.curve2ds(curve, c)
+            intersects.forEach(p => {
+                res.push({
+                    pt: p.point,
+                    c,
+                })
+            })
+        })
+        return res
     }
 }

@@ -7,8 +7,6 @@ import { EN_SNAP_TYPE } from './snap_type'
 export class PtSnap extends SnapResult {
     private _snappedPt: Vec2
 
-    private _snappedPlane?: Plane
-
     private _anotherPt?: Vec2
 
     private _snappedDir?: Vec2
@@ -43,14 +41,6 @@ export class PtSnap extends SnapResult {
         this._snappedPt = pt
     }
 
-    public get snappedPlane() {
-        return this._snappedPlane
-    }
-
-    public set snappedPlane(snappedPlane: Plane | undefined) {
-        this._snappedPlane = snappedPlane
-    }
-
     public set snappedDir(snappedDir: Vec2 | undefined) {
         this._snappedDir = snappedDir
     }
@@ -75,13 +65,14 @@ export class PtSnap extends SnapResult {
         return this._disToCursor
     }
 
+    // TODO待优化
     public getSnapPrompt(): GGroup {
         const res = new GGroup()
         if (this.getSnapType() === EN_SNAP_TYPE.PointOnSnapPlane) {
             return res
         }
 
-        const plane = this._snappedPlane?.clone() || Plane.XOY()
+        const plane = Plane.XOY()
         const point = new GPoint2d(plane, this._snappedPt.clone())
         point.setStyle({
             point: {

@@ -31,8 +31,6 @@ interface ISnapSettingState {
     canSnapPointOnCurve: boolean
     // 点在面上
     canSnapPointOnFace: boolean
-    // 是否允许捕捉平面外的点
-    canSnapPtOutSnapPlane: boolean
     // 是否允许捕捉辅助吸附对象
     canSnapHelperObject: boolean
     // 是否允许捕捉辅助吸附方向
@@ -97,9 +95,6 @@ export class SnapSetting {
     // 点在面上
     private _canSnapPointOnFace!: boolean
 
-    // 是否允许捕捉平面外的点
-    private _canSnapPtOutSnapPlane: boolean
-
     private _canSnapHelperObject!: boolean
 
     private _canSnapHelperDir!: boolean
@@ -109,7 +104,6 @@ export class SnapSetting {
         this._isSnapOff = false
         this._pixelsPerUnit = 1
         this._reset(true)
-        this._canSnapPtOutSnapPlane = true
     }
 
     /**
@@ -131,7 +125,6 @@ export class SnapSetting {
             canSnapClosedLineParallelToY: this._canSnapClosedLineParallelToY,
             canSnapPointOnCurve: this._canSnapPointOnCurve,
             canSnapPointOnFace: this._canSnapPointOnFace,
-            canSnapPtOutSnapPlane: this._canSnapPtOutSnapPlane,
             canSnapHelperObject: this._canSnapHelperObject,
             canSnapHelperDir: this._canSnapHelperDir,
         }
@@ -158,7 +151,6 @@ export class SnapSetting {
         this._canSnapClosedLineParallelToY = this._backup.canSnapClosedLineParallelToY
         this._canSnapPointOnCurve = this._backup.canSnapPointOnCurve
         this._canSnapPointOnFace = this._backup.canSnapPointOnFace
-        this._canSnapPtOutSnapPlane = this._backup.canSnapPtOutSnapPlane
         this._canSnapHelperObject = this._backup.canSnapHelperObject
         this._canSnapHelperDir = this._backup.canSnapHelperDir
         delete this._backup
@@ -250,14 +242,6 @@ export class SnapSetting {
 
     public set canSnapVertical(val: boolean) {
         this._canSnapVertical = val
-    }
-
-    public get canSnapPtOutSnapPlane() {
-        return this._canSnapPtOutSnapPlane
-    }
-
-    public set canSnapPtOutSnapPlane(val: boolean) {
-        this._canSnapPtOutSnapPlane = val
     }
 
     public get canSnapHelperObject() {
@@ -355,7 +339,6 @@ export class SnapSetting {
         this._canSnapClosedLineParallelToY = val
         this._canSnapPointOnCurve = val
         this._canSnapPointOnFace = val
-        this._canSnapPtOutSnapPlane = val
         this._canSnapHelperObject = val
         this._canSnapHelperDir = val
     }

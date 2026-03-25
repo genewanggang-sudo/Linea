@@ -1,5 +1,5 @@
 import type { GNode } from '@ccpc/core'
-import type { Curve2, Plane, Vec2 } from '@ccpc/math'
+import type { Curve2, Vec2 } from '@ccpc/math'
 
 import type { SnapResult } from './snap_result'
 
@@ -26,23 +26,18 @@ export class SnapContext {
 
     private _firstPoint: Vec2 | undefined // 连续取点中，获取的第一个点
 
-    private _snapPlane: Plane | undefined // 吸附约束平面，吸附到的点必须位于此平面上
-
     private _snapHelpers: Map<EN_SNAP_HELP_OBJ, (Vec2 | Curve2[])[]> = new Map()
 
     private _snapSort: ((a: SnapResult, b: SnapResult) => number) | undefined // 自定义吸附结果排序规则
 
     constructor()
 
-    constructor(snappableGNodes: GNode[], cursorWorld: Vec2, snapPlane?: Plane)
+    constructor(snappableGNodes: GNode[], cursorWorld: Vec2)
 
-    constructor(snappableGNodes?: GNode[], cursorWorld?: Vec2, snapPlane?: Plane) {
+    constructor(snappableGNodes?: GNode[], cursorWorld?: Vec2) {
         if (snappableGNodes && cursorWorld) {
             this._snappableGNodes = snappableGNodes
             this._cursorWorld = cursorWorld
-            if (snapPlane) {
-                this._snapPlane = snapPlane
-            }
         }
     }
 
@@ -96,14 +91,6 @@ export class SnapContext {
      */
     public set snapSort(snapSort: ((a: SnapResult, b: SnapResult) => number) | undefined) {
         this._snapSort = snapSort
-    }
-
-    public get snapPlane() {
-        return this._snapPlane
-    }
-
-    public set snapPlane(snapPlane: Plane | undefined) {
-        this._snapPlane = snapPlane
     }
 
     /**
