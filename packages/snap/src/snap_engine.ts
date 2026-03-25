@@ -6,6 +6,7 @@ import { SnapCandidates } from './snap_candidates'
 import type { SnapContext } from './snap_context'
 import { SnapDirection } from './snap_direction'
 import { SnapPoint } from './snap_point'
+import { SnapResult } from './snap_result'
 import { SnapSetting } from './snap_setting'
 import { EN_SNAP_TYPE } from './snap_type'
 import { SnapUtil } from './snap_util'
@@ -50,11 +51,7 @@ export class SnapEngine {
         const curvesXs = SnapPoint.snapCurvesXPoint(snapContext, snappableGNodes)
         res.addSnapResults(curvesXs)
 
-        const combinedSnaps = this._combineSnaps(
-            snapContext,
-            snapDirs,
-            res.snapResults.filter(_ => !snapDirs.includes(_ as PtSnap)) as PtSnap[],
-        )
+        const combinedSnaps = this._combineSnaps(snapContext, snapDirs.concat(snapPtOnRefCurve), res.snapResults)
         res.addSnapResults(combinedSnaps)
 
         // 5. 排序
@@ -92,14 +89,14 @@ export class SnapEngine {
         return res
     }
 
-    private static _combineIntersects(snapContext: SnapContext, snapDirs: PtSnap[], snaps: PtSnap[]): PtSnap[] {
+    private static _combineIntersects(snapContext: SnapContext, snapDirs: PtSnap[], snaps: SnapResult[]): PtSnap[] {
         const snapRes: PtSnap[] = []
         if (!snapDirs.length || !snaps.length) {
             return snapRes
         }
 
-        const getSnapCurve = (tmpSnap: PtSnap): Curve2 | undefined => {
-            if (tmpSnap.snappedPt && tmpSnap.snappedDir) {
+        const getSnapCurve = (tmpSnap: SnapResult): Curve2 | undefined => {
+            if (tmpSnap instanceof PtSnap && tmpSnap.snappedPt && tmpSnap.snappedDir) {
                 return new Ln2(tmpSnap.snappedPt, tmpSnap.snappedDir, [-CONST.MODEL_MAX_LENGTH, CONST.MODEL_MAX_LENGTH])
             }
 
@@ -191,7 +188,7 @@ export class SnapEngine {
                             }
                             if (
                                 dir.getSnapType() === EN_SNAP_TYPE.VerticalToCurve &&
-                                !snap.snappedDir &&
+                                (!(snap instanceof PtSnap) || !snap.snappedDir) &&
                                 isPerpendicularSnap(dir, snapCurve)
                             ) {
                                 res.setSnapType(EN_SNAP_TYPE.PerpendicularPoint)
@@ -210,7 +207,7 @@ export class SnapEngine {
     /**
      * 组合捕捉结果
      */
-    private static _combineSnaps(snapContext: SnapContext, snapDirs: PtSnap[], snaps: PtSnap[]): PtSnap[] {
+    private static _combineSnaps(snapContext: SnapContext, snapDirs: PtSnap[], snaps: SnapResult[]): PtSnap[] {
         const snapRes: PtSnap[] = []
 
         // 组合吸附结果，生成交点

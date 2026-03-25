@@ -83,6 +83,7 @@ export class PtSnap extends SnapResult {
         res.addNode(point)
 
         switch (this.getSnapType()) {
+            case EN_SNAP_TYPE.ParallelToX:
             case EN_SNAP_TYPE.ClosedLineParallelToX: {
                 if (this._anotherPt) {
                     const line = new GCurve2d(plane, new Ln2(this._anotherPt, this._snappedPt))
@@ -96,6 +97,7 @@ export class PtSnap extends SnapResult {
                 }
                 break
             }
+            case EN_SNAP_TYPE.ParallelToY:
             case EN_SNAP_TYPE.ClosedLineParallelToY: {
                 if (this._anotherPt) {
                     const line = new GCurve2d(plane, new Ln2(this._anotherPt, this._snappedPt))
@@ -152,6 +154,12 @@ export class PtSnap extends SnapResult {
                     break
                 case EN_SNAP_TYPE.ParallelToCurve:
                     text = '平行于曲线'
+                    break
+                case EN_SNAP_TYPE.ParallelToX:
+                    text = '平行X轴'
+                    break
+                case EN_SNAP_TYPE.ParallelToY:
+                    text = '平行Y轴'
                     break
                 case EN_SNAP_TYPE.ClosedLineParallelToX:
                     text = '平行X轴'

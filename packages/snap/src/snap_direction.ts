@@ -29,9 +29,62 @@ export class SnapDirection {
             res.push(...ptsOnVerticalDir)
         }
 
+        const ptsParallelToAxis = this.snapPointParallelToAxis(snapContext)
+        if (ptsParallelToAxis.length > 0) {
+            res.push(...ptsParallelToAxis)
+        }
+
         const lastLineParallelToAxis = this.snapLastLineDir(snapContext)
         if (lastLineParallelToAxis.length > 0) {
             res.push(...lastLineParallelToAxis)
+        }
+
+        return res
+    }
+
+    /**
+     * 捕捉过上一个点的水平/竖直方向
+     */
+    public static snapPointParallelToAxis(snapContext: SnapContext): PtSnap[] {
+        const res: PtSnap[] = []
+        if (!snapContext.previousPoint) {
+            return res
+        }
+
+        if (SnapSetting.instance().getCanSnapParallelToAxis(EN_XY.X)) {
+            const lineParallelToX = new Ln2(
+                snapContext.previousPoint,
+                Vec2.X(),
+                [-CONST.MODEL_MAX_LENGTH, CONST.MODEL_MAX_LENGTH],
+            )
+            const ptSnap = SnapUtil.intersectCurve(
+                snapContext.cursorWorld,
+                lineParallelToX,
+                EN_SNAP_TYPE.ParallelToX,
+                snapContext.previousPoint,
+            )
+            if (ptSnap) {
+                ptSnap.snappedDir = Vec2.X()
+                return [ptSnap]
+            }
+        }
+
+        if (SnapSetting.instance().getCanSnapParallelToAxis(EN_XY.Y)) {
+            const lineParallelToY = new Ln2(
+                snapContext.previousPoint,
+                Vec2.Y(),
+                [-CONST.MODEL_MAX_LENGTH, CONST.MODEL_MAX_LENGTH],
+            )
+            const ptSnap = SnapUtil.intersectCurve(
+                snapContext.cursorWorld,
+                lineParallelToY,
+                EN_SNAP_TYPE.ParallelToY,
+                snapContext.previousPoint,
+            )
+            if (ptSnap) {
+                ptSnap.snappedDir = Vec2.Y()
+                return [ptSnap]
+            }
         }
 
         return res

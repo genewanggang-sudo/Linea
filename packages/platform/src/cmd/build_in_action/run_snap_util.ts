@@ -71,6 +71,8 @@ export class RunSnapUtil {
                 color = EN_SNAP_PT_COLOR.MIDDLE_POINT
                 break
             case EN_SNAP_TYPE.ExtensionPoint:
+            case EN_SNAP_TYPE.ParallelToX:
+            case EN_SNAP_TYPE.ParallelToY:
                 color = EN_SNAP_PT_COLOR.PARALLEL_TO_AXIS
                 break
             case EN_SNAP_TYPE.PointOnCurve:
