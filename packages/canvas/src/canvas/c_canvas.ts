@@ -7,7 +7,7 @@ import { WorkPlane } from './work_plane'
 import { alg, CONST, Ln3, Plane, Vec2, Vec3 } from '@ccpc/math'
 import { KeyboardInteractor } from '../controller/keyboard_interactor'
 
-// TODO 先简单分层,canvas中只持有renderer
+// TODO 先简单分层，canvas中只持有renderer
 export class CCanvas implements ICCanvas {
     /**
      * 画布容器
@@ -128,6 +128,20 @@ export class CCanvas implements ICCanvas {
     public screenToWorkPlaneLocal(screenPos: Vec2) {
         const { plane } = this.getWorkPlane()
         return this.screenToPlaneLocal(screenPos, plane)
+    }
+
+    /**
+     * 获取当前工作平面下，1世界单位对应多少像素
+     */
+    public pixelsPerUnit() {
+        const { plane } = this.getWorkPlane()
+        const p1 = plane.getPtAt({ x: 0, y: 0 })
+        const p2 = plane.getPtAt({ x: 1, y: 0 })
+
+        const s1 = this.worldToScreen(p1)
+        const s2 = this.worldToScreen(p2)
+
+        return s1.distanceTo(s2)
     }
 
     /**
