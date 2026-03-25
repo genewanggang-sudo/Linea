@@ -1,5 +1,6 @@
 export { EN_SNAP_TYPE } from './snap_type'
 export type { ISnapResult } from './i_snap_result'
+export { SnapContext, EN_SNAP_HELP_OBJ } from './snap_context'
 export { SnapResult } from './snap_result'
 export { PtSnap } from './point_snap_result'
 export { SnapCandidates } from './snap_candidates'
