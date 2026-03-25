@@ -112,6 +112,25 @@ export class CCanvas implements ICCanvas {
     }
 
     /**
+     * 屏幕坐标转换为指定平面下的二维局部坐标
+     * @param screenPos 屏幕坐标
+     * @param plane 目标平面
+     */
+    public screenToPlaneLocal(screenPos: Vec2, plane: Plane) {
+        const pt3 = this.screenToWorldPlane(screenPos, plane)
+        return plane.getUVAt(pt3)
+    }
+
+    /**
+     * 屏幕坐标转换为当前工作平面下的二维局部坐标
+     * @param screenPos 屏幕坐标
+     */
+    public screenToWorkPlaneLocal(screenPos: Vec2) {
+        const { plane } = this.getWorkPlane()
+        return this.screenToPlaneLocal(screenPos, plane)
+    }
+
+    /**
      * 生成相机射线
      */
     public generateCameraRay(screenPos: Vec2): Ln3 {
