@@ -24,7 +24,10 @@ export enum EN_SNAP_TYPE {
     PointOnCurve,
     /**点在参考线上*/
     ReferCurve,
-    /**延长线上的点*/
+    /**
+     * 延长线上点
+     * 先画线-> 移动鼠标在延长线上
+     */
     ExtensionPoint,
     /**
     * 垂直方向上点
