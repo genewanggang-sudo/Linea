@@ -1,4 +1,4 @@
-import type { IDBEleId } from '../types/dump_type'
+import { IDBEleId } from '../types/type_define';
 
 class ElementId {
     public static get INVALID() {

@@ -18,3 +18,7 @@ export enum EN_CoreRequestIds {
     UNDO = 'core.undo',
     REDO = 'core.redo'
 }
+
+export type IDBEleId = {
+    id: number
+}
