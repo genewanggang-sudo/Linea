@@ -2,26 +2,35 @@ import { IDocument } from '../document/i_document'
 import { GRep } from '../grep/grep'
 import { ElementId } from './element_id'
 
-export interface IElement {
-    id: ElementId
+export type IModifiedProps = {
+    propertyName: string;
+    oldValue: unknown;
+    newValue: unknown;
+}
 
-    name: string
-
+export interface IDB {
     readonly db: Record<string, unknown>
 
     readonly cache: Record<string, unknown>
-
-    getDoc(): IDocument
-
-    setDoc(doc: IDocument): void
-
-    init(...params: unknown[]): this
 
     getModified(): IModifiedProps[]
 
     commit(): void
 
     rollBack(): void
+
+}
+
+export interface IElement extends IDB {
+    id: ElementId
+
+    name: string
+
+    getDoc(): IDocument
+
+    setDoc(doc: IDocument): void
+
+    init(...params: unknown[]): this
 
     getSerialId(): string
 
@@ -60,12 +69,6 @@ export type IElementCtor<T extends IElement = IElement> = {
     new(): T
 
     serializedId: T_SerializedId
-}
-
-export type IModifiedProps = {
-    propertyName: string;
-    oldValue: unknown;
-    newValue: unknown;
 }
 
 export const EN_VIEW_CACHE_PROPS = {
