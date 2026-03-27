@@ -76,10 +76,22 @@ export class DB implements IDB {
         for (const key of this.ownKeys()) {
             if (key.startsWith(EN_DontSavePropPrefix.UNDER_SCORE) || key.startsWith(EN_DontSavePropPrefix.C_UNDER_SCORE))
                 continue
-            if (json[key] === undefined || json[key] === null)
+            const val1 = db[key]
+            const val2 = json[key]
+            if (val2 === undefined || val2 === null)
                 continue
-            if (Array.isArray(db[key])) {
-                // db[key] = this._loadArr()
+            if (Array.isArray(val1)) {
+                db[key] = this._loadArr(val2 as Array<unknown>)
+            } else if (val1 instanceof Map) {
+                db[key] = this._loadMap(val2 as Map<unknown, unknown>)
+            } else if (val1 instanceof Set) {
+                db[key] = this._loadSet(val2 as Set<unknown>)
+            } else if (this._isDumpLoad(val1)) {
+                const newVal = new (val1.constructor as IConstructor<IDumpLoad>)()
+                newVal.load(val2)
+                db[key] = newVal
+            } else {
+                db[key] = val2
             }
         }
     }
@@ -133,6 +145,10 @@ export class DB implements IDB {
         return arr1
     }
 
+    private _loadArr(_arr: Array<unknown>) {
+
+    }
+
     private _dumpMap(map: Map<unknown, unknown>) {
         const mArr: Array<unknown[]> = [...map]
         for (let i = 0; i < mArr.length; i += 1) {
@@ -142,9 +158,17 @@ export class DB implements IDB {
         return this._dumpArr(mArr)
     }
 
+    private _loadMap(_map: Map<unknown, unknown>) {
+
+    }
+
     private _dumpSet(set: Set<unknown>) {
         const sArr = [...set]
         return this._dumpArr(sArr)
+    }
+
+    private _loadSet(_set: Set<unknown>) {
+
     }
 
     private _dumpAProperty(val: unknown) {
