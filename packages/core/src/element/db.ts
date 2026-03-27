@@ -71,8 +71,17 @@ export class DB implements IDB {
         return this._dumpData(this._db)
     }
 
-    public load(_json: IJSON) {
-
+    public load(json: IJSON) {
+        const db = this._db
+        for (const key of this.ownKeys()) {
+            if (key.startsWith(EN_DontSavePropPrefix.UNDER_SCORE) || key.startsWith(EN_DontSavePropPrefix.C_UNDER_SCORE))
+                continue
+            if (json[key] === undefined || json[key] === null)
+                continue
+            if (Array.isArray(db[key])) {
+                // db[key] = this._loadArr()
+            }
+        }
     }
 
     private _dumpData(data: IJSON): IJSON {
