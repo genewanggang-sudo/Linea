@@ -6,6 +6,7 @@ import { Document } from '../document/document';
 import { GRep } from '../grep/grep';
 import { StyleUtils } from '../grep/style_utils';
 import { DB } from './db';
+import { IConstructor } from '../types/type_guard';
 
 // TODO 补充dump load方法,统一处理? 每个类单独写?
 export class Element extends DB implements IElement {
@@ -139,5 +140,13 @@ export class Element extends DB implements IElement {
             if (!this.dontShowView()) return true
         }
         return false
+    }
+
+    public clone() {
+        const ele = this._doc.create(this.constructor as IConstructor<this>)
+        const data = this.dump()
+        delete data.id
+        ele.load(data)
+        return ele
     }
 }

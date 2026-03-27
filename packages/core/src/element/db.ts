@@ -1,6 +1,8 @@
+import { Document } from '../document/document';
+import { DebugUtil } from '../toolkit/debug_util';
 import { EN_DontSavePropPrefix, IJSON } from '../types/type_define';
 import { IConstructor } from '../types/type_guard';
-import { IDB, IModifiedProps } from './i_element';
+import { IDB, IDumpLoad, IModifiedProps } from './i_element';
 
 export class DB implements IDB {
     private _db: IJSON = {}
@@ -54,10 +56,10 @@ export class DB implements IDB {
         this._cache = {}
     }
 
-    // public ownKeys() {
-    //     const set = new Set([...Object.keys(this._db), ...Object.keys(this._cache)])
-    //     return [...set]
-    // }
+    public ownKeys() {
+        const set = new Set([...Object.keys(this._db), ...Object.keys(this._cache)])
+        return [...set]
+    }
 
     public dump(): IJSON {
         if (Object.keys(this._cache).length) {
@@ -69,12 +71,14 @@ export class DB implements IDB {
         return this._dumpData(this._db)
     }
 
-    public load(json: IJSON) {
+    public load(_json: IJSON) {
 
     }
 
-    public _dumpData(data: IJSON): IJSON {
+    private _dumpData(data: IJSON): IJSON {
+        Document.canCreate = true
         const defualtVal = new (this.constructor as IConstructor<DB>)() as unknown as IJSON
+        Document.canCreate = false
         const result: IJSON = {}
         Object.keys(data).forEach(key => {
             if (key.startsWith(EN_DontSavePropPrefix.UNDER_SCORE) || key.startsWith(EN_DontSavePropPrefix.C_UNDER_SCORE)) {
@@ -88,17 +92,20 @@ export class DB implements IDB {
                 if (JSON.stringify(res1) === JSON.stringify(res2)) return
                 result[key] = res2
             } else if (val2 instanceof Map) {
-                const res1 = this._dumpMap(val1 as Map<string, unknown>)
-                const res2 = this._dumpMap(val2 as Map<string, unknown>)
+                const res1 = this._dumpMap(val1 as Map<unknown, unknown>)
+                const res2 = this._dumpMap(val2 as Map<unknown, unknown>)
                 if (JSON.stringify(res1) === JSON.stringify(res2)) return
                 result[key] = res2
             } else if (val2 instanceof Set) {
                 const res1 = this._dumpSet(val1 as Set<unknown>)
                 const res2 = this._dumpSet(val2 as Set<unknown>)
-                if (JSON.stringify(val1) === JSON.stringify(res2)) return
+                if (JSON.stringify(res1) === JSON.stringify(res2)) return
                 result[key] = res2
             } else {
-
+                const res1 = this._dumpAProperty(val1)
+                const res2 = this._dumpAProperty(val2)
+                if (JSON.stringify(res1) === JSON.stringify(res2)) return
+                result[key] = res2
             }
         })
         return result
@@ -117,15 +124,36 @@ export class DB implements IDB {
         return arr1
     }
 
-    private _dumpMap(map: Map<string, unknown>) {
-
+    private _dumpMap(map: Map<unknown, unknown>) {
+        const mArr: Array<unknown[]> = [...map]
+        for (let i = 0; i < mArr.length; i += 1) {
+            const res = this._dumpArr(mArr[i])
+            mArr[i] = res
+        }
+        return this._dumpArr(mArr)
     }
 
     private _dumpSet(set: Set<unknown>) {
-
+        const sArr = [...set]
+        return this._dumpArr(sArr)
     }
 
     private _dumpAProperty(val: unknown) {
+        const type = typeof val
+        if (type === 'number' || type == 'string' || type == 'boolean') {
+            return val
+        }
+        if (this._isDumpLoad(val)) {
+            return val.dump()
+        }
+        if (val instanceof Array || val instanceof Map || val instanceof Set) {
+            DebugUtil.assert(false, '不支持的数据类型', 'wg', '2026-03-27')
+        }
+    }
 
+    private _isDumpLoad(obj: unknown): obj is IDumpLoad {
+        return !!obj &&
+            (obj as IDumpLoad).dump instanceof Function &&
+            (obj as IDumpLoad).load instanceof Function
     }
 }

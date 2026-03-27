@@ -1,5 +1,6 @@
 import { IDocument } from '../document/i_document'
 import { GRep } from '../grep/grep'
+import { IJSON } from '../types/type_define';
 import { ElementId } from './element_id'
 
 export type IModifiedProps = {
@@ -19,6 +20,9 @@ export interface IDB {
 
     rollBack(): void
 
+    dump(): IJSON
+
+    load(val: IJSON): void
 }
 
 export interface IElement extends IDB {
@@ -58,6 +62,8 @@ export interface IElement extends IDB {
 
     propShouldCacheToView(propName: string): boolean
 
+    clone(): this
+
 }
 
 export type T_SerializedId = {
@@ -75,3 +81,8 @@ export const EN_VIEW_CACHE_PROPS = {
     C_GREP: 'C_GRep',
     VISIBLE: 'visible',
 } as const;
+
+export type IDumpLoad = {
+    dump(): unknown,
+    load(val: unknown): void
+}

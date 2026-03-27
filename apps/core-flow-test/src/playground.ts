@@ -39,6 +39,12 @@ import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 }
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
 import type { IPickedResult } from '@ccpc/platform'
 
+declare global {
+    interface Window {
+        app: typeof app
+    }
+}
+
 export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
 
@@ -2166,7 +2172,8 @@ export function bootstrapPlayground(mount: HTMLElement) {
     canvasBootstrapped = true
     loadEngineeringDemo()
     scheduleFitEngineeringDemoView()
-    emitState()
+    emitState();
+    window.app = app
 }
 
 export async function armTool(kind: ShapeKind) {
