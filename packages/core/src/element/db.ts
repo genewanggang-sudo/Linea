@@ -81,12 +81,13 @@ export class DB implements IDB {
             if (val2 === undefined || val2 === null)
                 continue
             if (Array.isArray(val1)) {
-                const first = val1[0]
+                const first: unknown = val1[0]
                 db[key] = this._loadArr(val2 as Array<unknown>, first)
             } else if (val1 instanceof Map) {
-                db[key] = this._loadMap(val2 as Map<unknown, unknown>)
+                db[key] = this._loadMap(val2 as Array<unknown[]>, val1)
             } else if (val1 instanceof Set) {
-                db[key] = this._loadSet(val2 as Set<unknown>)
+                const first = [...val1.values()] as Array<unknown>[0]
+                db[key] = this._loadSet(val2 as Array<unknown>, first)
             } else if (this._isDumpLoad(val1)) {
                 const newVal = new (val1.constructor as IConstructor<IDumpLoad>)()
                 newVal.load(val2)
@@ -149,7 +150,8 @@ export class DB implements IDB {
     /**
      * 加载数组
      * @param arr JSON中的数组
-     * @param first 参考数组的第一个值
+     * @param first 参考数组中的第一个值
+     * 数组中元素当前只支持dump、load对象和基础类型
      */
     private _loadArr(arr: Array<unknown>, first: unknown): Array<unknown> {
         if (!arr.length) {
@@ -187,8 +189,28 @@ export class DB implements IDB {
         return this._dumpArr(mArr)
     }
 
-    private _loadMap(_map: Map<unknown, unknown>) {
+    /**
+     * Map中的元素支持dump、load对象和基础元素类型
+     */
+    private _loadMap(jsonMap: Array<unknown[]>, dbMap: Map<unknown, unknown>) {
+        if (!dbMap.size) {
+            DebugUtil.assert(false, 'DB数据需要提供初始值', 'wg', '2026-03-29')
+        }
 
+        const map = new Map()
+        for (const [key, val] of jsonMap) {
+            const dbVal = dbMap.get(key)
+            if (this._isDumpLoad(dbVal)) {
+                const newVal = new (dbVal.constructor as IConstructor<IDumpLoad>)()
+                newVal.load(val)
+                map.set(key, newVal)
+            } else if (this._isBasicType(dbVal)) {
+                map.set(key, val)
+            } else {
+                DebugUtil.assert(false, '不支持的类型', 'wg', '2026-03-29')
+            }
+        }
+        return map
     }
 
     private _dumpSet(set: Set<unknown>) {
@@ -196,13 +218,26 @@ export class DB implements IDB {
         return this._dumpArr(sArr)
     }
 
-    private _loadSet(_set: Set<unknown>) {
-
+    /**
+     * 当前Set只支持里面所有元素为同一类型
+     */
+    private _loadSet(setArr: Array<unknown>, first: unknown) {
+        const set = new Set<unknown>()
+        for (const val of setArr) {
+            if (this._isDumpLoad(first)) {
+                const Ctor = (first.constructor as IConstructor<IDumpLoad>)
+                const newVal = new Ctor()
+                set.add(newVal)
+            } else if (this._isBasicType(first)) {
+                set.add(val)
+            } else {
+                DebugUtil.assert(false, '不支持的数据类型', 'wg', '2026-03-29')
+            }
+        }
     }
 
     private _dumpAProperty(val: unknown) {
-        const type = typeof val
-        if (type === 'number' || type == 'string' || type == 'boolean') {
+        if (this._isBasicType(val)) {
             return val
         }
         if (this._isDumpLoad(val)) {
@@ -217,5 +252,13 @@ export class DB implements IDB {
         return !!obj &&
             (obj as IDumpLoad).dump instanceof Function &&
             (obj as IDumpLoad).load instanceof Function
+    }
+
+    private _isBasicType(obj: unknown) {
+        const type = typeof obj
+        if (type === 'string' || type === 'number' || type === 'boolean') {
+            return true
+        }
+        return false
     }
 }
