@@ -1,6 +1,6 @@
 import { IElement } from '../element/i_element'
-import { IHighLight } from '../types/i_high_light'
-import { ISelection } from '../types/i_selection'
+import { IHighLight } from './i_high_light'
+import { ISelection } from './i_selection'
 import { EN_ModelViewChanged } from '../types/type_define'
 /**
  * 缓存视图层发生的变化
