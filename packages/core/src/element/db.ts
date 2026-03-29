@@ -81,7 +81,8 @@ export class DB implements IDB {
             if (val2 === undefined || val2 === null)
                 continue
             if (Array.isArray(val1)) {
-                db[key] = this._loadArr(val2 as Array<unknown>)
+                const first = val1[0]
+                db[key] = this._loadArr(val2 as Array<unknown>, first)
             } else if (val1 instanceof Map) {
                 db[key] = this._loadMap(val2 as Map<unknown, unknown>)
             } else if (val1 instanceof Set) {
@@ -145,8 +146,36 @@ export class DB implements IDB {
         return arr1
     }
 
-    private _loadArr(_arr: Array<unknown>) {
-
+    /**
+     * 加载数组
+     * @param arr JSON中的数组
+     * @param first 参考数组的第一个值
+     */
+    private _loadArr(arr: Array<unknown>, first: unknown): Array<unknown> {
+        if (!arr.length) {
+            return []
+        }
+        if (Array.isArray(first)) {
+            return arr.map(val => {
+                return this._loadArr(val as Array<unknown>, first[0])
+            })
+        } else {
+            return arr.map(val => {
+                if (this._isDumpLoad(first)) {
+                    const Ctor = first.constructor as IConstructor<IDumpLoad>
+                    const newVal = new Ctor()
+                    newVal.load(val)
+                    return newVal
+                } else {
+                    const valType = typeof val
+                    if (valType === 'string' || valType === 'boolean' || valType === 'number') {
+                        return val
+                    } else {
+                        DebugUtil.assert(false, '暂不支持的类型', 'wg', '2026-03-29')
+                    }
+                }
+            })
+        }
     }
 
     private _dumpMap(map: Map<unknown, unknown>) {
