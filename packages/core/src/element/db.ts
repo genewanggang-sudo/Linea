@@ -227,6 +227,7 @@ export class DB implements IDB {
             if (this._isDumpLoad(first)) {
                 const Ctor = (first.constructor as IConstructor<IDumpLoad>)
                 const newVal = new Ctor()
+                newVal.load(val)
                 set.add(newVal)
             } else if (this._isBasicType(first)) {
                 set.add(val)
@@ -234,6 +235,7 @@ export class DB implements IDB {
                 DebugUtil.assert(false, '不支持的数据类型', 'wg', '2026-03-29')
             }
         }
+        return set
     }
 
     private _dumpAProperty(val: unknown) {
