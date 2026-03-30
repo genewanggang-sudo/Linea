@@ -52,7 +52,7 @@ export class DocSaver {
     }
 
     private _clearDocument() {
-        const eles = this._doc.filterElements()
+        const eles = this._doc.filterElements(e => !e.dontSave())
         eles.forEach(e => {
             this._doc.elementMgr.delete(e.id.asInt())
         })
@@ -62,7 +62,6 @@ export class DocSaver {
         const newEles: IElement[] = []
         if (!file.doc) return
         file.doc.forEach(_ => {
-            // TODO 补充根据ctor获取构造函数
             const Ctor = this._doc.elementMgr.getElementClsByCtor(_.ctor)
             DebugUtil.assert(Ctor, `cant find element ctor ${_.ctor}`, 'wg', '2026-03-30')
             Document.canCreate = true

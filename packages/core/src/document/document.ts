@@ -1,6 +1,6 @@
 import type { IElement } from '../element/i_element'
 import type { IDocFile, IDocument } from './i_document'
-import { elementMgr, ElementMgr } from './element_mgr'
+import { elementMgr } from './element_mgr'
 import { IDPool } from './id_pool'
 import { ElementId } from '../element/element_id'
 import { TransactionMgr } from '../transaction/transaction_mgr'
@@ -44,6 +44,10 @@ export class Document implements IDocument {
 
     public get id() {
         return this._id
+    }
+
+    public set id(val: string) {
+        this._id = val
     }
 
     public create<T extends IElement>(ctor: IConstructor<T>): T {

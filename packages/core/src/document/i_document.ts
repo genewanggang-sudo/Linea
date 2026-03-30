@@ -1,5 +1,5 @@
 import { ElementId } from '../element/element_id'
-import type { IElement, IElementCtor } from '../element/i_element'
+import type { IElement } from '../element/i_element'
 import { ModelView } from '../model_view/model_view';
 import { RequestMgr } from '../request/request_mgr';
 import { TransactionMgr } from '../transaction/transaction_mgr';
