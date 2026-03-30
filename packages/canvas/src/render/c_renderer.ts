@@ -90,6 +90,10 @@ export class CRenderer extends IRender {
         // 当前 render loop 持续执行，这里先保留空实现
     }
 
+    public updateImmediately(): void {
+
+    }
+
     /**
      * 根据渲染数据更新显示对象
      */

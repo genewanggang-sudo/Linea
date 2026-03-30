@@ -17,4 +17,8 @@ export class NullRender implements IRender {
     public updateView(): void {
         throw new Error('Method not implemented.');
     }
+
+    public updateImmediately(): void {
+        throw new Error('Method not implemented.');
+    }
 }

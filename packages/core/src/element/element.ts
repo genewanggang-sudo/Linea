@@ -149,4 +149,8 @@ export class Element extends DB implements IElement {
         ele.load(data)
         return ele
     }
+
+    public onLoad(): void {
+        this.markGRepDirty()
+    }
 }

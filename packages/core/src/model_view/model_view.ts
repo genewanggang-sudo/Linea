@@ -34,7 +34,16 @@ export class ModelView {
         this._doc = doc
     }
 
-    public updateView() {
+    public updateView(rebuild = false) {
+        if (rebuild) {
+            this.iRender.clearSelection()
+            this.iRender.clearActive()
+            this.generateAll()
+            this.iRender.updateImmediately()
+            this.cacheForView.clear()
+            return
+        }
+
         if (!this.cacheForView.isChange()) return
 
         this._renderDirty = false
@@ -46,6 +55,27 @@ export class ModelView {
             this.iRender.updateView()
         }
         this.cacheForView.clear()
+    }
+
+    public generateAll() {
+        this.clearAll()
+        for (const e of this._doc.filterElements()) {
+            if (!this._isElementValid(e)) {
+                continue
+            }
+            const grep = e.getGRep()
+            if (grep) {
+                this._addGRep(grep)
+            }
+        }
+    }
+
+    /**
+     * 清空modelview
+     */
+    public clearAll() {
+        this._eid2didMap.forEach((v, k) => this._removeGRep(k));
+        this._eid2didMap.clear();
     }
 
     private _updateElements() {

@@ -76,6 +76,9 @@ export class IDPool {
         return new ElementId(id);
     }
 
+    /**
+     * 重置稳定ID的起始计数
+     */
     public clearStableId(startIdx: number) {
         this._currentStableIndex = startIdx;
     }

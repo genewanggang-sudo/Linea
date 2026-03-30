@@ -64,6 +64,8 @@ export interface IElement extends IDB {
 
     clone(): this
 
+    onLoad(): void
+
 }
 
 export type T_SerializedId = {

@@ -6,6 +6,8 @@ export abstract class IRender {
      */
     public abstract updateView(): void
 
+    public abstract updateImmediately(): void
+
     /**
      * 清空高亮
      */

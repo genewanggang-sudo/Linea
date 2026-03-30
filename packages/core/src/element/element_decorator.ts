@@ -1,4 +1,5 @@
 ﻿import { Document } from '../document/document';
+import { elementMgr } from '../document/element_mgr';
 import { EN_ModelViewChanged } from '../types/type_define';
 import { IElement, IElementCtor } from './i_element';
 
@@ -7,6 +8,7 @@ export const RegisterElement = (ctorStr: string) => {
         Ctor.serializedId = {
             ctor: ctorStr,
         }
+        elementMgr.registerElement(ctorStr, Ctor)
         Document.canCreate = true
         const tmpEle = new Ctor();
         Document.canCreate = false;

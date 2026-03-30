@@ -1,6 +1,6 @@
 import type { IElement } from '../element/i_element'
-import type { IDocument } from './i_document'
-import { ElementMgr } from './element_mgr'
+import type { IDocFile, IDocument } from './i_document'
+import { elementMgr, ElementMgr } from './element_mgr'
 import { IDPool } from './id_pool'
 import { ElementId } from '../element/element_id'
 import { TransactionMgr } from '../transaction/transaction_mgr'
@@ -9,17 +9,24 @@ import { IConstructor } from '../types/type_guard'
 import { requestMgr } from '../request/request_mgr'
 import { EN_ModelViewChanged } from '../types/type_define'
 import { ModelView } from '../model_view/model_view'
+import { brep } from '@ccpc/math'
+import { DocSaver } from './doc_saver'
 
 export class Document implements IDocument {
 
     public isMainDoc: boolean = false
+
+    /**
+     * 文档唯一标识
+     */
+    private _id: string
 
     /**是否可以创建对象*/
     public static canCreate = false;
 
     public readonly idPool = new IDPool()
 
-    public readonly elementMgr: ElementMgr
+    public readonly elementMgr = elementMgr
 
     public readonly transactionMgr: TransactionMgr
 
@@ -28,11 +35,15 @@ export class Document implements IDocument {
     public readonly modelView: ModelView
 
     constructor() {
-        this.elementMgr = new ElementMgr()
+        this._id = brep.uuid()
         this.transactionMgr = new TransactionMgr()
         this.transactionMgr.init(this)
         this.requestMgr.init(this)
         this.modelView = new ModelView(this);
+    }
+
+    public get id() {
+        return this._id
     }
 
     public create<T extends IElement>(ctor: IConstructor<T>): T {
@@ -102,6 +113,17 @@ export class Document implements IDocument {
         return result
     }
 
+    // public getElementClsByCtor(ctor:string) {
+    //     return this
+    // }
+
+    public filterElements(filter?: (ele: IElement) => boolean) {
+        if (!filter) {
+            return this.elementMgr.getAllElements()
+        }
+        return this.elementMgr.getAllElements().filter(filter)
+    }
+
     public checkIfCanModifyDoc(): void {
         DebugUtil.assert(this.transactionMgr.getCurrentTransaction(), '事务外不可修改文档', 'wg', '2025-11-18');
     }
@@ -110,9 +132,21 @@ export class Document implements IDocument {
         this.modelView.cacheForView.cacheElementChanged(evtType, elements)
     }
 
-    public updateView(_rebuild: boolean = false) {
-        this.modelView.updateView()
+    public updateView(rebuild: boolean = false) {
+        this.modelView.updateView(rebuild)
         return true
+    }
+
+    public dump() {
+        const docSaver = new DocSaver(this)
+        const file = docSaver.dump()
+        return file
+    }
+
+    public load(file: IDocFile) {
+        const docSaver = new DocSaver(this)
+        docSaver.syncLoad(file)
+        return this
     }
 
     // TODO 补充完整
