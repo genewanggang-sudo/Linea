@@ -13,6 +13,7 @@ import {
   type PlaygroundState,
   type ShapeKind,
 } from './playground'
+import { exportCurrentDocument, importCurrentDocument } from './playground_doc_io'
 
 const mountRef = ref<HTMLElement | null>(null)
 
@@ -42,6 +43,11 @@ const tools: Array<{ id: ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear' 
   { id: 'styleDemo' },
   { id: 'clear' },
 ]
+
+const docActions = [
+  { id: 'export', label: '导出文档' },
+  { id: 'import', label: '加载文档' },
+] as const
 
 const hintText = computed(() => {
   const parts = [state.drawing.title, state.drawing.detail]
@@ -76,6 +82,14 @@ function handleToolClick(id: ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'cle
   void armTool(id)
 }
 
+function handleDocAction(id: typeof docActions[number]['id']) {
+  if (id === 'export') {
+    exportCurrentDocument()
+    return
+  }
+  void importCurrentDocument()
+}
+
 onMounted(() => {
   if (mountRef.value) {
     bootstrapPlayground(mountRef.value)
@@ -106,6 +120,18 @@ onBeforeUnmount(() => {
           >
             <span class="tool-label" :style="{ color: toolMeta[tool.id].accent }">
               {{ toolMeta[tool.id].label }}
+            </span>
+          </n-button>
+          <n-button
+            v-for="action in docActions"
+            :key="action.id"
+            tertiary
+            strong
+            class="tool-button doc-action"
+            @click="handleDocAction(action.id)"
+          >
+            <span class="tool-label doc-label">
+              {{ action.label }}
             </span>
           </n-button>
         </n-flex>
@@ -185,9 +211,18 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.32) inset;
 }
 
+.doc-action {
+  background: rgba(12, 20, 16, 0.88);
+  border-color: rgba(52, 211, 153, 0.18);
+}
+
 .tool-label {
   font-size: 12px;
   font-weight: 700;
+}
+
+.doc-label {
+  color: #a7f3d0;
 }
 
 .hint {

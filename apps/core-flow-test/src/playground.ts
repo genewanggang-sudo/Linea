@@ -1,7 +1,4 @@
 ﻿import {
-    ArcElement,
-    BSplineElement,
-    CircleElement,
     CreateArcRequest,
     CreateBSplineRequest,
     CreateCircleRequest,
@@ -10,76 +7,47 @@
     CreateLineRequest,
     CreatePolylineRequest,
     CreateRectLineRequest,
-    EllipseArcElement,
-    EllipseElement,
-    LineElement,
-    PolyLineElement,
-    RectLineElement,
 } from '@ccpc/editor_sdk'
 import {
-    EN_AnchorX,
-    EN_AnchorY,
     Document,
-    Element,
     GCurve2d,
     GNode,
     GPoint2d,
     GPolycurve,
-    GPolygon,
     GRep,
-    GText2d,
-    RegisterElement,
-    Request,
     TmpElementPainter,
-    registerRequest,
     requestMgr,
 } from '@ccpc/core'
 import type { IMouseEvent } from '@ccpc/canvas'
-import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, Polygon, PolyCurve, Vec2 } from '@ccpc/math'
+import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
 import type { IPickedResult } from '@ccpc/platform'
+import { RandomPolygonElement } from './playground_elements'
+import {
+    ClearTestShapesReq,
+    DrawRandomPolygonReq,
+    LoadEngineeringDemoReq,
+    LoadStyleDemoReq,
+} from './playground_requests'
+import {
+    type PlaygroundState,
+    type ShapeKind,
+    type ToolId,
+    toolMeta,
+} from './playground_defs'
+import {
+    emitPlaygroundState,
+    resetDrawingStatus,
+    setCursorWorld,
+    setToast,
+    subscribePlayground,
+    updateDrawingStatus as updateDrawingStatusState,
+} from './playground_state'
 
 declare global {
     interface Window {
         app: typeof app
     }
-}
-
-export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
-export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
-
-export type CursorPoint = {
-    x: number
-    y: number
-}
-
-export type DrawingState = {
-    activeTool: ShapeKind | null
-    title: string
-    detail: string
-    steps: string[]
-    fixedPoints: number
-}
-
-export type PlaygroundState = {
-    cursorWorld: CursorPoint | null
-    drawing: DrawingState
-    toast: string
-}
-
-export const toolMeta: Record<ToolId, { label: string, accent: string, subtitle: string }> = {
-    polyline: { label: '绘制折线', accent: '#22c55e', subtitle: '依次拾取多个折线点' },
-    rectLine: { label: '绘制矩形', accent: '#f59e0b', subtitle: '通过两个角点生成矩形' },
-    line: { label: '绘制直线', accent: '#38bdf8', subtitle: '两点定义线段' },
-    circle: { label: '绘制圆', accent: '#60a5fa', subtitle: '圆心加半径点' },
-    arc: { label: '绘制圆弧', accent: '#fb923c', subtitle: '三点定义圆弧' },
-    ellipse: { label: '绘制椭圆', accent: '#34d399', subtitle: '中心加长短轴点' },
-    ellipseArc: { label: '绘制椭圆弧', accent: '#4ade80', subtitle: '五点拟合椭圆弧' },
-    bspline: { label: '绘制 B 样条', accent: '#f472b6', subtitle: '四点控制点样条' },
-    polygon: { label: '插入轮廓', accent: '#a78bfa', subtitle: '插入随机测试轮廓' },
-    demo: { label: '加载图框', accent: '#fbbf24', subtitle: '显示工程图图框与投影视图' },
-    styleDemo: { label: '样式测试', accent: '#22d3ee', subtitle: '验证 style 机制链路' },
-    clear: { label: '清空画布', accent: '#f87171', subtitle: '删除当前测试图形' },
 }
 
 const shapePointCount: Record<ShapeKind, number> = {
@@ -109,32 +77,15 @@ const shapeSteps: Record<ShapeKind, string[]> = {
     bspline: ['点击样条点 1', '点击样条点 2', '点击样条点 3', '点击样条点 4'],
 }
 
-const defaultDetail = '请选择上方工具。滚轮缩放，拖拽平移，Esc 可取消当前命令。'
-
-const state: PlaygroundState = {
-    cursorWorld: null,
-    drawing: {
-        activeTool: null,
-        title: '工程图演示台已就绪',
-        detail: defaultDetail,
-        steps: [],
-        fixedPoints: 0,
-    },
-    toast: '空闲',
-}
-
-const subscribers = new Set<(state: PlaygroundState) => void>()
-
 let activeDoc: Document | undefined
 let canvasBootstrapped = false
 let mountNode: HTMLElement | undefined
-let shapeSeed = 1
 
 const engineeringSheetFrame = {
-    minX: -560,
-    maxX: 560,
-    minY: -380,
-    maxY: 380,
+    minX: -148.5,
+    maxX: 148.5,
+    minY: -105,
+    maxY: 105,
 }
 
 function countDistinctPoints(points: Vec2[], eps = 1e-6) {
@@ -145,6 +96,22 @@ function countDistinctPoints(points: Vec2[], eps = 1e-6) {
         }
     }
     return distinct.length
+}
+
+function isSamePoint(a: Vec2, b: Vec2, eps = 1e-6) {
+    return a.distanceTo(b) <= eps
+}
+
+function removeAdjacentDuplicatePoints(points: Vec2[], eps = 1e-6) {
+    const filtered: Vec2[] = []
+    for (const point of points) {
+        const last = filtered[filtered.length - 1]
+        if (last && isSamePoint(last, point, eps)) {
+            continue
+        }
+        filtered.push(point)
+    }
+    return filtered
 }
 
 function getCanvasWorkPlaneApi() {
@@ -179,55 +146,8 @@ function syncSelection(gnode?: GNode) {
     activeDoc.updateView()
 }
 
-function emitState() {
-    const snapshot: PlaygroundState = {
-        cursorWorld: state.cursorWorld ? { ...state.cursorWorld } : null,
-        toast: state.toast,
-        drawing: {
-            ...state.drawing,
-            steps: [...state.drawing.steps],
-        },
-    }
-    subscribers.forEach(listener => listener(snapshot))
-}
-
-function setToast(message: string) {
-    state.toast = message
-    emitState()
-}
-
-function resetDrawingStatus(detail = defaultDetail) {
-    state.drawing = {
-        activeTool: null,
-        title: '工程图演示台已就绪',
-        detail,
-        steps: [],
-        fixedPoints: 0,
-    }
-    emitState()
-}
-
 function updateDrawingStatus(kind: ShapeKind, fixedPoints: number) {
-    const steps = shapeSteps[kind]
-    const nextStep = kind === 'bspline'
-        ? `继续点击控制点，当前 ${fixedPoints} 个，右键完成`
-        : steps[Math.min(fixedPoints, steps.length - 1)]
-    state.drawing = {
-        activeTool: kind,
-        title: toolMeta[kind].label,
-        detail: kind === 'bspline'
-            ? `${nextStep}。`
-            : `${nextStep}，已固定 ${fixedPoints}/${steps.length} 个点。`,
-        steps,
-        fixedPoints,
-    }
-    emitState()
-}
-
-function nextShapeName(kind: ToolId) {
-    const name = `${kind}-${shapeSeed}`
-    shapeSeed += 1
-    return name
+    updateDrawingStatusState(kind, fixedPoints, shapeSteps[kind])
 }
 
 function clonePoints(points: Vec2[]) {
@@ -236,89 +156,6 @@ function clonePoints(points: Vec2[]) {
 
 function appendGRep(target: GRep, source: GRep) {
     source.children.forEach(node => target.addNode(node))
-}
-
-function addLine(grep: GRep, start: Vec2, end: Vec2) {
-    grep.addNode(new GCurve2d(Plane.XOY(), new Ln2(start, end)))
-}
-
-function addRect(grep: GRep, center: Vec2, width: number, height: number) {
-    const halfW = width * 0.5
-    const halfH = height * 0.5
-    const lb = new Vec2(center.x - halfW, center.y - halfH)
-    const rb = new Vec2(center.x + halfW, center.y - halfH)
-    const rt = new Vec2(center.x + halfW, center.y + halfH)
-    const lt = new Vec2(center.x - halfW, center.y + halfH)
-    addLine(grep, lb, rb)
-    addLine(grep, rb, rt)
-    addLine(grep, rt, lt)
-    addLine(grep, lt, lb)
-}
-
-function addCircle(grep: GRep, center: Vec2, radius: number) {
-    grep.addNode(new GCurve2d(
-        Plane.XOY(),
-        new Arc2(new Coord2(center, Vec2.X()), radius, radius, true, [0, Math.PI * 2]),
-    ))
-}
-
-function addText(grep: GRep, text: string, position: Vec2) {
-    grep.addNode(new GText2d(text, Plane.XOY(), position))
-}
-
-function addStyledText(grep: GRep, text: string, position: Vec2, fontSize = 16, color = '#d7e3f4') {
-    const node = new GText2d(text, Plane.XOY(), position)
-    node.setStyle({
-        text: {
-            color,
-            fontSize,
-        },
-    })
-    grep.addNode(node)
-}
-
-function addFilledRect(grep: GRep, lb: Vec2, rt: Vec2, color: string, opacity = 0.18) {
-    const face = new GPolygon(Plane.XOY(), Polygon.createByRectangle(lb, rt))
-    face.setStyle({
-        face: {
-            color,
-            opacity,
-        },
-    })
-    grep.addNode(face)
-}
-
-function addStyledLine(grep: GRep, start: Vec2, end: Vec2, color: string, width = 2, opacity = 1) {
-    const node = new GCurve2d(Plane.XOY(), new Ln2(start, end))
-    node.setStyle({
-        line: {
-            color,
-            width,
-            opacity,
-        },
-    })
-    grep.addNode(node)
-}
-
-function addCenterMark(grep: GRep, center: Vec2, radius: number) {
-    addCircle(grep, center, radius)
-    addStyledLine(grep, new Vec2(center.x - radius - 18, center.y), new Vec2(center.x + radius + 18, center.y), '#cbd5e1', 1.2, 0.85)
-    addStyledLine(grep, new Vec2(center.x, center.y - radius - 18), new Vec2(center.x, center.y + radius + 18), '#cbd5e1', 1.2, 0.85)
-}
-
-function addHatchRect(grep: GRep, lb: Vec2, rt: Vec2, spacing = 14, color = '#cbd5e1') {
-    const width = rt.x - lb.x
-    const height = rt.y - lb.y
-    for (let offset = -height; offset <= width; offset += spacing) {
-        const startX = Math.max(lb.x, lb.x + offset)
-        const startY = Math.max(lb.y, lb.y - offset)
-        const endX = Math.min(rt.x, lb.x + offset + height)
-        const endY = Math.min(rt.y, lb.y - offset + width)
-        if (endX - startX < 1 || endY - startY < 1) {
-            continue
-        }
-        addStyledLine(grep, new Vec2(startX, startY), new Vec2(endX, endY), color, 1, 0.75)
-    }
 }
 
 function getEllipseControlPoints(points: Vec2[]) {
@@ -395,7 +232,7 @@ function getEllipseArcControlPoints(points: Vec2[]) {
 
 function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
     if (kind === 'line') {
-        return points.length >= 2 ? new Ln2(points[0], points[1]) : undefined
+        return points.length >= 2 && !isSamePoint(points[0], points[1]) ? new Ln2(points[0], points[1]) : undefined
     }
 
     if (kind === 'circle') {
@@ -449,26 +286,30 @@ function createShapeCurve(kind: ShapeKind, points: Vec2[]) {
 function buildShapeGRep(kind: ShapeKind, points: Vec2[]) {
     const grep = new GRep()
     const plane = Plane.XOY()
+    const renderPoints = removeAdjacentDuplicatePoints(points)
 
     if (kind === 'polyline') {
-        if (points.length >= 2) {
-            grep.addNode(new GPolycurve(plane, new PolyCurve(points)))
+        if (renderPoints.length >= 2 && countDistinctPoints(renderPoints) >= 2) {
+            const polyCurve = new PolyCurve(renderPoints)
+            if (!polyCurve.isEmpty()) {
+                grep.addNode(new GPolycurve(plane, polyCurve))
+            }
         }
         return grep
     }
 
     if (kind === 'rectLine') {
-        if (points.length >= 2) {
-            grep.addNode(new GPolycurve(plane, Loop.createByRectangle(points[0], points[1])))
+        if (renderPoints.length >= 2 && !isSamePoint(renderPoints[0], renderPoints[1])) {
+            grep.addNode(new GPolycurve(plane, Loop.createByRectangle(renderPoints[0], renderPoints[1])))
         }
         return grep
     }
 
-    const curve = createShapeCurve(kind, points)
+    const curve = createShapeCurve(kind, renderPoints)
     if (curve) {
         grep.addNode(new GCurve2d(plane, curve))
-    } else if (points.length >= 2 && kind !== 'ellipse' && kind !== 'ellipseArc') {
-        grep.addNode(new GCurve2d(plane, new Ln2(points[0], points[1])))
+    } else if (renderPoints.length >= 2 && !isSamePoint(renderPoints[0], renderPoints[1]) && kind !== 'ellipse' && kind !== 'ellipseArc') {
+        grep.addNode(new GCurve2d(plane, new Ln2(renderPoints[0], renderPoints[1])))
     }
 
     return grep
@@ -486,7 +327,7 @@ function buildHelperGRep(points: Vec2[]) {
             },
         })
         grep.addNode(point)
-        if (i > 0) {
+        if (i > 0 && !isSamePoint(points[i - 1], points[i])) {
             const line = new GCurve2d(plane, new Ln2(points[i - 1], points[i]))
             line.setStyle({
                 line: {
@@ -542,7 +383,12 @@ function buildEllipseArcGuideGRep(points: Vec2[]) {
 
 function buildShapePreviewGRep(kind: ShapeKind, fixedPoints: Vec2[], cursor?: Vec2) {
     const previewPoints = clonePoints(fixedPoints)
-    if (cursor && (kind === 'bspline' || previewPoints.length < shapePointCount[kind])) {
+    const lastPreviewPoint = previewPoints[previewPoints.length - 1]
+    if (
+        cursor &&
+        (kind === 'bspline' || previewPoints.length < shapePointCount[kind]) &&
+        (!lastPreviewPoint || !isSamePoint(lastPreviewPoint, cursor))
+    ) {
         previewPoints.push(cursor.clone())
     }
 
@@ -672,448 +518,6 @@ function normalizeShapePoint(kind: ShapeKind, fixedPoints: Vec2[], point: Vec2) 
     }
 
     return point
-}
-
-function createRandomPolygon() {
-    const center = new Vec2(Math.random() * 420 - 210, Math.random() * 260 - 130)
-    const width = 180 + Math.random() * 140
-    const height = 110 + Math.random() * 120
-    const radius = Math.min(width, height) * 0.18
-    const loop = new Loop([
-        new Ln2(new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5), new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5 + radius), new Vec2(center.x + width * 0.5 - radius, center.y - height * 0.5), new Vec2(center.x + width * 0.5, center.y - height * 0.5 + radius), true),
-        new Ln2(new Vec2(center.x + width * 0.5, center.y - height * 0.5 + radius), new Vec2(center.x + width * 0.5, center.y + height * 0.5 - radius)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5 - radius), new Vec2(center.x + width * 0.5, center.y + height * 0.5 - radius), new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5), true),
-        new Ln2(new Vec2(center.x + width * 0.5 - radius, center.y + height * 0.5), new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5 - radius), new Vec2(center.x - width * 0.5 + radius, center.y + height * 0.5), new Vec2(center.x - width * 0.5, center.y + height * 0.5 - radius), true),
-        new Ln2(new Vec2(center.x - width * 0.5, center.y + height * 0.5 - radius), new Vec2(center.x - width * 0.5, center.y - height * 0.5 + radius)),
-        Arc2.makeArcByStartEndPoints(new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5 + radius), new Vec2(center.x - width * 0.5, center.y - height * 0.5 + radius), new Vec2(center.x - width * 0.5 + radius, center.y - height * 0.5), true),
-    ])
-
-    const polygon = new Polygon()
-    polygon.addLoop(loop.rotate((Math.random() - 0.5) * Math.PI * 0.7, center), false)
-    return polygon
-}
-
-function buildPolygonGRep(polygon: Polygon) {
-    const grep = new GRep()
-    grep.addNode(new GPolygon(Plane.XOY(), polygon))
-    return grep
-}
-
-function buildEngineeringSheetGRep() {
-    const grep = new GRep()
-
-    addRect(grep, new Vec2(0, 0), 1120, 760)
-    addRect(grep, new Vec2(0, 0), 1080, 720)
-
-    // Main view
-    addRect(grep, new Vec2(-220, 20), 256, 210)
-    addRect(grep, new Vec2(-220, 20), 164, 116)
-    addRect(grep, new Vec2(-272, 60), 60, 34)
-    addRect(grep, new Vec2(-272, -20), 60, 34)
-    addLine(grep, new Vec2(-348, 20), new Vec2(-92, 20))
-    addLine(grep, new Vec2(-220, -86), new Vec2(-220, 124))
-    addLine(grep, new Vec2(-302, 78), new Vec2(-138, 78))
-    addLine(grep, new Vec2(-302, -38), new Vec2(-138, -38))
-    addLine(grep, new Vec2(-302, -20), new Vec2(-302, 60))
-    addLine(grep, new Vec2(-138, -20), new Vec2(-138, 60))
-    addCenterMark(grep, new Vec2(-220, 20), 28)
-    addStyledLine(grep, new Vec2(-156, 120), new Vec2(-156, -82), '#fbbf24', 1.2, 0.9)
-    addStyledLine(grep, new Vec2(-284, 120), new Vec2(-284, -82), '#fbbf24', 1.2, 0.9)
-    addStyledText(grep, 'A', new Vec2(-284, 136), 16, '#fbbf24')
-    addStyledText(grep, 'A', new Vec2(-156, 136), 16, '#fbbf24')
-
-    // Top view
-    addRect(grep, new Vec2(-220, 248), 164, 120)
-    addRect(grep, new Vec2(-220, 248), 92, 74)
-    addLine(grep, new Vec2(-302, 216), new Vec2(-138, 216))
-    addLine(grep, new Vec2(-302, 280), new Vec2(-138, 280))
-    addLine(grep, new Vec2(-262, 188), new Vec2(-262, 308))
-    addLine(grep, new Vec2(-178, 188), new Vec2(-178, 308))
-    addCenterMark(grep, new Vec2(-220, 248), 22)
-
-    // Right view
-    addRect(grep, new Vec2(120, 34), 196, 180)
-    addRect(grep, new Vec2(120, 34), 132, 92)
-    addLine(grep, new Vec2(22, 84), new Vec2(218, 84))
-    addLine(grep, new Vec2(22, -16), new Vec2(218, -16))
-    addLine(grep, new Vec2(70, -56), new Vec2(70, 124))
-    addLine(grep, new Vec2(170, -56), new Vec2(170, 124))
-    addCenterMark(grep, new Vec2(120, 34), 24)
-
-    // Section A-A
-    addRect(grep, new Vec2(120, 248), 218, 140)
-    addFilledRect(grep, new Vec2(31, 198), new Vec2(209, 298), '#94a3b8', 0.12)
-    addHatchRect(grep, new Vec2(31, 198), new Vec2(209, 298), 14, '#cbd5e1')
-    addRect(grep, new Vec2(87, 248), 36, 64)
-    addRect(grep, new Vec2(153, 248), 36, 64)
-    addLine(grep, new Vec2(31, 248), new Vec2(209, 248))
-    addStyledText(grep, '剖面 A-A', new Vec2(120, 160), 16)
-
-    addStyledText(grep, '主视图', new Vec2(-220, -118), 16)
-    addStyledText(grep, '俯视图', new Vec2(-220, 166), 16)
-    addStyledText(grep, '右视图', new Vec2(120, -98), 16)
-
-    // Professional title block at the lower-right corner.
-    const x0 = 180
-    const x1 = 240
-    const x2 = 330
-    const x3 = 420
-    const x4 = 520
-    const y0 = -340
-    const y1 = -300
-    const y2 = -260
-    const y3 = -220
-    const y4 = -160
-
-    addRect(grep, new Vec2((x0 + x4) * 0.5, (y0 + y4) * 0.5), x4 - x0, y4 - y0)
-    addLine(grep, new Vec2(x1, y0), new Vec2(x1, y4))
-    addLine(grep, new Vec2(x2, y0), new Vec2(x2, y4))
-    addLine(grep, new Vec2(x3, y0), new Vec2(x3, y4))
-    addLine(grep, new Vec2(x0, y1), new Vec2(x4, y1))
-    addLine(grep, new Vec2(x0, y2), new Vec2(x4, y2))
-    addLine(grep, new Vec2(x0, y3), new Vec2(x4, y3))
-
-    // Merge the upper-right cells for the drawing title.
-    addLine(grep, new Vec2(x2, y3), new Vec2(x4, y3))
-    addLine(grep, new Vec2(x2, y2), new Vec2(x4, y2))
-    addLine(grep, new Vec2(x2, y1), new Vec2(x4, y1))
-
-    addText(grep, '设计', new Vec2((x0 + x1) * 0.5, (y3 + y4) * 0.5))
-    addText(grep, '校核', new Vec2((x0 + x1) * 0.5, (y2 + y3) * 0.5))
-    addText(grep, '批准', new Vec2((x0 + x1) * 0.5, (y1 + y2) * 0.5))
-    addText(grep, '日期', new Vec2((x0 + x1) * 0.5, (y0 + y1) * 0.5))
-
-    addText(grep, '王工', new Vec2((x1 + x2) * 0.5, (y3 + y4) * 0.5))
-    addText(grep, '李工', new Vec2((x1 + x2) * 0.5, (y2 + y3) * 0.5))
-    addText(grep, '张工', new Vec2((x1 + x2) * 0.5, (y1 + y2) * 0.5))
-    addText(grep, '2026-03-16', new Vec2((x1 + x2) * 0.5, (y0 + y1) * 0.5))
-
-    addText(grep, '支架总成工程图', new Vec2((x2 + x4) * 0.5, (y3 + y4) * 0.5))
-    addText(grep, '材质  Q235-B', new Vec2((x2 + x3) * 0.5, (y2 + y3) * 0.5))
-    addText(grep, '比例  1:2', new Vec2((x3 + x4) * 0.5, (y2 + y3) * 0.5))
-    addText(grep, '单位  mm', new Vec2((x2 + x3) * 0.5, (y1 + y2) * 0.5))
-    addText(grep, '图号  A-1024', new Vec2((x3 + x4) * 0.5, (y1 + y2) * 0.5))
-    addText(grep, '阶段  方案评审', new Vec2((x2 + x3) * 0.5, (y0 + y1) * 0.5))
-    addText(grep, '页次  1 / 1', new Vec2((x3 + x4) * 0.5, (y0 + y1) * 0.5))
-
-    return grep
-}
-
-function assertStyle(title: string, condition: boolean, payload?: unknown) {
-    console.assert(condition, `[style-demo] ${title}`, payload)
-    if (!condition) {
-        console.error(`[style-demo] ${title}`, payload)
-    }
-}
-
-function buildStyleDemoGRep() {
-    const grep = new GRep()
-
-    addText(grep, 'Style Mechanism Demo', new Vec2(-420, 310))
-    addText(grep, 'default', new Vec2(-360, 230))
-    addText(grep, 'local style', new Vec2(-40, 230))
-    addText(grep, 'inherit', new Vec2(290, 230))
-
-    const pointDefault = new GPoint2d(Plane.XOY(), new Vec2(-360, 140))
-    const pointLocal = new GPoint2d(Plane.XOY(), new Vec2(-40, 140))
-    pointLocal.setStyle({
-        point: {
-            color: '#ef4444',
-            size: 16,
-            opacity: 0.45,
-        },
-    })
-    const pointParent = new GRep().setStyle({
-        point: {
-            color: '#06b6d4',
-            size: 20,
-            opacity: 0.55,
-        },
-    })
-    pointParent.addNode(new GPoint2d(Plane.XOY(), new Vec2(290, 140)))
-    grep.addNode(pointDefault)
-    grep.addNode(pointLocal)
-    grep.addNode(pointParent)
-
-    const lineDefault = new GCurve2d(Plane.XOY(), new Ln2(new Vec2(-420, 40), new Vec2(-300, 40)))
-    const lineLocal = new GCurve2d(Plane.XOY(), new Ln2(new Vec2(-100, 40), new Vec2(20, 40)))
-    lineLocal.setStyle({
-        line: {
-            color: '#22c55e',
-            width: 6,
-            opacity: 0.4,
-        },
-    })
-    const lineParent = new GRep().setStyle({
-        line: {
-            color: '#f59e0b',
-            width: 10,
-            opacity: 0.65,
-        },
-    })
-    lineParent.addNode(new GCurve2d(Plane.XOY(), new Ln2(new Vec2(230, 40), new Vec2(350, 40))))
-    grep.addNode(lineDefault)
-    grep.addNode(lineLocal)
-    grep.addNode(lineParent)
-
-    const polygonDefault = new GPolygon(Plane.XOY(), Polygon.createByRectangle(new Vec2(-420, -130), new Vec2(-300, -40)))
-    const polygonLocal = new GPolygon(Plane.XOY(), Polygon.createByRectangle(new Vec2(-100, -130), new Vec2(20, -40)))
-    polygonLocal.setStyle({
-        face: {
-            color: '#3b82f6',
-            opacity: 0.42,
-        },
-    })
-    const polygonParent = new GRep().setStyle({
-        face: {
-            color: '#8b5cf6',
-            opacity: 0.58,
-        },
-    })
-    polygonParent.addNode(new GPolygon(Plane.XOY(), Polygon.createByRectangle(new Vec2(230, -130), new Vec2(350, -40))))
-    grep.addNode(polygonDefault)
-    grep.addNode(polygonLocal)
-    grep.addNode(polygonParent)
-
-    const textDefault = new GText2d('Default text', Plane.XOY(), new Vec2(-360, -245))
-    const textLocal = new GText2d('Styled text', Plane.XOY(), new Vec2(-40, -245))
-    textLocal.setStyle({
-        text: {
-            color: '#f97316',
-            fontSize: 28,
-            anchorX: EN_AnchorX.Left,
-            anchorY: EN_AnchorY.Top,
-        },
-    })
-    const textParent = new GRep().setStyle({
-        text: {
-            color: '#14b8a6',
-            fontSize: 24,
-            anchorX: EN_AnchorX.Right,
-            anchorY: EN_AnchorY.Bottom,
-        },
-    })
-    textParent.addNode(new GText2d('Inherited text', Plane.XOY(), new Vec2(290, -245)))
-    grep.addNode(textDefault)
-    grep.addNode(textLocal)
-    grep.addNode(textParent)
-
-    const pointLocalStyle = pointLocal.toRenderNode().style.point
-    assertStyle('point local style applied', pointLocalStyle?.color === '#ef4444'
-        && pointLocalStyle?.size === 16
-        && pointLocalStyle?.opacity === 0.45, pointLocalStyle)
-
-    const pointInheritedStyle = pointParent.children[0].toRenderNode().style.point
-    assertStyle('point inherited style applied', pointInheritedStyle?.color === '#06b6d4'
-        && pointInheritedStyle?.size === 20
-        && pointInheritedStyle?.opacity === 0.55, pointInheritedStyle)
-
-    const lineLocalStyle = lineLocal.toRenderNode().style.line
-    assertStyle('line local style applied', lineLocalStyle?.color === '#22c55e'
-        && lineLocalStyle?.width === 6
-        && lineLocalStyle?.opacity === 0.4, lineLocalStyle)
-
-    const lineInheritedStyle = lineParent.children[0].toRenderNode().style.line
-    assertStyle('line inherited style applied', lineInheritedStyle?.color === '#f59e0b'
-        && lineInheritedStyle?.width === 10
-        && lineInheritedStyle?.opacity === 0.65, lineInheritedStyle)
-
-    const faceLocalStyle = polygonLocal.toRenderNode().style.face
-    assertStyle('face local style applied', faceLocalStyle?.color === '#3b82f6'
-        && faceLocalStyle?.opacity === 0.42, faceLocalStyle)
-
-    const faceInheritedStyle = polygonParent.children[0].toRenderNode().style.face
-    assertStyle('face inherited style applied', faceInheritedStyle?.color === '#8b5cf6'
-        && faceInheritedStyle?.opacity === 0.58, faceInheritedStyle)
-
-    const textLocalStyle = textLocal.toRenderNode().style.text
-    assertStyle('text local style applied', textLocalStyle?.color === '#f97316'
-        && textLocalStyle?.fontSize === 28
-        && textLocalStyle?.anchorX === EN_AnchorX.Left
-        && textLocalStyle?.anchorY === EN_AnchorY.Top, textLocalStyle)
-
-    const textInheritedStyle = textParent.children[0].toRenderNode().style.text
-    assertStyle('text inherited style applied', textInheritedStyle?.color === '#14b8a6'
-        && textInheritedStyle?.fontSize === 24
-        && textInheritedStyle?.anchorX === EN_AnchorX.Right
-        && textInheritedStyle?.anchorY === EN_AnchorY.Bottom, textInheritedStyle)
-
-    addText(grep, 'Anchor Probe', new Vec2(-420, -340))
-
-    const anchorCenter = new Vec2(260, -350)
-    const guideColor = '#64748b'
-    const guideLineStyle = {
-        line: {
-            color: guideColor,
-            width: 1,
-            opacity: 0.75,
-        },
-    }
-    const guidePointStyle = {
-        point: {
-            color: '#e2e8f0',
-            size: 6,
-            opacity: 1,
-        },
-    }
-    const guideTextStyle = {
-        text: {
-            color: '#94a3b8',
-            fontSize: 14,
-        },
-    }
-
-    const horizontalGuide = new GCurve2d(Plane.XOY(), new Ln2(
-        new Vec2(anchorCenter.x - 170, anchorCenter.y),
-        new Vec2(anchorCenter.x + 170, anchorCenter.y),
-    ))
-    horizontalGuide.setStyle(guideLineStyle)
-    grep.addNode(horizontalGuide)
-
-    const verticalGuide = new GCurve2d(Plane.XOY(), new Ln2(
-        new Vec2(anchorCenter.x, anchorCenter.y - 120),
-        new Vec2(anchorCenter.x, anchorCenter.y + 120),
-    ))
-    verticalGuide.setStyle(guideLineStyle)
-    grep.addNode(verticalGuide)
-
-    const centerPoint = new GPoint2d(Plane.XOY(), anchorCenter.clone())
-    centerPoint.setStyle(guidePointStyle)
-    grep.addNode(centerPoint)
-
-    const centerLabel = new GText2d('cross = shared anchor point', Plane.XOY(), new Vec2(anchorCenter.x - 150, anchorCenter.y + 132))
-    centerLabel.setStyle(guideTextStyle)
-    grep.addNode(centerLabel)
-
-    const anchorSpecs: Array<{
-        label: string
-        pos: Vec2
-        anchorX: EN_AnchorX
-        anchorY: EN_AnchorY
-        color: string
-    }> = [
-            {
-                label: 'Left / Top',
-                pos: new Vec2(anchorCenter.x - 120, anchorCenter.y + 80),
-                anchorX: EN_AnchorX.Left,
-                anchorY: EN_AnchorY.Top,
-                color: '#f97316',
-            },
-            {
-                label: 'Center / Middle',
-                pos: new Vec2(anchorCenter.x, anchorCenter.y),
-                anchorX: EN_AnchorX.Center,
-                anchorY: EN_AnchorY.Middle,
-                color: '#22c55e',
-            },
-            {
-                label: 'Right / Bottom',
-                pos: new Vec2(anchorCenter.x + 120, anchorCenter.y - 80),
-                anchorX: EN_AnchorX.Right,
-                anchorY: EN_AnchorY.Bottom,
-                color: '#38bdf8',
-            },
-        ]
-
-    anchorSpecs.forEach(spec => {
-        const probe = new GText2d(spec.label, Plane.XOY(), spec.pos)
-        probe.setStyle({
-            text: {
-                color: spec.color,
-                fontSize: 20,
-                anchorX: spec.anchorX,
-                anchorY: spec.anchorY,
-            },
-        })
-        grep.addNode(probe)
-
-        const probeStyle = probe.toRenderNode().style.text
-        assertStyle(`anchor probe ${spec.label}`, probeStyle?.anchorX === spec.anchorX
-            && probeStyle?.anchorY === spec.anchorY
-            && probeStyle?.color === spec.color
-            && probeStyle?.fontSize === 20, probeStyle)
-    })
-
-    return grep
-}
-
-@RegisterElement('random-polygon-element')
-class RandomPolygonElement extends Element {
-    public polygon: Polygon = new Polygon()
-
-    public override markGRepDirty(): void {
-        this.C_GRep = buildPolygonGRep(this.polygon.clone())
-    }
-}
-
-@RegisterElement('engineering-sheet-element')
-class EngineeringSheetElement extends Element {
-}
-
-@RegisterElement('style-demo-element')
-class StyleDemoElement extends Element {
-}
-
-@registerRequest('draw-random-polygon')
-class DrawRandomPolygonReq extends Request {
-    constructor(private readonly _polygon: Polygon) {
-        super()
-    }
-
-    public execute() {
-        const element = this._doc.create(RandomPolygonElement)
-        element.name = nextShapeName('polygon')
-        element.polygon = this._polygon.clone()
-        element.markGRepDirty()
-        return element
-    }
-}
-
-@registerRequest('load-engineering-demo')
-class LoadEngineeringDemoReq extends Request {
-    public execute() {
-        const element = this._doc.create(EngineeringSheetElement)
-        element.name = nextShapeName('demo')
-        element.setGRep(buildEngineeringSheetGRep())
-        return element
-    }
-}
-
-@registerRequest('load-style-demo')
-class LoadStyleDemoReq extends Request {
-    public execute() {
-        const element = this._doc.create(StyleDemoElement)
-        element.name = nextShapeName('styleDemo')
-        element.setGRep(buildStyleDemoGRep())
-        return element
-    }
-}
-
-@registerRequest('clear-test-shapes')
-class ClearTestShapesReq extends Request {
-    public execute() {
-        const ids = this._doc.elementMgr
-            .getAllElements()
-            .filter(element =>
-                element instanceof LineElement ||
-                element instanceof PolyLineElement ||
-                element instanceof RectLineElement ||
-                element instanceof CircleElement ||
-                element instanceof ArcElement ||
-                element instanceof EllipseElement ||
-                element instanceof EllipseArcElement ||
-                element instanceof BSplineElement ||
-                element instanceof RandomPolygonElement ||
-                element instanceof EngineeringSheetElement ||
-                element instanceof StyleDemoElement)
-            .map(element => element.id)
-
-        if (ids.length > 0) {
-            this._doc.deleteElementsById(...ids)
-        }
-    }
 }
 
 @registerCmd('draw-line-cmd')
@@ -2069,13 +1473,11 @@ function updateCursorFromPointer(evt: PointerEvent) {
     const rect = mountNode.getBoundingClientRect()
     const localPos = new Vec2(evt.clientX - rect.left, evt.clientY - rect.top)
     const world = getCanvasWorkPlaneApi().screenToWorkPlane(localPos)
-    state.cursorWorld = { x: world.x, y: world.y }
-    emitState()
+    setCursorWorld({ x: world.x, y: world.y })
 }
 
 function clearCursor() {
-    state.cursorWorld = null
-    emitState()
+    setCursorWorld(null)
 }
 
 function fitEngineeringDemoView() {
@@ -2144,19 +1546,6 @@ function bindCanvasEvents() {
     window.addEventListener('resize', scheduleFitEngineeringDemoView)
 }
 
-export function subscribePlayground(listener: (state: PlaygroundState) => void) {
-    subscribers.add(listener)
-    listener({
-        cursorWorld: state.cursorWorld ? { ...state.cursorWorld } : null,
-        toast: state.toast,
-        drawing: {
-            ...state.drawing,
-            steps: [...state.drawing.steps],
-        },
-    })
-    return () => subscribers.delete(listener)
-}
-
 export function bootstrapPlayground(mount: HTMLElement) {
     mountNode = mount
     if (canvasBootstrapped) {
@@ -2172,7 +1561,7 @@ export function bootstrapPlayground(mount: HTMLElement) {
     canvasBootstrapped = true
     loadEngineeringDemo()
     scheduleFitEngineeringDemoView()
-    emitState();
+    emitPlaygroundState()
     window.app = app
 }
 
@@ -2208,7 +1597,7 @@ export async function armTool(kind: ShapeKind) {
 }
 
 export function insertRandomPolygon() {
-    requestMgr.executeReq(requestMgr.createReq(DrawRandomPolygonReq, createRandomPolygon()), true)
+    requestMgr.executeReq(requestMgr.createReq(DrawRandomPolygonReq, RandomPolygonElement.createRandomPolygon()), true)
     setToast('已插入一组测试轮廓')
 }
 
@@ -2243,3 +1632,6 @@ export function cancelActiveCommand() {
     resetDrawingStatus('命令已取消，请重新选择工具。')
     setToast('已取消当前命令')
 }
+
+export { subscribePlayground, toolMeta }
+export type { PlaygroundState, ShapeKind }

@@ -1,4 +1,4 @@
-import { AxesHelper, Group, OrthographicCamera, Raycaster, Scene, SRGBColorSpace, Vector2, Vector3, WebGLRenderer } from 'three'
+import { Group, OrthographicCamera, Raycaster, Scene, SRGBColorSpace, Vector2, Vector3, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
 import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
@@ -77,7 +77,7 @@ export class CRenderer extends IRender {
         this._activeSelectionOp = new ActiveSelectionOp(this._activeScene)
 
         // TODO 测试代码
-        this._scene.add(new AxesHelper(30))
+        // this._scene.add(new AxesHelper(30))
 
         this.render()
     }

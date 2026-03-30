@@ -1,8 +1,9 @@
+import { Loader, types } from '@ccpc/math';
 import { Document } from '../document/document';
 import { DebugUtil } from '../toolkit/debug_util';
 import { EN_DontSavePropPrefix, IJSON } from '../types/type_define';
 import { IConstructor } from '../types/type_guard';
-import { IDB, IDumpLoad, IModifiedProps } from './i_element';
+import { IDB, IDumpLoad, IModifiedProps, MathSymbol } from './i_element';
 
 export class DB implements IDB {
     private _db: IJSON = {}
@@ -92,6 +93,8 @@ export class DB implements IDB {
                 const newVal = new (val1.constructor as IConstructor<IDumpLoad>)()
                 newVal.load(val2)
                 db[key] = newVal
+            } else if (val1 === MathSymbol) {
+                db[key] = Loader.load(val2 as types.IDBLibGeo)
             } else {
                 db[key] = val2
             }
@@ -167,6 +170,9 @@ export class DB implements IDB {
                     const Ctor = first.constructor as IConstructor<IDumpLoad>
                     const newVal = new Ctor()
                     newVal.load(val)
+                    return newVal
+                } else if (first === MathSymbol) {
+                    const newVal = Loader.load(val as types.IDBLibGeo)
                     return newVal
                 } else {
                     const valType = typeof val

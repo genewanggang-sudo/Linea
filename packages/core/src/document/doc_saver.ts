@@ -42,8 +42,7 @@ export class DocSaver {
             const eles = this._doc.filterElements()
             eles.forEach(_ => _.onLoad())
             trans.commit()
-            // TODO 补充完整
-            this._doc.updateView(true)
+            // this._doc.updateView(true)
             return true
         } catch {
             DebugUtil.warn(false, 'parsing saved doc failed', 'wg', '2026-03-30')

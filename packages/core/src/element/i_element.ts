@@ -88,3 +88,15 @@ export type IDumpLoad = {
     dump(): unknown,
     load(val: unknown): void
 }
+
+export const MathSymbol = Symbol('math')
+
+export const DBGenerator = {
+    newGeoArray: <T>() => {
+        return [MathSymbol] as T[];
+    },
+
+    newGeoObject: <T>() => {
+        return MathSymbol as T;
+    },
+};
