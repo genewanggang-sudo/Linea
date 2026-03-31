@@ -8,9 +8,10 @@ export default defineConfig({
         lib: {
             entry: path.resolve(__dirname, 'src/index.ts'),
             formats: ['cjs'],
-            fileName: () => 'index.cjs',
+            fileName: 'index',
         },
         rollupOptions: {
+            // 写在dependencies里,运行时安装依赖
             external: [
                 'uuid',
                 'earcut',
