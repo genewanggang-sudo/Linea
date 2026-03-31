@@ -21,8 +21,6 @@ import { Matrix4 } from '../base/matrix4';
 import { NurbsCurve3 } from './nurbs_curve3';
 import { verb } from '../verb/export_verb';
 
-
-
 /**
  *
  * 三维圆弧

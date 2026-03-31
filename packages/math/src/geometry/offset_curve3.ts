@@ -22,8 +22,6 @@ import { Util } from '../util/util';
 import { CONST } from '../type_define/const';
 import { verb } from '../verb/export_verb';
 
-
-
 /**
  * 仅支持三维空间中的平面曲线
  */

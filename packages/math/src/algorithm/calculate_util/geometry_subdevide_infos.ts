@@ -1,4 +1,4 @@
-// eslint-disable-next-line max-classes-per-file
+
 import { Interval } from '../../base/interval';
 import { Curve3 } from '../../geometry/curve3d';
 import { Curve2 } from '../../geometry/curve2';
@@ -13,8 +13,6 @@ import { Vec } from '../../base/vec';
 import { Curve } from '../../geometry/curve';
 import { Box } from '../../base/box';
 import { CircularSurface } from '../../geometry/circular_surface';
-
-
 
 export abstract class CurveSegment<VectorType extends Vec> {
     public static getEndPoints<VectorType extends Vec>(segs: CurveSegment<VectorType>[]): VectorType[] {
@@ -248,21 +246,21 @@ export class CurveSegmentPair<VectorType extends Vec> {
 
 export class Curve2dSegmentPair extends CurveSegmentPair<Vec2> {
     public get segment1(): Curve2dSegment {
-        return this._segment1 as any;
+        return this._segment1 as unknown as Curve2dSegment;
     }
 
     public get segment2(): Curve2dSegment {
-        return this._segment2 as any;
+        return this._segment2 as unknown as Curve2dSegment;
     }
 }
 
 export class Curve3dSegmentPair extends CurveSegmentPair<Vec3> {
     public get segment1(): Curve3dSegment {
-        return this._segment1 as any;
+        return this._segment1 as unknown as Curve3dSegment;
     }
 
     public get segment2(): Curve3dSegment {
-        return this._segment2 as any;
+        return this._segment2 as unknown as Curve3dSegment;
     }
 }
 

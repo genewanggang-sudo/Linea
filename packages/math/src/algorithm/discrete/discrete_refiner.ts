@@ -1,4 +1,4 @@
-import * as PriorityQueue from 'priorityqueuejs';
+import PriorityQueue from 'priorityqueuejs';
 import { Vec3 } from '../../base/vec3';
 import { Surface } from '../../geometry/surface';
 import { types } from '../../type_define/i_types';
@@ -6,8 +6,6 @@ import { DiscreteParam } from '../../base/discrete_param';
 import { Vec2 } from '../../base/vec2';
 import { Box2 } from '../../base/box2';
 import { MeshAssist } from '../mesh/mesh_assist';
-
-
 
 export interface IMesh2d {
     vertices: types.IXY[];
@@ -79,10 +77,10 @@ export class DiscreteRefiner {
         }
 
         return {
-            vertices: this.pts.map(v => v.data as types.numberArr3),
+            vertices: this.pts.map(v => v.data),
             faces: retFaces,
             uvs: this.uvs.map(uv => [uv.x, uv.y]),
-            normals: this.uvs.map(uv => this.surface.getNormAt(uv).data as types.numberArr3),
+            normals: this.uvs.map(uv => this.surface.getNormAt(uv).data),
         };
     }
 
@@ -92,7 +90,7 @@ export class DiscreteRefiner {
         this._twinMap = MeshAssist.getEdgeNeighbourMap(this.faces);
 
         this._nodeMap = new Map<number, ICoedgeNode>();
-        this._queue = new (PriorityQueue as any)((node1: ICoedgeNode, node2: ICoedgeNode) =>
+        this._queue = new PriorityQueue<ICoedgeNode>((node1: ICoedgeNode, node2: ICoedgeNode) =>
             node1.priority === node2.priority ? node1.index - node2.index : node1.priority - node2.priority,
         );
     }

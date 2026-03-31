@@ -1,8 +1,6 @@
-import { Paths64, PolyPath64 } from "clipper2-wasm/dist/clipper2z";
-import { IPoint, Path, Paths } from "./pave";
+import { Paths64, PolyPath64 } from 'clipper2-wasm/dist/clipper2z';
+import { IPoint, Path, Paths } from './pave';
 import * as numeric from 'numeric';
-
-
 
 export interface Point<T extends bigint | number> {
     x: T;
@@ -74,13 +72,13 @@ export function applyMatrixToPt(pt: IPoint, matrix: number[][]) {
 }
 
 export function multiplyMatrix(A: number[][], B: number[][]) {
-    var n = A.length;
-    var C: number[][] = [];
-    for (var i = 0; i < n; i++) {
+    const n = A.length;
+    const C: number[][] = [];
+    for (let i = 0; i < n; i++) {
         C[i] = [];
-        for (var j = 0; j < n; j++) {
+        for (let j = 0; j < n; j++) {
             C[i][j] = 0;
-            for (var k = 0; k < n; k++) {
+            for (let k = 0; k < n; k++) {
                 C[i][j] += A[i][k] * B[k][j];
             }
         }
@@ -89,7 +87,7 @@ export function multiplyMatrix(A: number[][], B: number[][]) {
 }
 
 function transpose(matrix: number[][]) {
-    let result = new Array(matrix.length).fill(0).map(arr => new Array(matrix[0].length).fill(0));
+    const result = new Array(matrix.length).fill(0).map(arr => new Array<number>(matrix[0].length).fill(0));
     for (let i = 0; i < result.length; i++) {
         for (let j = 0; j < result[0].length; j++) {
             result[i][j] = matrix[j][i];
@@ -104,14 +102,14 @@ function det(square: number[][]) {
         throw new Error();
     }
     // 方阵阶数
-    let n = square.length;
+    const n = square.length;
 
     let result = 0;
     if (n > 3) {
         // n 阶
         for (let column = 0; column < n; column++) {
             // 去掉第 0 行第 column 列的矩阵
-            let matrix = new Array(n - 1).fill(0).map(arr => new Array(n - 1).fill(0));
+            const matrix = new Array(n - 1).fill(0).map(arr => new Array<number>(n - 1).fill(0));
             for (let i = 0; i < n - 1; i++) {
                 for (let j = 0; j < n - 1; j++) {
                     if (j < column) {
@@ -147,16 +145,16 @@ function adjoint(square: number[][]) {
         throw new Error();
     }
 
-    let n = square.length;
+    const n = square.length;
 
-    let result = new Array(n).fill(0).map(arr => new Array(n).fill(0));
+    const result = new Array(n).fill(0).map(arr => new Array<number>(n).fill(0));
     for (let row = 0; row < n; row++) {
         for (let column = 0; column < n; column++) {
             // 去掉第 row 行第 column 列的矩阵
-            let matrix: number[][] = [];
+            const matrix: number[][] = [];
             for (let i = 0; i < square.length; i++) {
                 if (i !== row) {
-                    let arr: number[] = [];
+                    const arr: number[] = [];
                     for (let j = 0; j < square.length; j++) {
                         if (j !== column) {
                             arr.push(square[i][j]);
@@ -175,8 +173,8 @@ export function inv(square: number[][]) {
     if (square[0].length !== square.length) {
         throw new Error();
     }
-    let detValue = det(square);
-    let result = adjoint(square);
+    const detValue = det(square);
+    const result = adjoint(square);
 
     for (let i = 0; i < result.length; i++) {
         for (let j = 0; j < result.length; j++) {
@@ -225,7 +223,6 @@ export function toArray(path: Path, reversed = false) {
         return ret;
     }, [] as number[]);
 }
-
 
 export function addPolyPathToResult(solution: PolyPath64, joints: Paths[], precise: number, holes: Point<bigint>[][]) {
 

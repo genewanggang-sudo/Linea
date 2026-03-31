@@ -1,8 +1,6 @@
 import * as poly2tri from 'poly2tri';
 import { LibtessVertex, tessTriangulate } from './libtess';
 
-
-
 import { types } from '../../type_define/i_types';
 import { Vec } from '../../base/vec';
 import { Vec2 } from '../../base/vec2';
@@ -66,7 +64,7 @@ class DiscreteUtil {
             if (vData.index !== undefined) {
                 return (vData as LibtessVertex).index;
             }
-            ret.vertices.push(new Vec2(vData));
+            ret.vertices.push(new Vec2(vData as number[]));
             return ret.vertices.length - 1;
         };
 

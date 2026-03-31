@@ -3,15 +3,13 @@ import {
     Coord2,
     Curve2,
     Loop,
-} from "../..";
+} from '../..';
 import { applyMatrixToPt, getParamAtUV, getUVMinMax } from './math';
 
-
-
-import { types } from "../../type_define/i_types";
-import { IPoint, Paths } from "./pave";
-import { Pattern } from "./pattern";
-import { clipBlocks2Geometry, fullBlocks2Geometry } from "./blocks2Geometry";
+import { types } from '../../type_define/i_types';
+import { IPoint, Paths } from './pave';
+import { Pattern } from './pattern';
+import { clipBlocks2Geometry, fullBlocks2Geometry } from './blocks2Geometry';
 
 // // 输出: 相同材质(materialid相同)合并。
 export class RegionMesh {
@@ -115,19 +113,17 @@ export class PatternUtil {
         udir = { x: transformUDir.x - transformO.x, y: transformUDir.y - transformO.y };
         vdir = { x: transformVDir.x - transformO.x, y: transformVDir.y - transformO.y };
 
-
         const vLen = Math.sqrt(vdir.x * vdir.x + vdir.y * vdir.y);
         const uLen = Math.sqrt(udir.x * udir.x + udir.y * udir.y);
 
         const vDirNormal = { x: vdir.x / vLen, y: vdir.y / vLen };
         const uDirNormal = { x: udir.x / uLen, y: udir.y / uLen };
 
-
-        let bgData: types.IXY[][] = [background.outer, ...background.holes].map(
-            (l) => new Loop(l).toPath() as IPoint[]
+        const bgData: types.IXY[][] = [background.outer, ...background.holes].map(
+            (l) => new Loop(l).toPath() as IPoint[],
         );
 
-        let patternUnitsPath = patternData.units.map(unit => {
+        const patternUnitsPath = patternData.units.map(unit => {
             return new Loop(unit.outer).toPath() as IPoint[]
         })
 
@@ -138,10 +134,10 @@ export class PatternUtil {
         const vUnitLen = Math.ceil(patternMinMax.vMax / vLen) - Math.floor(patternMinMax.vMin / vLen);
         const { setFlag, getFlag } = buildFlags([
             Math.floor(bgMinMax.uMin / uLen) - uUnitLen,
-            Math.ceil(bgMinMax.uMax / uLen) + uUnitLen
+            Math.ceil(bgMinMax.uMax / uLen) + uUnitLen,
         ], [
             Math.floor(bgMinMax.vMin / vLen) - vUnitLen,
-            Math.ceil(bgMinMax.vMax / vLen) + vUnitLen
+            Math.ceil(bgMinMax.vMax / vLen) + vUnitLen,
         ]);
 
         const clipQueue: [number, number, IPoint][] = [];
@@ -291,9 +287,9 @@ export class PatternUtil {
             if (!path.length) return;
             const delta = { x: path[0].x - origin.x, y: path[0].y - origin.y };
 
-            let [u, v] = getParamAtUV(uDirNormal, vDirNormal, delta);
-            let uIndex = Math.floor(u / uLen);
-            let vIndex = Math.floor(v / vLen);
+            const [u, v] = getParamAtUV(uDirNormal, vDirNormal, delta);
+            const uIndex = Math.floor(u / uLen);
+            const vIndex = Math.floor(v / vLen);
 
             // 因为uIndex 和vIndex调用的是floor，所以最大值需要增加1
             for (let v = Math.floor(patternMinMax.vMin / vLen); v <= Math.ceil(patternMinMax.vMax / vLen) + 1; v++) {
@@ -347,7 +343,7 @@ export class PatternUtil {
             vertices: new Float32Array(length.verticesL),
             faces: new Uint32Array(length.indicesL),
             uvs: new Float32Array(length.uvL),
-            normals: new Float32Array(length.verticesL)
+            normals: new Float32Array(length.verticesL),
         };
 
         let vertexCount = 0;

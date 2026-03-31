@@ -26,8 +26,6 @@ import { PtLoopPJType } from '../pj/pj_type';
 import { Polygon } from '../../topology/polygon';
 import { Box2 } from '../../base/box2';
 
-
-
 /**
  * 三维曲线与曲面的交点, 交点可能不止一个，故返回交点的数组
  * @returns
@@ -74,7 +72,7 @@ class CurveSurfaceX {
     ): Vec3[] {
         const rets = this._preciseMethod(curve, surface, tol);
         if (rets) {
-            return rets.map(it => it.point!);
+            return rets.map(it => it.point);
         }
 
         if (CurveSurfaceCoincide.execute(curve, surface, tol)) {
@@ -344,27 +342,27 @@ class CurveSurfaceX {
     ): ICvSurfXInfo[] | undefined {
         let rets: ICvSurfXInfo[] = [];
         if (curve.isLine3d()) {
-            const line = curve as Ln3;
+            const line = curve;
             if (surface.isPlane()) {
-                const plane = surface as Plane;
+                const plane = surface;
                 rets = this._line3dPlane(line, plane, tol);
             } else if (surface.isCylinder()) {
-                const cly = surface as Cylinder;
+                const cly = surface;
                 rets = this._line3dCylinder(line, cly, tol);
             } else {
                 return undefined;
             }
         } else if (curve instanceof Arc3 && surface.isPlane()) {
-            const pts = this._circle3dPlane(curve, surface as Plane, tol);
+            const pts = this._circle3dPlane(curve, surface, tol);
 
-            rets = pts.filter(p => curve.getRange().containsPt(p.curveT!));
+            rets = pts.filter(p => curve.getRange().containsPt(p.curveT));
         } else {
             return undefined;
         }
 
         if (surfRangeUV) {
             const filterRets = rets.filter(
-                p => surfRangeUV[0].containsPt(p.surfaceUV!.x) && surfRangeUV[1].containsPt(p.surfaceUV!.y),
+                p => surfRangeUV[0].containsPt(p.surfaceUV.x) && surfRangeUV[1].containsPt(p.surfaceUV.y),
             );
             return filterRets;
         }
@@ -504,7 +502,7 @@ class CurveSurfaceX {
             }
 
             return intersctPts;
-            // eslint-disable-next-line no-else-return
+
         } else if (Math.abs(discrm / den) <= sqrTol) {
             const t = -b / (2 * a); // Ray is tangent to side
             if (transLine.getRange().containsPt(t)) {

@@ -1,15 +1,13 @@
-import { MainModule, Paths64 } from "clipper2-wasm/dist/clipper2z";
-import { IPoint, Path, Paths } from "./pave";
-import { Point, applyMatrixToPt, inv, multiplyMatrix } from "./math";
-import { getBBox } from "./math";
-import { convert2Js } from "./math";
-import { toArray } from "./math";
-import { addPolyPathToResult } from "./math";
-import { IPavePattern, IPolygon } from "./pattern_util";
-import { Clipper2Util, Loop, types } from "../..";
-import _ from "lodash";
-
-
+import { MainModule, Paths64 } from 'clipper2-wasm/dist/clipper2z';
+import { IPoint, Path, Paths } from './pave';
+import { Point, applyMatrixToPt, inv, multiplyMatrix } from './math';
+import { getBBox } from './math';
+import { convert2Js } from './math';
+import { toArray } from './math';
+import { addPolyPathToResult } from './math';
+import { IPavePattern, IPolygon } from './pattern_util';
+import { Clipper2Util, Loop, types } from '../..';
+import _ from 'lodash';
 
 export class Pattern {
     private precise = 1000000000;
@@ -48,7 +46,7 @@ export class Pattern {
 
         this.patternData = _.cloneDeep(patternData);
         this.patternData.coord.setOrigin(
-            this.patternData.coord.getOrigin().multiply(this.precise)
+            this.patternData.coord.getOrigin().multiply(this.precise),
         );
 
         this.patternData.udir.x *= this.precise;
@@ -63,7 +61,7 @@ export class Pattern {
             [...patternData.coord.getDy().data, 0],
             [0, 0, 1],
         ];
-        let patternUnits = patternData.units.map(unit => {
+        const patternUnits = patternData.units.map(unit => {
             return {
                 outer: new Loop(unit.outer).toPath() as IPoint[],
                 holes: [],
@@ -78,9 +76,8 @@ export class Pattern {
             });
         });
 
-
         let bgData: types.IXY[][] = [background.outer, ...background.holes].map(
-            (l) => new Loop(l).toPath() as IPoint[]
+            (l) => new Loop(l).toPath() as IPoint[],
         );
         bgData = bgData.map((p) =>
             p.map((pt) => {
@@ -88,7 +85,7 @@ export class Pattern {
                     x: Math.round(pt.x * this.precise),
                     y: Math.round(pt.y * this.precise),
                 };
-            })
+            }),
         );
 
         if (!this._clipper) return;
@@ -133,14 +130,14 @@ export class Pattern {
             const blockAsHole = new Path64();
             for (let i = unit.length - 1; i > -1; i--) {
                 blockAsHole.push_back(
-                    new Point64(BigInt(unit[i].x), BigInt(unit[i].y), BigInt(100))
+                    new Point64(BigInt(unit[i].x), BigInt(unit[i].y), BigInt(100)),
                 );
             }
 
             const block = new Path64();
             for (let i = 0; i < unit.length; i++) {
                 block.push_back(
-                    new Point64(BigInt(unit[i].x), BigInt(unit[i].y), BigInt(100))
+                    new Point64(BigInt(unit[i].x), BigInt(unit[i].y), BigInt(100)),
                 );
             }
 
@@ -152,7 +149,7 @@ export class Pattern {
                 JoinType.Miter, // 斜交
                 EndType.Polygon,
                 Infinity, // 官方文档解释：斜交限制。我理解应该是交点锐角最大长度，如果偏移超出这个数，则交点不会斜交而变成折线交。实际大于3就都是斜交。
-                0 // 官方文档：精确性precision
+                0, // 官方文档：精确性precision
             );
             const unitC2PathD = new Path64();
             const path = jointOuter.get(0);
@@ -188,8 +185,8 @@ export class Pattern {
                         [...coord.getDx().data, 0],
                         [...coord.getDy().data, 0],
                         [...coord.getOrigin().data, 1],
-                    ])
-                )
+                    ]),
+                ),
             ),
         };
     }
@@ -224,7 +221,7 @@ export class Pattern {
             BigInt(Math.round(left - this.recOffset)),
             BigInt(Math.round(top - this.recOffset)),
             BigInt(Math.round(right + this.recOffset)),
-            BigInt(Math.round(bottom + this.recOffset))
+            BigInt(Math.round(bottom + this.recOffset)),
         );
         const result = RectClipLinesPaths64(unitRectOffseted, this._clipLines);
 
@@ -232,7 +229,7 @@ export class Pattern {
             const pt = new Point64(
                 BigInt(Math.round((left + right) / 2)),
                 BigInt(Math.round((top + bottom) / 2)),
-                BigInt(0)
+                BigInt(0),
             );
             const outer = PointInPolygon64(pt, this._clip.get(0)).value;
             if (outer === 0) {
@@ -314,7 +311,7 @@ export class Pattern {
             const offsetedJointSubject = TranslatePaths64(
                 this._unitJoints,
                 bigIntOffset.x,
-                bigIntOffset.y
+                bigIntOffset.y,
             );
             const solution = new PolyPath64();
             BooleanOpOut64(
@@ -322,7 +319,7 @@ export class Pattern {
                 FillRule.NonZero,
                 offsetedJointSubject,
                 clip,
-                solution
+                solution,
             );
 
             offsetedJointSubject.delete();
@@ -344,8 +341,8 @@ export class Pattern {
                     holes.some((path) =>
                         path.some(
                             (p) =>
-                                p.x === pt.x + bigIntOffset.x && p.y === pt.y + bigIntOffset.y
-                        )
+                                p.x === pt.x + bigIntOffset.x && p.y === pt.y + bigIntOffset.y,
+                        ),
                     )
                 ) {
                     blockResult.data.set(index, true);
@@ -361,7 +358,7 @@ export class Pattern {
                 FillRule.NonZero,
                 subject,
                 clip,
-                tile
+                tile,
             );
 
             if (tile.count() >= 1) {

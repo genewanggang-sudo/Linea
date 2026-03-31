@@ -23,8 +23,6 @@ import { estimateRootMultiplicity } from '../calculate_util/iterative_method';
 import { boxCutLine } from './box_cut_line';
 import { Box3 } from '../../base/box3';
 
-
-
 export class CurveSurfaceXUtil {
     // 返回是否是重复点：如果不是重复点，返回false；如果是重复点，在此函数内会处理掉重复点，返回true；
     public static dealRedundantIntersect(
@@ -241,8 +239,7 @@ export class CurveSurfaceXUtil {
         }
 
         const surf = surfPatch.surface;
-        let tiltBox: Box3 | undefined;
-        tiltBox = surf.getBox();
+        const tiltBox: Box3 | undefined = surf.getBox();
 
         if (!tiltBox) {
             return true;
@@ -261,7 +258,7 @@ export class CurveSurfaceXUtil {
         const curveBox = curveSeg.getSegBox();
 
         if (surfPatch.surface.isPlane()) {
-            const plane = surfPatch.surface as Plane;
+            const plane = surfPatch.surface;
             const rangeU = [CONST.MODEL_MAX_LENGTH, -CONST.MODEL_MAX_LENGTH];
             const rangeV = [CONST.MODEL_MAX_LENGTH, -CONST.MODEL_MAX_LENGTH];
             for (const pt of curveBox.getCornerPts()) {

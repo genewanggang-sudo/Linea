@@ -245,8 +245,6 @@ export class Extruder {
         return this.curveBoundingBoxList.some(box => box.intersectsBox(tmp));
     }
 
-
-
     /**
      * 基于pnpoly算法判断点是否在多边形内部
      * @param point
@@ -255,14 +253,14 @@ export class Extruder {
     public inside(point: types.IXY) {
         // ray-casting algorithm based on
         // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
-        let x = point.x, y = point.y;
+        const x = point.x, y = point.y;
 
         let inside = false;
         for (let i = 0, j = this._lpts.length - 1; i < this._lpts.length; j = i++) {
-            let xi = this._lpts[i].x, yi = this._lpts[i].y;
-            let xj = this._lpts[j].x, yj = this._lpts[j].y;
+            const xi = this._lpts[i].x, yi = this._lpts[i].y;
+            const xj = this._lpts[j].x, yj = this._lpts[j].y;
 
-            let intersect = ((yi > y) != (yj > y))
+            const intersect = ((yi > y) != (yj > y))
                 && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
             if (intersect) inside = !inside;
         }
@@ -493,7 +491,7 @@ export class ExtrudeClip {
         //1. 逐面搜环，补面
         const ct = new Loop(extruder.line2ds).getCentroidPoint();
         for (const line of extruder.line2ds) {
-            let edges = sideFaceEdgeMap.get(line);
+            const edges = sideFaceEdgeMap.get(line);
             if (!edges) continue;
             // 计算平面
             const from = line.getStartPt();
@@ -593,7 +591,7 @@ export class ExtrudeClip {
                     const v1 = ret[0],
                         v2 = ret[1],
                         v3 = ret[2];
-                    let vn1 = baseDir,
+                    const vn1 = baseDir,
                         vn2 = baseDir,
                         vn3 = baseDir;
                     const vuv1 = transformXY(uv1, uvScale, translate);
@@ -1006,19 +1004,19 @@ export class ExtrudeClip {
                     v: v1,
                     n: vn1,
                     uv: vuv1,
-                    uv1: vuv11
+                    uv1: vuv11,
                 };
                 const triVertex2: IVertex = {
                     v: v2,
                     n: vn2,
                     uv: vuv2,
-                    uv1: vuv12
+                    uv1: vuv12,
                 };
                 const triVertex3: IVertex = {
                     v: v3,
                     n: vn3,
                     uv: vuv3,
-                    uv1: vuv13
+                    uv1: vuv13,
                 };
                 totalTris.push({ vertex1: triVertex1, vertex2: triVertex2, vertex3: triVertex3 });
             }
@@ -1365,7 +1363,7 @@ export class ExtrudeClip {
         vertex1: IVertex,
         vertex2: IVertex,
         vertex3: IVertex,
-        isUV1 = false
+        isUV1 = false,
     ): types.IXY | undefined {
         let uv1 = vertex1.uv;
         let uv2 = vertex2.uv;
