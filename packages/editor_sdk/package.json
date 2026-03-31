@@ -15,7 +15,7 @@
     },
     "dependencies": {
         "@ccpc/core": "^0.1.9",
-        "@ccpc/math": "^0.1.11"
+        "@ccpc/math": "^0.1.12"
     },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",

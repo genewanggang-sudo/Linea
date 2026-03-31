@@ -43,19 +43,19 @@ importers:
     dependencies:
       '@ccpc/canvas':
         specifier: ^0.1.6
-        version: 0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)
+        version: 0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)
       '@ccpc/core':
         specifier: ^0.1.9
-        version: 0.1.9(@ccpc/math@0.1.11)
+        version: 0.1.9(@ccpc/math@0.1.12)
       '@ccpc/editor_sdk':
         specifier: ^0.1.0
         version: 0.1.0
       '@ccpc/math':
-        specifier: ^0.1.11
-        version: 0.1.11
+        specifier: ^0.1.12
+        version: 0.1.12
       '@ccpc/platform':
         specifier: ^0.1.6
-        version: 0.1.6(@ccpc/canvas@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11))(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)(@ccpc/snap@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11))
+        version: 0.1.6(@ccpc/canvas@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12))(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)(@ccpc/snap@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12))
       naive-ui:
         specifier: ^2.44.1
         version: 2.44.1(vue@3.5.30(typescript@5.9.3))
@@ -127,10 +127,10 @@ importers:
     dependencies:
       '@ccpc/core':
         specifier: ^0.1.9
-        version: 0.1.9(@ccpc/math@0.1.11)
+        version: 0.1.9(@ccpc/math@0.1.12)
       '@ccpc/math':
-        specifier: ^0.1.11
-        version: 0.1.11
+        specifier: ^0.1.12
+        version: 0.1.12
 
   packages/math:
     dependencies:
@@ -257,8 +257,8 @@ packages:
   '@ccpc/editor_sdk@0.1.0':
     resolution: {integrity: sha512-TcEu3FNOdU8yF43Du5dDy2jjmWAmBNF3vLZS+6eXr7Z9HK+jV7EqqBw1IYcg5VBWwBcgMnwPK+SZgZQvVBC5XQ==}
 
-  '@ccpc/math@0.1.11':
-    resolution: {integrity: sha512-xHaLHshBv3gLczmhCEUFiSR1WTY9fJQthUuYizBMrc578/MPur//T45TgZBnwUfCcwqUWiMXJORIfkSDHh/WCw==}
+  '@ccpc/math@0.1.12':
+    resolution: {integrity: sha512-HmcFZzA75fWvOUzQZOqiFmm5m/tu3xNfPukw773HmerdY0TzPbv6adCS6LcbDIRHcZ5m7Qi7hO2JVc7z373CEA==}
 
   '@ccpc/platform@0.1.6':
     resolution: {integrity: sha512-t4E2TQkRfji0azHP35QUuqHoBT1AklX6Pcgomg7K5kYC2d4SxocuN4wD/L4rldE7nvZChoZseJ6KF/LEZHDffA==}
@@ -1747,23 +1747,23 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@ccpc/canvas@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)':
+  '@ccpc/canvas@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)':
     dependencies:
-      '@ccpc/core': 0.1.9(@ccpc/math@0.1.11)
-      '@ccpc/math': 0.1.11
+      '@ccpc/core': 0.1.9(@ccpc/math@0.1.12)
+      '@ccpc/math': 0.1.12
       three: 0.181.2
       troika-three-text: 0.52.4(three@0.181.2)
 
-  '@ccpc/core@0.1.9(@ccpc/math@0.1.11)':
+  '@ccpc/core@0.1.9(@ccpc/math@0.1.12)':
     dependencies:
-      '@ccpc/math': 0.1.11
+      '@ccpc/math': 0.1.12
 
   '@ccpc/editor_sdk@0.1.0':
     dependencies:
-      '@ccpc/core': 0.1.9(@ccpc/math@0.1.11)
-      '@ccpc/math': 0.1.11
+      '@ccpc/core': 0.1.9(@ccpc/math@0.1.12)
+      '@ccpc/math': 0.1.12
 
-  '@ccpc/math@0.1.11':
+  '@ccpc/math@0.1.12':
     dependencies:
       clipper2-wasm: 0.2.1
       earcut: 3.0.2
@@ -1775,17 +1775,17 @@ snapshots:
       quadtree-lib: 1.0.9
       uuid: 10.0.0
 
-  '@ccpc/platform@0.1.6(@ccpc/canvas@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11))(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)(@ccpc/snap@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11))':
+  '@ccpc/platform@0.1.6(@ccpc/canvas@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12))(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)(@ccpc/snap@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12))':
     dependencies:
-      '@ccpc/canvas': 0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)
-      '@ccpc/core': 0.1.9(@ccpc/math@0.1.11)
-      '@ccpc/math': 0.1.11
-      '@ccpc/snap': 0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)
+      '@ccpc/canvas': 0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)
+      '@ccpc/core': 0.1.9(@ccpc/math@0.1.12)
+      '@ccpc/math': 0.1.12
+      '@ccpc/snap': 0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)
 
-  '@ccpc/snap@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.11))(@ccpc/math@0.1.11)':
+  '@ccpc/snap@0.1.6(@ccpc/core@0.1.9(@ccpc/math@0.1.12))(@ccpc/math@0.1.12)':
     dependencies:
-      '@ccpc/core': 0.1.9(@ccpc/math@0.1.11)
-      '@ccpc/math': 0.1.11
+      '@ccpc/core': 0.1.9(@ccpc/math@0.1.12)
+      '@ccpc/math': 0.1.12
 
   '@css-render/plugin-bem@0.15.14(css-render@0.15.14)':
     dependencies:

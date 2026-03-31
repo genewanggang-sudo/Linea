@@ -12,7 +12,7 @@
     "@ccpc/canvas": "^0.1.6",
     "@ccpc/core": "^0.1.9",
     "@ccpc/editor_sdk": "^0.1.0",
-    "@ccpc/math": "^0.1.11",
+    "@ccpc/math": "^0.1.12",
     "@ccpc/platform": "^0.1.6",
     "naive-ui": "^2.44.1",
     "vue": "^3.5.30"
