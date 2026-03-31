@@ -4,8 +4,6 @@ import { types } from '../type_define/i_types';
 import { Tol } from './tol';
 import { MathError } from '../util/math_error';
 
-
-
 /**
  * 区间
  */
@@ -316,7 +314,7 @@ class Interval {
 
         const pts = points.slice(min, max + 1);
 
-        const result = [];
+        const result: Interval[] = [];
         for (let i = 0; i < pts.length - 1; i++) {
             if (pts[i + 1] - pts[i] > Tol.NUMBER) {
                 result.push(new Interval(pts[i], pts[i + 1], true));
@@ -339,7 +337,7 @@ class Interval {
         if (intRange.length === 0) {
             return [this];
         }
-        const result = [];
+        const result: Interval[] = [];
         const min1 = this._min;
         const max1 = intRange[0]._min;
         if (max1 > min1) {

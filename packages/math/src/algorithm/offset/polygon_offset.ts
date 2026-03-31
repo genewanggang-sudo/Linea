@@ -10,8 +10,6 @@ import { Tol } from '../../base/tol';
 import { Loop2dOffset } from './loop2d_offset';
 import { Loop } from '../..';
 
-
-
 export interface IPolygonOffsetResult {
     /**
      * 偏移的结果
@@ -123,4 +121,3 @@ export class PolygonOffset {
         return evolution;
     }
 }
-

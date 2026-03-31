@@ -7,8 +7,6 @@ import { Vec2 } from '../../base/vec2';
 import { DiscreteParam } from '../../base/discrete_param';
 import { DiscreteTopology } from '../discrete/discrete_topology';
 
-
-
 /**
  * 根据包含关系，将loop[]，组成polygon
  */

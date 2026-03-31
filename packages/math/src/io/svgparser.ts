@@ -1,4 +1,4 @@
-/* eslint-disable consistent-return */
+
 import { Box2 } from '../base/box2';
 import { Coord2 } from '../base/coord2';
 import { Interval } from '../base/interval';
@@ -12,11 +12,14 @@ import { PolyCurve } from '../topology/polycurve';
 import { CONST } from '../type_define/const';
 import { Util } from '../util/util';
 
-
-
 interface IIDPath {
     id: string;
     path: string;
+}
+
+interface ISVGCommand {
+    cmd: string;
+    data: number[];
 }
 
 export interface ISVGData {
@@ -273,11 +276,11 @@ export class SVGParser {
     // }
 
     // 将string转成一串SVG的Commands
-    private static _SVGStringToCommands(inputSVGString: string) {
+    private static _SVGStringToCommands(inputSVGString: string): ISVGCommand[] {
         const cmdExtractorReg = /[a-df-z][^a-df-z]*/gi;
         const parseFloats = (input: string) => {
             const array = input.split(/[\s,]+/);
-            const output = [];
+            const output: number[] = [];
             for (let i = 0; i < array.length; i++) {
                 const number = array[i];
                 if (number.indexOf('.') !== number.lastIndexOf('.')) {
@@ -293,9 +296,9 @@ export class SVGParser {
         };
 
         const commands = inputSVGString.match(cmdExtractorReg);
-        const result = [];
+        const result: ISVGCommand[] = [];
         if (commands) {
-            for (let i = 0; i < commands!.length; i++) {
+            for (let i = 0; i < commands.length; i++) {
                 const command = commands[i];
                 const type = command.charAt(0);
                 const data = command.substr(1).trim();

@@ -19,8 +19,6 @@ import { Face } from '../../brep/face';
 import { IProjectInfo } from '../alg_types';
 import { FaceProject } from './face_project';
 
-
-
 enum BodyPosition {
     UP, // 在投影方向上
     ON, // 横跨投影面
@@ -272,9 +270,9 @@ export class ViewProject {
     }
 
     private _sortInfo(loopInfosForSort: IProjectLoop[]) {
-        const front = [];
-        const middle = [];
-        const back = [];
+        const front: IProjectLoop[] = [];
+        const middle: IProjectLoop[] = [];
+        const back: IProjectLoop[] = [];
         for (const loopInfo of loopInfosForSort) {
             const loop = loopInfo.loop.loops[0];
             const curFace = loopInfo.projInfo.projFace;

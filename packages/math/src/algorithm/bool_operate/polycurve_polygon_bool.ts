@@ -1,4 +1,4 @@
-/* eslint-disable no-loop-func */
+
 import { SearchSimpleLoop } from '../search_graph/search_polyline';
 import { PolyCurve } from '../../topology/polycurve';
 import { Loop } from '../../topology/loop';
@@ -9,8 +9,6 @@ import { CurvesX } from '../intersect/curves_x';
 import { PtPolygonPJ } from '../pj/pt_polygon_pj';
 import { PtLoopPJType } from '../pj/pj_type';
 import { PtLoopPJ } from '../pj/pt_loop_pj';
-
-
 
 export class PolycurvePolygonBool {
     /**
@@ -103,4 +101,3 @@ export class PolycurvePolygonBool {
         return SearchSimpleLoop.execute(result, tolerance);
     }
 }
-

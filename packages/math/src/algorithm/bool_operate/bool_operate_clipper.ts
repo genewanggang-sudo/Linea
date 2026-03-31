@@ -13,8 +13,6 @@ import { Ln2 } from '../../geometry/ln2';
 import { EN_GEO_TYPE } from '../../type_define/i_element_type';
 import { Tol } from '../../base/tol';
 
-
-
 /**
  * 二维布尔运算，封装的clipper算法
  */
@@ -175,7 +173,7 @@ class BoolOperateClipper {
         }
         const polygons: Polygon[] = [];
         const nodeStack = polyTree.Childs();
-        const toLoop = (path: any) => {
+        const toLoop = (path: ClipperLib.IntPoint[]) => {
             ClipperLib.JS.ScaleDownPath(path, scale);
             return ClipperFormatConverter.pathToLoop(path);
         };

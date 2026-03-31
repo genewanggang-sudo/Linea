@@ -1,13 +1,11 @@
-/* eslint-disable @typescript-eslint/prefer-for-of */
-import * as Quadtree from 'quadtree-lib';
+
+import Quadtree from 'quadtree-lib';
 import { Box2 } from '../../base/box2';
 import { Vec2 } from '../../base/vec2';
 import * as ClipperLib from '../../clipperlib/clipperlib';
 import { types } from '../../type_define/i_types';
 import { IMesh2d } from './discrete_refiner';
 import { DiscreteUtil } from './discrete_util';
-
-
 
 const scale = 1e6;
 
@@ -25,7 +23,7 @@ function buildQuadTree(polygon: types.IXY[][]) {
     const totalBox = new Box2(polygon.flat());
     const size = totalBox.getSize();
 
-    const quadtree = new (Quadtree as any)({
+    const quadtree = new Quadtree({
         x: Math.round(totalBox.min.x) - 50,
         y: Math.round(totalBox.min.y) - 50,
         width: size.x + 100,
@@ -80,7 +78,7 @@ function clip(
         const ptItem = { x: testP.x, y: testP.y, width: totalBox.getSize().x * 2, height: 0.1 };
         let isIn = false;
         // 精确判断
-        // eslint-disable-next-line no-lone-blocks
+
         {
             // quadtree.colliding(ptItem).forEach(item => {
             //     const [p1, p2] = item.obj;
@@ -101,7 +99,7 @@ function clip(
         isIn = !!(quadtree.colliding(ptItem).length % 2);
 
         if (isIn) {
-            return [JSON.parse(JSON.stringify(rect))];
+            return [JSON.parse(JSON.stringify(rect)) as types.IXY[]];
         }
         return undefined;
     }

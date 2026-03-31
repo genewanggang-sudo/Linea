@@ -4,8 +4,6 @@ import { Tol } from '../../base/tol';
 import { Vec3 } from '../../base/vec3';
 import { types } from '../../type_define/i_types';
 
-
-
 export class MeshAssist {
     public static getEdgeNeighbourMap(faces: number[]): Map<number, number> {
         const edgeNbrMap = new Map<number, number>();
@@ -165,7 +163,6 @@ export class MeshAssist {
 
             const loop: number[] = [cur];
 
-            // eslint-disable-next-line no-constant-condition
             while (true) {
                 const nexts = nextMap.get(cur);
                 if (!nexts) {

@@ -5,8 +5,6 @@ import { Tol } from './tol';
 import { Interval } from './interval';
 import { types } from '../type_define/i_types';
 
-
-
 /**
  * 周期区间
  * min in [0, period)
@@ -261,7 +259,7 @@ class PeriodInterval extends Interval {
      * @param param
      * @param tolerance
      */
-    public equals(that: PeriodInterval, tolerance: number = Tol.NUMBER): boolean {
+    public equals(that: PeriodInterval, _tolerance: number = Tol.NUMBER): boolean {
         if (this._period !== that._period) {
             return false;
         }
@@ -285,7 +283,7 @@ class PeriodInterval extends Interval {
      */
     public distanceTo(another: PeriodInterval | number): number {
         if (typeof another === 'number') {
-            const p = another as number;
+            const p = another;
             const p2 = this.getRegularParam(p);
             if (p2 < this._max) {
                 return Math.max(p2 - this._max, this._min - p2);
@@ -429,7 +427,7 @@ class PeriodInterval extends Interval {
             return a - b;
         });
 
-        const result = [];
+        const result: PeriodInterval[] = [];
         for (let i = 0; i < points.length - 1; i++) {
             if (points[i + 1] - points[i] > Tol.NUMBER) {
                 result.push(new PeriodInterval(points[i], points[i + 1], this._period));

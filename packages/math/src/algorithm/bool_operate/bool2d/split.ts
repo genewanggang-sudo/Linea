@@ -1,4 +1,4 @@
-import * as Quadtree from 'quadtree-lib';
+import Quadtree from 'quadtree-lib';
 import { IFace2D, areFacesTotallyOverlap } from './utils';
 import { Curve2 } from '../../../geometry/curve2';
 import { Loop } from '../../../topology/loop';
@@ -12,7 +12,9 @@ import { Polygon } from '../../../topology/polygon';
 import { SearchLoop2D } from '../../search_graph/search_loop2d';
 import { ILoopsToPolygonExes } from '../../search_graph/iloops_polygonex';
 
-
+type QuadObj = Quadtree.QuadtreeItem & {
+    obj: Curve2 | IFace2D;
+};
 
 class UniqueCurveInfo {
     public curve: Curve2;
@@ -87,11 +89,11 @@ function dealWithDuplicates(
             values = [];
             uniqueObjMap.set(key, values);
         }
-        values!.push(obj);
+        values.push(obj);
     }
 
     for (const values of uniqueObjMap.values()) {
-        const tmpCurve2ds = values.filter(it => it instanceof Curve2) as Curve2[];
+        const tmpCurve2ds = values.filter(it => it instanceof Curve2);
         const tmpUniqueCurveInfos: UniqueCurveInfo[] = [];
         tmpCurve2ds.forEach(tmpCurve => {
             let uniqueCurveInfo: UniqueCurveInfo | undefined;
@@ -172,7 +174,7 @@ export function faces2DSplit(
         }
     }
 
-    const objs = [];
+    const objs: QuadObj[] = [];
     for (const [key, value] of objectBoxMap) {
         const s = value.getSize();
         objs.push({
@@ -183,7 +185,7 @@ export function faces2DSplit(
             obj: key,
         });
     }
-    const quadtree = new (Quadtree as any)({
+    const quadtree = new Quadtree({
         x: Math.round(totalBox.min.x) - 50,
         y: Math.round(totalBox.min.y) - 50,
         width: totalBox.getSize().x + 100,
@@ -210,20 +212,21 @@ export function faces2DSplit(
             y: Math.round(faceBox.min.y) - 2,
             width: s.x + 4,
             height: s.y + 4,
-        }) as any[];
+        });
         overlaps = overlaps.filter(it => it.obj instanceof Curve2 && !boundarySet.has(it.obj));
         const innerCurves: Curve2[] = [];
         const tmpLoops = face2d.loops.map(l => new Loop(l));
         const tmpPoly = new Polygon();
         tmpLoops.forEach(l => tmpPoly.addLoop(l, false));
         overlaps.forEach(overlap => {
+            const overlapObj = overlap.obj as Curve2
             const midPtInLoopRet = PtPolygonPJ.execute(
-                (overlap.obj as any).getMidPt(),
+                overlapObj.getMidPt(),
                 tmpPoly,
                 distanceTol,
             );
             if (midPtInLoopRet === PtLoopPJType.IN) {
-                innerCurves.push(overlap.obj);
+                innerCurves.push(overlapObj);
             }
         });
 

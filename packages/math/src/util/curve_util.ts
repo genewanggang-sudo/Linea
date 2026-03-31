@@ -21,8 +21,6 @@ import { types } from '../type_define/i_types';
 import { Util } from './util';
 import { PeriodInterval } from '../base/period_inverval';
 
-
-
 export interface ICurveSimplifyOption {
     clone?: boolean;
     splitOffsetCurve?: boolean;
@@ -48,7 +46,7 @@ export class CurveUtil {
             if (dz) return dz;
         }
         if (curve instanceof SmoothPoly3) {
-            const dz = CurveUtil.getDzByPoints(curve.getPoints() as any);
+            const dz = CurveUtil.getDzByPoints(curve.getPoints() as Vec3[]);
             if (dz) return dz;
         }
 
@@ -271,7 +269,7 @@ export class CurveUtil {
         if (params.length < 1) return [];
         let minDist = CONST.MODEL_MAX_LENGTH;
         const rets: number[] = [];
-        const newParams = [];
+        const newParams: number[] = [];
         params.sort((a, b) => a - b);
         newParams.push(params[0]);
         for (let i = 1; i < params.length; ++i) {
@@ -309,7 +307,7 @@ export class CurveUtil {
     public static filterCurvesBurr(curves: Curve3[], angleEps: number, disEps: number) {
         if (curves.length < 3) return curves;
 
-        const newCurves = [];
+        const newCurves: Curve3[] = [];
         newCurves.push(curves[0]);
         for (let i = 1; i < curves.length; ++i) {
             if (newCurves.length < 1) {
@@ -318,7 +316,7 @@ export class CurveUtil {
             }
             const pre = newCurves[newCurves.length - 1];
             const cur = curves[i];
-            if (pre.isLine3d() && cur.isLine3d() && (pre as Ln3).isParallelTo(cur, angleEps)) {
+            if (pre.isLine3d() && cur.isLine3d() && (pre).isParallelTo(cur, angleEps)) {
                 const dis = pre.getStartPt().distanceTo(cur.getEndPt());
                 if (dis < disEps && Util.isNearlyEqual(pre.getLength(), cur.getLength(), disEps)) {
                     newCurves.pop();
@@ -338,7 +336,7 @@ export class CurveUtil {
         if (newCurves.length > 2 && newCurves[0].getStartPt().equals(newCurves[newCurves.length - 1].getEndPt())) {
             const pre = newCurves[newCurves.length - 1];
             const cur = newCurves[0];
-            if (pre.isLine3d() && cur.isLine3d() && (pre as Ln3).isParallelTo(cur, angleEps)) {
+            if (pre.isLine3d() && cur.isLine3d() && (pre).isParallelTo(cur, angleEps)) {
                 const dis = pre.getStartPt().distanceTo(cur.getEndPt());
                 if (dis < disEps && Util.isNearlyEqual(pre.getLength(), cur.getLength(), disEps)) {
                     newCurves.pop();

@@ -4,10 +4,7 @@ import { Vec2 } from '../base/vec2';
 import { Vec3 } from '../base/vec3';
 import { EN_GEO_TYPE } from './i_element_type';
 
-
-
 declare namespace types {
-    // eslint-disable-next-line @typescript-eslint/interface-name-prefix
     interface Class<T> {
         new(): T;
     }

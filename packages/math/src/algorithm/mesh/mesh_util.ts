@@ -20,8 +20,6 @@ import { BrepBody, Shell } from '../../brep-src';
 import { DiscreteParam } from '../..';
 import { Curve3, Polygon, brep } from '../..';
 
-
-
 enum PositionType {
     Above = 2,
     On = 1,
@@ -187,8 +185,8 @@ export class MeshUtil {
 
     public static clone<MeshType extends types.IFlatMesh>(mesh: MeshType): MeshType {
         const ret = {} as MeshType;
-        for (const key of Object.keys(mesh)) {
-            (ret as any)[key] = mesh[key].slice();
+        for (const key of Object.keys(mesh) as Array<keyof MeshType>) {
+            ret[key] = mesh[key].slice() as MeshType[typeof key];
         }
         return ret;
     }
@@ -260,9 +258,9 @@ export class MeshUtil {
         ) => void,
     ): Map<MeshType, MeshType | undefined> {
         const newMeshes: MeshType[] = [];
-        const attres = [];
-        const newUvsListes = [];
-        const nextMapes = [];
+        const attres: IMeshAttribute[][] = [];
+        const newUvsListes: number[][][] = [];
+        const nextMapes: Map<number, number[]>[] = [];
         const resMap: Map<MeshType, MeshType> = new Map();
         for (let i = 0; i < meshes.length; ++i) {
             const mesh = meshes[i];
@@ -296,13 +294,13 @@ export class MeshUtil {
             const nextMap = new Map<number, number[]>();
             let idx = 0;
             for (let i = 0; i < newMeshes.length; ++i) {
-                // eslint-disable-next-line no-loop-func
+
                 newMeshes[i].faces.forEach(f => fillClipMesh.faces.push(f + idx));
                 for (const attr of attres[i]) {
                     newMeshes[i][attr.name].forEach(a => fillClipMesh[attr.name].push(a));
                 }
                 for (const next of nextMapes[i]) {
-                    // eslint-disable-next-line no-loop-func
+
                     const newArr = next[1].map(num => num + idx);
                     nextMap.set(next[0] + idx, newArr);
                 }
@@ -563,7 +561,7 @@ export class MeshUtil {
         // 自动调整扫描轮廓，垂直于路径
         adjustProfile: boolean = true,
         // 自动调整扫描路径，寻找起始路径（距离近，且角度大）
-        adjustPath: boolean = false,): types.IFlatMesh {
+        adjustPath: boolean = false): types.IFlatMesh {
         const sweep = brep.alg.BodyBuilder.sweep(coordinate, polygon2d, path3d, adjustProfile, adjustPath);
         return MeshUtil.brepToMesh(sweep, discreteParams);
     }
@@ -886,7 +884,7 @@ export class MeshUtil {
 
             // prettier-ignore
             const iThat =
-                // eslint-disable-next-line no-nested-ternary
+
                 iAboves.length === 2 ? iAboves[1] :
                     iBelows.length === 2 ? iBelows[1] : iOns[0];
 
@@ -986,7 +984,7 @@ export class MeshUtil {
         const keyN = -Math.log10(Tol.LENGTH);
         const vertexKey = (vi: number): string => {
             const i = vi * 3;
-            // eslint-disable-next-line
+
             return `${mesh.vertices[i].toFixed(keyN)}_${mesh.vertices[i + 1].toFixed(keyN)}_${mesh.vertices[
                 i + 2
             ].toFixed(keyN)}`;
@@ -1053,7 +1051,7 @@ export class MeshUtil {
         const keyN = -Math.log10(Tol.LENGTH);
         const vertexKey = (vi: number): string => {
             const i = vi * 3;
-            // eslint-disable-next-line
+
             return `${mesh.vertices[i].toFixed(keyN)}_${mesh.vertices[i + 1].toFixed(keyN)}_${mesh.vertices[
                 i + 2
             ].toFixed(keyN)}`;

@@ -9,8 +9,6 @@ import { Vec3 } from '../../base/vec3';
 import { Tol } from '../../base/tol';
 import { MeshAssist } from './mesh_assist';
 
-
-
 function getId(vn: number, vi: number, vj: number): number {
     const [vMin, vMax] = vi < vj ? [vi, vj] : [vj, vi];
     return vn * vMin + vMax;
@@ -129,7 +127,7 @@ export class MeshContour {
             const v2 = mesh.faces[f0 + 2];
 
             const area = MeshContour._getArea(mesh.vertices, v0, v1, v2);
-            // eslint-disable-next-line no-nested-ternary
+
             isFaceUp[f0 / 3] = area > areaEps ? true : area < -areaEps ? false : undefined;
         }
         return isFaceUp;

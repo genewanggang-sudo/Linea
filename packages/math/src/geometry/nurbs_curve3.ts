@@ -20,8 +20,6 @@ import { Coord3 } from '../base/coord3';
 import { DiscreteUtil } from '../algorithm/discrete/discrete_util';
 import { Box3 } from '../base/box3';
 
-
-
 /**
  * Nurbs曲线
  */
@@ -143,7 +141,7 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
         const interpts = this._fiterCoPoint(pts);
         if (interpts.length <= 1) {
             MathAssert.warn(false, 'nurbs curve 至少需要 2 个点进行插值');
-            return new Ln3(interpts.length > 0 ? interpts[0] : Vec3.O(), Vec3.X(), [0, 0]) as any;
+            return new Ln3(interpts.length > 0 ? interpts[0] : Vec3.O(), Vec3.X(), [0, 0]) as unknown as NurbsCurve3;
         }
 
         const dg = Math.min(degree, interpts.length - 1);
@@ -250,7 +248,7 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
             knotsStart.push((1 / 3) * weightSums);
         }
         var knots = knotsStart.concat([1, 1, 1, 1]);
-        var A = [];
+        var A: number[][] = [];
         var n = points.length - 1;
         var _g4 = 0;
         var ld = points.length - 4;
@@ -265,7 +263,7 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
             A.push(rowstart.concat(basisFuncs).concat(rowend));
         }
         var dim = points[0].length;
-        var xs = [];
+        var xs: number[][] = [];
         var _g5 = 0;
         while (_g5 < dim) {
             var i3 = [_g5++];
@@ -279,7 +277,7 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
                 })(i3),
             );
 
-            var x;
+            let x: number[];
             if (A.length > 5) {
                 var newA = A.map(arr => arr.slice());
                 x = this._quickSolve(newA, b.slice());
@@ -382,7 +380,7 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
     }
 
     public toVerbNurbs(): verb.geom.NurbsCurve {
-        return this._verbCurve.clone();
+        return this._verbCurve.clone() as verb.geom.NurbsCurve;
     }
 
     public getDegree(): number {
@@ -506,7 +504,7 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
         distEps = Tol.LENGTH,
         angleEps = Tol.ANGLE,
     ): number[] {
-        const result = [];
+        const result: number[] = [];
         const clampParam = !this.isPeriodic();
         const domain = this.getDomain();
         const segNum = this._degree * this._controlPoints.length;

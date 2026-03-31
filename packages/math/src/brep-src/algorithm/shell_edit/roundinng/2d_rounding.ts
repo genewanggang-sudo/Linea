@@ -10,8 +10,6 @@ import { IShellModelingResult, addShellModifyInfo } from '../shell_modeling_resu
 import { splitEdgeByVertex } from '../operator/split_edge';
 import { ContinuousUtil } from '../../../continuous';
 
-
-
 const errorRounding2DNotAdjacent = '倒圆角的边不相邻';
 const errorRounding2DNotLine = '倒圆角的边不是直线边';
 const errorRounding2DNoFace = '倒圆角的边不共面';
@@ -137,7 +135,7 @@ export class Rounding2D extends ShellModelingBase {
         // 构造新的边数组
         const shell = this._edge1.getParent() as Shell;
         const newArc = this._calRoundingArc3d(line1, line2, newV1.getPoint(), newV2.getPoint());
-        const newArcEdges = [];
+        const newArcEdges: Edge[] = [];
         if (!this._useSmooth) {
             const tmpEdge = new Edge(newArc, newV1, newV2);
             newArcEdges.push(tmpEdge);
@@ -254,7 +252,7 @@ export class Rounding2D extends ShellModelingBase {
         }
 
         const allSurfaces = [...faces1, ...faces2].map(f => f.getSurface());
-        if (!allSurfaces.every(s => s.isPlane()) || !allSurfaces.every(s => (s as Plane).isCoplanar(allSurfaces[0]))) {
+        if (!allSurfaces.every(s => s.isPlane()) || !allSurfaces.every(s => (s).isCoplanar(allSurfaces[0]))) {
             // 不共平面
             return errorRounding2DNotCoplanar;
         }

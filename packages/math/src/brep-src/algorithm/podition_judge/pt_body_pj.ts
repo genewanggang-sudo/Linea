@@ -7,14 +7,11 @@ import {
     alg,
     Polygon,
     Vec2,
-    Plane,
     Surface,
     CONST,
     Loop,
 } from '../../..';
 import { BrepBody, Edge, Face, Vertex } from '../..';
-
-
 
 export enum PtBodyPositionType {
     INSIDE,
@@ -98,13 +95,13 @@ export class PtBodyPosition {
         let count = 0;
         while (!coPointFlag) {
             coPointFlag = false;
-            let pts = [];
+            let pts: Vec3[] = [];
             for (const xFace of xFaceBox) {
                 const sur = xFace.getSurface();
                 if (
                     sur.containsPt(point, eps) &&
                     sur.isPlane() &&
-                    (sur as Plane).getNorm().isPerpendicular(rayLine.getDirection(), eps)
+                    (sur).getNorm().isPerpendicular(rayLine.getDirection(), eps)
                 ) {
                     coPointFlag = true;
                     pts = [];
@@ -219,7 +216,7 @@ export class PtBodyPosition {
             }
         }
 
-        const newLoops = [];
+        const newLoops: Loop[] = [];
         for (const loop of polygon.getLoops()) {
             const newloop = new Loop(
                 loop

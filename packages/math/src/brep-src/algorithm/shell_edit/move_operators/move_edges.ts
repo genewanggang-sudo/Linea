@@ -31,8 +31,6 @@ import { facesSplit } from '../faces_boolean/faces_boolean';
 import { splitShell } from '../operator/split_shell';
 import { Wire } from '../../..';
 
-
-
 interface ICurveIntersectFullInfo {
     overlap: alg.ICurvesXInfo3d; // 重合信息
     curve1: Edge; // 重合的第一条边
@@ -232,7 +230,7 @@ export class MoveEdges extends ShellModelingBase {
             }
         };
 
-        const subtractFaces = []; // 如果移动后,内环和外环相交，构造内外环的face，后续做布尔减
+        const subtractFaces: Face[] = []; // 如果移动后,内环和外环相交，构造内外环的face，后续做布尔减
         for (const modifyFace of modifyFaces) {
             if (shell!.getFaces().findIndex(f => f === modifyFace) >= 0) {
                 const poly2d: Polygon = modifyFace.calcPolygon();
@@ -762,7 +760,7 @@ export class MoveEdges extends ShellModelingBase {
         // 获取重合边切分点
         let movedEdge: Edge;
         this._edges.forEach(e => {
-            movedEdge! = e;
+            movedEdge = e;
         });
         const overEdges: Edge[] = [];
         const points: Vec3[] = [];
@@ -789,7 +787,7 @@ export class MoveEdges extends ShellModelingBase {
         }
         points.sort(sortByEdgeDir);
 
-        const newPoints = [];
+        const newPoints: Vec3[] = [];
         newPoints.push(points[0]);
         for (let i = 1; i < points.length; ++i) {
             if (points[i - 1].equals(points[i])) continue;
@@ -801,7 +799,7 @@ export class MoveEdges extends ShellModelingBase {
         const vertexs: Set<Vertex> = new Set();
         let Vertex0 = this._shell.createVertex(newPoints[0]);
         vertexs.add(Vertex0);
-        const newEdges = [];
+        const newEdges: Edge[] = [];
         for (let i = 1; i < newPoints.length; ++i) {
             const vertex1 = this._shell.createVertex(newPoints[i]);
             const edge = this._shell.createEdge(new Ln3(newPoints[i - 1], newPoints[i]), Vertex0, vertex1);

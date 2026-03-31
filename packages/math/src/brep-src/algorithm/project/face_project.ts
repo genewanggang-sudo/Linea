@@ -21,8 +21,6 @@ import {
     types,
 } from '../../..';
 
-
-
 import { Face } from '../../brep/face';
 
 /**
@@ -56,14 +54,14 @@ class FaceProject {
             const polylines = FaceProject.mergeLines(paths);
             return polylines;
         }
-        if (surface.isCylinder() && (surface as Cylinder).getCoord().getDz().isParallel(coordinate.getDz())) {
+        if (surface.isCylinder() && (surface).getCoord().getDz().isParallel(coordinate.getDz())) {
             const crv2d: Curve2[] = [];
             face.getWires().forEach(w => {
                 w.getCoedge3ds().forEach(c =>
                     crv2d.push(alg.Project.curveToPlane(c.getCurve(), targetPlane)!),
                 );
             });
-            return this._makeArc2d(surface as Cylinder, crv2d, targetPlane);
+            return this._makeArc2d(surface, crv2d, targetPlane);
         }
 
         const polygon = new Polygon();
@@ -128,7 +126,7 @@ class FaceProject {
             return [polygon];
         }
 
-        if (surface.isCylinder() && (surface as Cylinder).getCoord().getDz().isParallel(coordinate.getDz())) {
+        if (surface.isCylinder() && (surface).getCoord().getDz().isParallel(coordinate.getDz())) {
             // const crv2d: Curve2[] = [];
             // face.getWires().forEach(w => {
             //     w.getCoedge3ds().forEach(c =>
@@ -181,7 +179,7 @@ class FaceProject {
 
         const polygons: Polygon[] = [];
         contours.forEach(c => {
-            const ptss = matrix3 ? c.map(pts => pts.map(it => new Vec2(it).transform(matrix3!))) : c;
+            const ptss = matrix3 ? c.map(pts => pts.map(it => new Vec2(it).transform(matrix3))) : c;
             polygons.push(new Polygon(ptss));
         });
 
@@ -191,7 +189,7 @@ class FaceProject {
     public static mergeLines(paths: Vec2[][]): PolyCurve[] {
         // 合并直线
         let line0: Ln2 | undefined;
-        const ranges = [];
+        const ranges: Interval[] = [];
         for (const path of paths) {
             for (let i = 0; i < path.length; i++) {
                 if (path[i].equals(path[i === path.length - 1 ? 0 : i + 1])) {
@@ -217,7 +215,7 @@ class FaceProject {
         const resultRanges = Interval.merge(ranges);
 
         return resultRanges.map(r => {
-            const l = (line0 as Ln2).clone().setRange(r);
+            const l = (line0).clone().setRange(r);
             const polyline = new PolyCurve();
             polyline.addCurve(l);
             return polyline;
@@ -257,7 +255,7 @@ class FaceProject {
         if (Util.isNearlySmaller(max - min, Math.PI * 2)) {
             arc2d.setRange(min, max);
         }
-        polycurve.push(new PolyCurve([arc2d!]));
+        polycurve.push(new PolyCurve([arc2d]));
         return polycurve;
     }
 }

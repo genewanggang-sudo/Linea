@@ -2,8 +2,6 @@ import * as ClipperLib from '../clipperlib/clipperlib';
 import { Tol } from '../base/tol';
 import { types } from '../type_define/i_types';
 
-
-
 export class ClipperUtil {
     public static clipperTreeToPathLists(polyTree: ClipperLib.PolyTree): ClipperLib.Paths[] {
         const allPaths: ClipperLib.Paths[] = [];

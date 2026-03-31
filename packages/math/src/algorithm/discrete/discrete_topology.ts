@@ -5,8 +5,6 @@ import { Polygon } from '../../topology/polygon';
 import { IMesh2d } from './discrete_refiner';
 import { DiscreteUtil } from './discrete_util';
 
-
-
 export class DiscreteTopology {
     /**
      * 网格化PolygonEx，得到三角面片
@@ -14,7 +12,7 @@ export class DiscreteTopology {
      * @param params 离散精度
      * @param startIdx
      */
-    public static tessPolygonEx(polygon: Polygon, params = DiscreteParam.NORMAL, startIdx = 0): IMesh2d {
+    public static tessPolygonEx(polygon: Polygon, params = DiscreteParam.NORMAL, _startIdx = 0): IMesh2d {
         if (polygon.getAllCurves().length < 1) {
             //
             console.error('input error');
@@ -82,7 +80,7 @@ export class DiscreteTopology {
      */
     public static discretePolyline(curve2ds: PolyCurve, params = DiscreteParam.NORMAL): Vec2[] {
         const ces = curve2ds.getAllCurves();
-        const pts = [];
+        const pts: Array<Vec2> = [];
         for (let i = 0; i < ces.length; i++) {
             const cv = ces[i];
             const discretedCurve = cv.discrete(params);

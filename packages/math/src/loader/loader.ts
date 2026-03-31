@@ -2,8 +2,6 @@ import { IGeo } from '../type_define/i_element';
 import { types } from '../type_define/i_types';
 import { EN_GEO_TYPE } from '../type_define/i_element_type';
 
-
-
 /**
  * 将字符串/Json反射为几何
  */
@@ -28,16 +26,17 @@ export class Loader {
      * @returns 返回几何元素或点
      */
     public static reflect(str: string): IGeo[] {
-        const result = [];
+        const result: IGeo[] = [];
 
         let metaString = str;
 
         // 支持2种格式：1.整个str是1个json
         try {
-            let json = JSON.parse(metaString);
+            const json = JSON.parse(metaString);
             // 去换行符
             metaString = JSON.stringify(json);
         } catch (error) {
+            console.error(error)
         }
 
         // 2. 每行是一个json
@@ -53,11 +52,11 @@ export class Loader {
                 const jsObj = JSON.parse(s);
                 if (Array.isArray(jsObj)) {
                     jsObj.flat(100).forEach(_ => {
-                        const geo = this.load(_);
+                        const geo = this.load(_ as types.IDBLibGeo);
                         result.push(geo);
                     });
                 } else {
-                    const geo = this.load(jsObj);
+                    const geo = this.load(jsObj as types.IDBLibGeo);
                     result.push(geo);
                 }
             } catch (error) {
@@ -86,7 +85,7 @@ export class Loader {
      * load外部的mesh数据
      */
     public static reflectMesh(jsonString: string): IGeo[] {
-        const result = [];
+        const result: IGeo[] = [];
 
         const strs: string[] = jsonString.split('\n');
         for (let s of strs) {
@@ -108,7 +107,7 @@ export class Loader {
                 jsObj.faces = [];
                 jsObj.uvs = [];
 
-                const geo = this.load(jsObj);
+                const geo = this.load(jsObj as types.IDBLibGeo);
                 result.push(geo);
             } catch (error) {
                 //

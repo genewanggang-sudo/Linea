@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/prefer-for-of */
+
 import * as ClipperLib from '../clipperlib/clipperlib';
 import { Polygon } from '../topology/polygon';
 import { Loop } from '../topology/loop';
 import { PolyCurve } from '../topology/polycurve';
 import { types } from '../type_define/i_types';
 import { EN_GEO_TYPE } from '../type_define/i_element_type';
-
-
+import { Vec2 } from '../base/vec2';
 
 /**
  * 格式转换类
@@ -73,7 +72,7 @@ class ClipperFormatConverter {
         const loops = polygon.getLoops();
         loops.forEach((loop: Loop) => {
             const ces = loop.getAllCurves();
-            const pts = [];
+            const pts: Vec2[] = [];
             for (let i = 0; i < ces.length; i++) {
                 const cv = ces[i];
                 const discretedCurve = cv.discrete();
@@ -90,7 +89,7 @@ class ClipperFormatConverter {
     }
 
     public static clpExPolygonToPolygon(exPolygon: ClipperLib.ExPolygon): Polygon {
-        const out = [];
+        const out: ClipperLib.IntPoint[] = [];
 
         for (let i = 0; i < exPolygon.outer.length; i++) {
             out.push(exPolygon.outer[i]);
@@ -99,7 +98,7 @@ class ClipperFormatConverter {
         const polygon = ClipperFormatConverter.pathsToPolygon([out]);
 
         for (let i = 0; i < exPolygon.holes.length; i++) {
-            const inner = [];
+            const inner: ClipperLib.IntPoint[] = [];
             for (let j = 0; j < exPolygon.holes[i].length; j++) {
                 inner.push(exPolygon.holes[i][j]);
             }
