@@ -10,34 +10,32 @@ import { IGrapher2DInEdge, IGrapher2DOutPoint, IGrapher2DEdge, IGrapher2DCoeEdge
 import { WasmInstance } from './wasminstance';
 import { C2d, C2dType } from './c2d';
 import { L2D } from './l2d';
-import { A2D } from "./a2d";
-import { Elli } from "./elli";
+import { A2D } from './a2d';
+import { Elli } from './elli';
 import { Bx2 } from './bx2';
 import { getGeomInstance, loadWasmInstanceAsync } from './loader';
-
-
 
 function mathCurveToCurve2d(mathCurve: MathCurve2d, id: number = -1): C2d {
     switch (mathCurve.getType()) {
         case EN_GEO_TYPE.LN_2: {
-            let edge: MathLn2 = mathCurve as MathLn2;
+            const edge: MathLn2 = mathCurve as MathLn2;
             return new L2D(edge.getStartPt(), edge.getEndPt(), id);
         }
         case EN_GEO_TYPE.ARC_2: {
-            let edge: MathArc2d = mathCurve as MathArc2d;
-            let coord = edge.getCoord();
-            let a = edge.getA();
-            let b = edge.getB();
-            let region = edge.getRange();
+            const edge: MathArc2d = mathCurve as MathArc2d;
+            const coord = edge.getCoord();
+            const a = edge.getA();
+            const b = edge.getB();
+            const region = edge.getRange();
             if (Math.abs(a - b) < 0.0000000001) {
                 return new A2D(edge.getStartPt(), edge.getEndPt(), a, (region.max - region.min) * (edge.isCCW() ? 1 : -1), coord.getOrigin(), id);
             } else {
-                let dir = coord.getDx();
+                const dir = coord.getDx();
                 return new Elli(edge.getStartPt(), edge.getEndPt(), a, b, Math.atan2(dir.y, dir.x), coord.getOrigin(), (region.max - region.min) * (edge.isCCW() ? 1 : -1), id);
             }
         }
         default: {
-            throw "Unsupported data type " + mathCurve.getType();
+            throw 'Unsupported data type ' + mathCurve.getType();
         }
     }
 }
@@ -94,25 +92,25 @@ class GeomLibWrapper {
     }
 
     public search(input: IGrapher2DInEdge[], clean: number = 1, tol: number = 1e-6): IGrapher2DResult {
-        let rotator = this.getRot(input);
+        const rotator = this.getRot(input);
         const rotateMatrix = MathMatrix3.makeRotate(MathVec2.O(), rotator);
         const rotateBackMatrix = MathMatrix3.makeRotate(MathVec2.O(), -rotator);
         input.forEach(_ => {
             _.curve = _.curve.transformed(rotateMatrix);
         });
-        let regionId: Map<number, number | string> = new Map();
-        let curveId: Map<number, number | string> = new Map();
-        let pointId: Map<number, number | string> = new Map();
+        const regionId: Map<number, number | string> = new Map();
+        const curveId: Map<number, number | string> = new Map();
+        const pointId: Map<number, number | string> = new Map();
 
-        let regionMark: Map<string | number | undefined, number> = new Map();
-        let curveMark: Map<string | number | undefined, number> = new Map();
-        let pointMark: Map<string | number | undefined, number> = new Map();
+        const regionMark: Map<string | number | undefined, number> = new Map();
+        const curveMark: Map<string | number | undefined, number> = new Map();
+        const pointMark: Map<string | number | undefined, number> = new Map();
 
-        let algInput: any[] = [];
+        const algInput: any[] = [];
         let regionTotal = 0;
         let curveTotal = 0;
         let pointTotal = 0;
-        let inputAllCurve: C2d[] = [];
+        const inputAllCurve: C2d[] = [];
         const build = (curves: IGrapher2DInEdge[]): void => {
             for (let k = 0; k < curves.length; ++k) {
                 if ((curves[k].id === 0 || curves[k].id) && !curveMark.has(curves[k].id as number)) {
@@ -154,55 +152,55 @@ class GeomLibWrapper {
             }
         }
         build(input);
-        let bufferPt = this._instance._malloc(Int32Array.BYTES_PER_ELEMENT * algInput.length);
-        let buffer = new Int32Array(this._instance.HEAPF64.buffer, bufferPt);
+        const bufferPt = this._instance._malloc(Int32Array.BYTES_PER_ELEMENT * algInput.length);
+        const buffer = new Int32Array(this._instance.HEAPF64.buffer, bufferPt);
         for (let i = 0; i < algInput.length; ++i) {
             buffer[i] = algInput[i];
         }
-        let inputInfo = this.curvesToBuffer(inputAllCurve);
-        let _ret = this._instance.search(inputInfo.ptr, inputInfo.bitsize, bufferPt, algInput.length, tol, clean);
+        const inputInfo = this.curvesToBuffer(inputAllCurve);
+        const _ret = this._instance.search(inputInfo.ptr, inputInfo.bitsize, bufferPt, algInput.length, tol, clean);
         input.forEach(_ => {
             _.curve.transform(rotateBackMatrix);
         });
         this._instance._free(bufferPt);
         this._instance._free(inputInfo.ptr);
-        let ret = this._processGrapher2DBuffer(_ret);
-        let allcurve: IGrapher2DEdge[] = [];
-        let regionMap: Map<number, IGrapher2DDualRegion> = new Map();
+        const ret = this._processGrapher2DBuffer(_ret);
+        const allcurve: IGrapher2DEdge[] = [];
+        const regionMap: Map<number, IGrapher2DDualRegion> = new Map();
         for (let i = 0; i < ret.regions.length; ++i) {
             regionMap.set(ret.regions[i].id, { id: ret.regions[i].id, oldId: [], outer: [], holes: [], link: [], depth: -1 });
         }
-        let allPoint: IGrapher2DOutPoint[] = this.getPTS(ret, pointId, rotateBackMatrix);
+        const allPoint: IGrapher2DOutPoint[] = this.getPTS(ret, pointId, rotateBackMatrix);
         for (let i = 0; i < ret.allEdge.length; ++i) {
-            let curve = this.cueveTomathCurve(ret.allEdge[i].c);
+            const curve = this.cueveTomathCurve(ret.allEdge[i].c);
             curve.transform(rotateBackMatrix);
-            let id = ret.allEdge[i].id;
-            let lface = regionMap.get(ret.allEdge[i].l) as IGrapher2DDualRegion;
-            let rface = regionMap.get(ret.allEdge[i].r) as IGrapher2DDualRegion;
-            let oldId: (number | string)[] = [];
+            const id = ret.allEdge[i].id;
+            const lface = regionMap.get(ret.allEdge[i].l) as IGrapher2DDualRegion;
+            const rface = regionMap.get(ret.allEdge[i].r) as IGrapher2DDualRegion;
+            const oldId: (number | string)[] = [];
             for (let k = 0; k < ret.allEdge[i].o.length; ++k) {
-                let tmpid = curveId.get(ret.allEdge[i].o[k]);
+                const tmpid = curveId.get(ret.allEdge[i].o[k]);
                 if (tmpid || tmpid == 0) oldId.push(tmpid);
             }
 
-            let edge: IGrapher2DEdge = {
+            const edge: IGrapher2DEdge = {
                 curve,
                 coedges: [],
                 from: allPoint[ret.allEdge[i].f],
                 to: allPoint[ret.allEdge[i].t],
                 oldId,
             };
-            let start = curve.getStartPt();
-            let end = curve.getEndPt();
+            const start = curve.getStartPt();
+            const end = curve.getEndPt();
             edge.from.point.x = start.x;
             edge.from.point.y = start.y;
             edge.to.point.x = end.x;
             edge.to.point.y = end.y;
-            let coedgel: IGrapher2DCoeEdge = {
+            const coedgel: IGrapher2DCoeEdge = {
                 edge, isRev: false, id, region: lface, oldId,
             }
 
-            let coedger: IGrapher2DCoeEdge = {
+            const coedger: IGrapher2DCoeEdge = {
                 edge, isRev: true, id, region: rface, oldId,
             }
             edge.coedges.push(coedgel, coedger);
@@ -231,13 +229,13 @@ class GeomLibWrapper {
             return true;
         }
         for (let i = 0; i < ret.regions.length; ++i) {
-            let ref = regionMap.get(ret.regions[i].id) as IGrapher2DDualRegion;
+            const ref = regionMap.get(ret.regions[i].id) as IGrapher2DDualRegion;
             ref.id = ret.regions[i].id;
-            let outer = ret.regions[i].outer;
-            let tmpchildern: Set<IGrapher2DDualRegion> = new Set();
+            const outer = ret.regions[i].outer;
+            const tmpchildern: Set<IGrapher2DDualRegion> = new Set();
             ref.link = [];
             for (let k = 0; k < outer.length; ++k) {
-                let r = allcurve[outer[k].ind];
+                const r = allcurve[outer[k].ind];
                 ref.outer.push(r.coedges[outer[k].isrev ? 1 : 0]);
                 for (let t = 0; t < r.coedges.length; ++t) {
                     if (r.coedges[t].region.id !== ref.id) {
@@ -251,11 +249,11 @@ class GeomLibWrapper {
                     }
                 }
             }
-            let holes = ret.regions[i].holes;
+            const holes = ret.regions[i].holes;
             for (let k = 0; k < holes.length; ++k) {
-                let tmp: IGrapher2DCoeEdge[] = [];
+                const tmp: IGrapher2DCoeEdge[] = [];
                 for (let j = 0; j < holes[k].length; ++j) {
-                    let r = allcurve[holes[k][j].ind];
+                    const r = allcurve[holes[k][j].ind];
                     tmp.push(r.coedges[holes[k][j].isrev ? 1 : 0]);
                     for (let t = 0; t < r.coedges.length; ++t) {
                         if (r.coedges[t].region.id !== ref.id) {
@@ -279,11 +277,11 @@ class GeomLibWrapper {
             }
         }
         const createDepth = (root: IGrapher2DDualRegion): IGrapher2DDualRegion[] => {
-            let _list = [root];
+            const _list = [root];
             root.depth = 0;
             let l = 0;
             while (l < _list.length) {
-                let ref = _list[l++];
+                const ref = _list[l++];
                 for (let i = 0; i < ref.link.length; ++i) {
                     if (ref.link[i].depth > -1) continue;
                     ref.link[i].depth = ref.depth + 1;
@@ -309,7 +307,7 @@ class GeomLibWrapper {
         });
         return {
             root,
-            list: regionList
+            list: regionList,
         };
     }
 
@@ -330,12 +328,12 @@ class GeomLibWrapper {
         fast: boolean = true): MathCurve2d[][][] {
         if (loops2.length === 0 || loops1.length === 0) return [];
         let scanLineBegin: number = -1e100, scanLineEnd: number = 1e100;
-        let curves1 = this.mathCurveToCueves(loops1);
-        let curves2 = this.mathCurveToCueves(loops2);
-        let midIndex = curves2.length;
+        const curves1 = this.mathCurveToCueves(loops1);
+        const curves2 = this.mathCurveToCueves(loops2);
+        const midIndex = curves2.length;
         if (fast) {
-            let box1 = new Bx2();
-            let box2 = new Bx2();
+            const box1 = new Bx2();
+            const box2 = new Bx2();
             for (let i = 0; i < curves1.length; ++i) {
                 curves1[i].updateBox2d(box1);
             }
@@ -356,26 +354,26 @@ class GeomLibWrapper {
     // loops1 对 loops2 做差，保留loops2独有对点集。同时合并共线，毛刺
     public different(loops1: MathCurve2d[][], loops2: MathCurve2d[][], tol: { angleEps: number, lengthEps: number } = { angleEps: 1e-4, lengthEps: 1e-6 },
         fast: boolean = false) {
-        let scanLineBegin: number = -1e100, scanLineEnd: number = 1e100;
-        let curves1 = this.mathCurveToCueves(loops1);
-        let midIndex = curves1.length;
+        const scanLineBegin: number = -1e100, scanLineEnd: number = 1e100;
+        const curves1 = this.mathCurveToCueves(loops1);
+        const midIndex = curves1.length;
         if (fast) {
-            let ret = this.intersect(loops1, loops2, tol, true);
-            let input: MathCurve2d[][] = [];
+            const ret = this.intersect(loops1, loops2, tol, true);
+            const input: MathCurve2d[][] = [];
             for (let i = 0; i < ret.length; ++i) {
                 for (let k = 0; k < ret[i].length; ++k) {
                     input.push(ret[i][k]);
                 }
             }
 
-            let curves2 = this.mathCurveToCueves(input);
+            const curves2 = this.mathCurveToCueves(input);
             for (let i = 0; i < curves2.length; ++i) {
                 curves1.push(curves2[i]);
             }
-            let res = this.cueveLoopsTomathCurveLoops(this._clipperDiff(curves1, tol.lengthEps, tol.angleEps, scanLineBegin, scanLineEnd, true, midIndex));
+            const res = this.cueveLoopsTomathCurveLoops(this._clipperDiff(curves1, tol.lengthEps, tol.angleEps, scanLineBegin, scanLineEnd, true, midIndex));
             return res;
         }
-        let curves2 = this.mathCurveToCueves(loops2);
+        const curves2 = this.mathCurveToCueves(loops2);
         for (let i = 0; i < curves2.length; ++i) {
             curves1.push(curves2[i]);
         }
@@ -385,32 +383,32 @@ class GeomLibWrapper {
     public xor(loops1: MathCurve2d[][], loops2: MathCurve2d[][], tol: { angleEps: number, lengthEps: number } = { angleEps: 1e-4, lengthEps: 1e-6 },
         fast: boolean = true): MathCurve2d[][][] {
         if (fast) {
-            let ret = this.intersect(loops1, loops2, tol, true);
-            let input: MathCurve2d[][] = [];
+            const ret = this.intersect(loops1, loops2, tol, true);
+            const input: MathCurve2d[][] = [];
             for (let i = 0; i < ret.length; ++i) {
                 for (let k = 0; k < ret[i].length; ++k) {
                     input.push(ret[i][k]);
                 }
             }
-            let curves = this.mathCurveToCueves(input);
-            let input1 = this.mathCurveToCueves(loops1);
-            let input2 = this.mathCurveToCueves(loops2);
-            let midIndex1 = input1.length;
-            let midIndex2 = input2.length;
+            const curves = this.mathCurveToCueves(input);
+            const input1 = this.mathCurveToCueves(loops1);
+            const input2 = this.mathCurveToCueves(loops2);
+            const midIndex1 = input1.length;
+            const midIndex2 = input2.length;
             for (let i = 0; i < curves.length; ++i) {
                 input1.push(curves[i]);
                 input2.push(curves[i]);
             }
-            let result1 = this.cueveLoopsTomathCurveLoops(this._clipperDiff(input1, tol.lengthEps, tol.angleEps, -1e100, 1e100, false, midIndex1));
-            let result2 = this.cueveLoopsTomathCurveLoops(this._clipperDiff(input2, tol.lengthEps, tol.angleEps, -1e100, 1e100, false, midIndex2));
+            const result1 = this.cueveLoopsTomathCurveLoops(this._clipperDiff(input1, tol.lengthEps, tol.angleEps, -1e100, 1e100, false, midIndex1));
+            const result2 = this.cueveLoopsTomathCurveLoops(this._clipperDiff(input2, tol.lengthEps, tol.angleEps, -1e100, 1e100, false, midIndex2));
             for (let i = 0; i < result1.length; ++i) {
                 result2.push(result1[i]);
             }
             return result2;
         }
-        let curves1 = this.mathCurveToCueves(loops1);
-        let midIndex = curves1.length;
-        let curves2 = this.mathCurveToCueves(loops2);
+        const curves1 = this.mathCurveToCueves(loops1);
+        const midIndex = curves1.length;
+        const curves2 = this.mathCurveToCueves(loops2);
         for (let i = 0; i < curves2.length; ++i) {
             curves1.push(curves2[i]);
         }
@@ -424,7 +422,7 @@ class GeomLibWrapper {
     }
 
     private cueveLoopsTomathCurveLoops(loops: C2d[][][]): MathCurve2d[][][] {
-        let result: MathCurve2d[][][] = [];
+        const result: MathCurve2d[][][] = [];
         for (let i = 0; i < loops.length; ++i) {
             result.push([]);
             for (let k = 0; k < loops[i].length; ++k) {
@@ -451,12 +449,12 @@ class GeomLibWrapper {
     }
 
     private mathCurveToCueves(loops1: MathCurve2d[][], loops2?: MathCurve2d[][], tol: number = 1e-6): C2d[] {
-        let curves: C2d[] = [];
-        let data = loops2 ? [loops1, loops2] : [loops1];
+        const curves: C2d[] = [];
+        const data = loops2 ? [loops1, loops2] : [loops1];
         for (let t = 0; t < data.length; ++t) {
-            let loops = data[t];
+            const loops = data[t];
             for (let i = 0; i < loops.length; ++i) {
-                let begin = curves.length;
+                const begin = curves.length;
                 for (let k = 0; k < loops[i].length; ++k) {
                     curves.push(mathCurveToCurve2d(loops[i][k]));
                 }
@@ -482,10 +480,10 @@ class GeomLibWrapper {
     }
 
     private _getPathByBufferEx(type: Int32Array, data: Float64Array, typeStep: number, dataStep: number, count: number) {
-        let loop: C2d[] = [];
+        const loop: C2d[] = [];
         for (let i = 0; i < count; ++i) {
-            let offsetType = i * typeStep;
-            let offsetData = i * dataStep + 1;
+            const offsetType = i * typeStep;
+            const offsetData = i * dataStep + 1;
             switch (type[offsetType]) {
                 case C2dType.line: {
                     loop.push(new L2D({ x: data[offsetData], y: data[offsetData + 1] }, { x: data[offsetData + 2], y: data[offsetData + 3] }, type[offsetType + 1]));
@@ -497,7 +495,7 @@ class GeomLibWrapper {
                         data[offsetData + 7],
                         {
                             x: data[offsetData + 5],
-                            y: data[offsetData + 6]
+                            y: data[offsetData + 6],
                         },
                         type[offsetType + 1]));
                 }
@@ -509,7 +507,7 @@ class GeomLibWrapper {
                         data[offsetData + 6],
                         {
                             x: data[offsetData + 7],
-                            y: data[offsetData + 8]
+                            y: data[offsetData + 8],
                         },
                         data[offsetData + 9],
                         type[offsetType + 1]));
@@ -521,19 +519,19 @@ class GeomLibWrapper {
     }
 
     private _processGrapher2DBuffer_Points(input: BufferPoints) {
-        let bufferPoint = new Float64Array(this._instance.HEAPF64.buffer, input.data);
-        let bufferBegin = new Int32Array(this._instance.HEAPF64.buffer, input.begin);
-        let bufferList = new Int32Array(this._instance.HEAPF64.buffer, input.list);
-        let count = input.count;
-        let points: types.IXY[] = [];
-        let list = [];
-        let begin = [0];
+        const bufferPoint = new Float64Array(this._instance.HEAPF64.buffer, input.data);
+        const bufferBegin = new Int32Array(this._instance.HEAPF64.buffer, input.begin);
+        const bufferList = new Int32Array(this._instance.HEAPF64.buffer, input.list);
+        const count = input.count;
+        const points: types.IXY[] = [];
+        const list = [];
+        const begin = [0];
         for (let i = 0; i < count; ++i) {
             points.push({ x: bufferPoint[i * 2], y: bufferPoint[i * 2 + 1] });
         }
         let maxEnd = 0;
         for (let i = 0; i < count; ++i) {
-            let end = bufferBegin[i + 1]
+            const end = bufferBegin[i + 1]
             begin.push(end);
             if (maxEnd < end) maxEnd = end;
         }
@@ -541,29 +539,29 @@ class GeomLibWrapper {
             list.push(bufferList[k]);
         }
         return {
-            points, list, begin
+            points, list, begin,
         }
     }
 
     private _processGrapher2DBuffer_Edge(input: BufferEdges) {
-        let type = new Int32Array(this._instance.HEAPF64.buffer, input.ptr, input.edgeCount * this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT);
-        let data = new Float64Array(this._instance.HEAPF64.buffer, input.ptr, input.edgeCount * this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT);
-        let typeStep = this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT;
-        let dataStep = this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT;
-        let loops = this._getPathByBufferEx(type, data, typeStep, dataStep, input.edgeCount);
-        let array = [];
-        let buffer = new Int32Array(this._instance.HEAPF64.buffer, input.curveData);
-        let oldIdBuffer = new Int32Array(this._instance.HEAPF64.buffer, input.idData);
+        const type = new Int32Array(this._instance.HEAPF64.buffer, input.ptr, input.edgeCount * this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT);
+        const data = new Float64Array(this._instance.HEAPF64.buffer, input.ptr, input.edgeCount * this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT);
+        const typeStep = this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT;
+        const dataStep = this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT;
+        const loops = this._getPathByBufferEx(type, data, typeStep, dataStep, input.edgeCount);
+        const array = [];
+        const buffer = new Int32Array(this._instance.HEAPF64.buffer, input.curveData);
+        const oldIdBuffer = new Int32Array(this._instance.HEAPF64.buffer, input.idData);
         for (let i = 0, j = 0; i < loops.length; ++i) {
-            let c = loops[i];
-            let l = buffer[j++];
-            let r = buffer[j++];
-            let f = buffer[j++];
-            let t = buffer[j++];
-            let id = buffer[j++];
+            const c = loops[i];
+            const l = buffer[j++];
+            const r = buffer[j++];
+            const f = buffer[j++];
+            const t = buffer[j++];
+            const id = buffer[j++];
             let begin = buffer[j++];
-            let end = buffer[j++];
-            let o = [];
+            const end = buffer[j++];
+            const o = [];
             while (begin < end) {
                 o.push(oldIdBuffer[begin++]);
             }
@@ -576,15 +574,15 @@ class GeomLibWrapper {
     }
 
     private _processGrapher2DBuffer_Regions(input: BufferRegions) {
-        let regions = [];
-        let bufferLoop = new Int32Array(this._instance.HEAPF64.buffer, input.loopsPtr);
-        let bufferOldId = new Int32Array(this._instance.HEAPF64.buffer, input.regionOldPtr);
+        const regions = [];
+        const bufferLoop = new Int32Array(this._instance.HEAPF64.buffer, input.loopsPtr);
+        const bufferOldId = new Int32Array(this._instance.HEAPF64.buffer, input.regionOldPtr);
         for (let i = 0; i < input.regions.length; ++i) {
-            let id = input.regions[i].id;
-            let outer: { ind: number, isrev: number }[] = [];
+            const id = input.regions[i].id;
+            const outer: { ind: number, isrev: number }[] = [];
             let obegin = input.regions[i].obegin;
-            let oend = input.regions[i].oend;
-            let o = [];
+            const oend = input.regions[i].oend;
+            const o = [];
             while (obegin < oend) {
                 o.push(bufferOldId[obegin++]);
             }
@@ -594,11 +592,11 @@ class GeomLibWrapper {
                 outer.push({ ind: bufferLoop[loopbegin], isrev: bufferLoop[loopbegin + 1] });
                 loopbegin += 2;
             }
-            let holes: { ind: number, isrev: number }[][] = [];
+            const holes: { ind: number, isrev: number }[][] = [];
             for (let k = 0; k < input.regions[i].holes.length; ++k) {
                 loopbegin = input.regions[i].holes[k].loopbegin;
                 loopend = input.regions[i].holes[k].loopend;
-                let hole: { ind: number, isrev: number }[] = [];
+                const hole: { ind: number, isrev: number }[] = [];
                 while (loopbegin < loopend) {
                     hole.push({ ind: bufferLoop[loopbegin], isrev: bufferLoop[loopbegin + 1] });
                     loopbegin += 2;
@@ -611,9 +609,9 @@ class GeomLibWrapper {
     }
 
     private _processGrapher2DBuffer(input: Grapher2DResultForWasm) {
-        let res1 = this._processGrapher2DBuffer_Edge(input.alledge);
-        let res2 = this._processGrapher2DBuffer_Points(input.point);
-        let res3 = this._processGrapher2DBuffer_Regions(input.regions);
+        const res1 = this._processGrapher2DBuffer_Edge(input.alledge);
+        const res2 = this._processGrapher2DBuffer_Points(input.point);
+        const res3 = this._processGrapher2DBuffer_Regions(input.regions);
         return {
             allEdge: res1,
             points: res2.points,
@@ -624,12 +622,12 @@ class GeomLibWrapper {
     }
 
     private _getPathByBuffer(isOuter: Int32Array, polyBegin: Int32Array, type: Int32Array, data: Float64Array, typeStep: number, dataStep: number, index: number) {
-        let result: C2d[][] = [];
+        const result: C2d[][] = [];
         do {
-            let loop: C2d[] = [];
+            const loop: C2d[] = [];
             for (let i = polyBegin[index], end = polyBegin[index + 1]; i < end; ++i) {
-                let offsetType = i * typeStep;
-                let offsetData = i * dataStep + 1;
+                const offsetType = i * typeStep;
+                const offsetData = i * dataStep + 1;
                 switch (type[offsetType]) {
                     case C2dType.line: {
                         loop.push(new L2D({ x: data[offsetData], y: data[offsetData + 1] }, { x: data[offsetData + 2], y: data[offsetData + 3] }, type[offsetType + 1]));
@@ -641,7 +639,7 @@ class GeomLibWrapper {
                             data[offsetData + 7],
                             {
                                 x: data[offsetData + 5],
-                                y: data[offsetData + 6]
+                                y: data[offsetData + 6],
                             },
                             type[offsetType + 1]));
                     }
@@ -653,7 +651,7 @@ class GeomLibWrapper {
                             data[offsetData + 6],
                             {
                                 x: data[offsetData + 7],
-                                y: data[offsetData + 8]
+                                y: data[offsetData + 8],
                             },
                             data[offsetData + 9],
                             type[offsetType + 1]));
@@ -668,16 +666,16 @@ class GeomLibWrapper {
     }
 
     private _paraseBuffer(sul: any) {
-        let isOuter: Int32Array = sul.isOuter;
-        let polyBegin: Int32Array = sul.polyBegin;
-        let type = new Int32Array(this._instance.HEAPF64.buffer, sul.edge, sul.edgeCount * this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT);
-        let data = new Float64Array(this._instance.HEAPF64.buffer, sul.edge, sul.edgeCount * this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT);
-        let typeStep = this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT;
-        let dataStep = this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT;
+        const isOuter: Int32Array = sul.isOuter;
+        const polyBegin: Int32Array = sul.polyBegin;
+        const type = new Int32Array(this._instance.HEAPF64.buffer, sul.edge, sul.edgeCount * this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT);
+        const data = new Float64Array(this._instance.HEAPF64.buffer, sul.edge, sul.edgeCount * this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT);
+        const typeStep = this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT;
+        const dataStep = this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT;
         let i = 0, count = sul.count;
-        let ret: C2d[][][] = [];
+        const ret: C2d[][][] = [];
         while (i < count) {
-            let { result, index } = this._getPathByBuffer(isOuter, polyBegin, type, data, typeStep, dataStep, i);
+            const { result, index } = this._getPathByBuffer(isOuter, polyBegin, type, data, typeStep, dataStep, i);
             i = index;
             ret.push(result);
         }
@@ -686,40 +684,40 @@ class GeomLibWrapper {
     }
 
     private _clipperInter(curves: C2d[], tol: number, tolAngle: number, scanLineBegin: number, scanLineEnd: number, performCross: boolean, midIndex: number = 0): C2d[][][] {
-        let { ptr, bitsize } = this.curvesToBuffer(curves);
-        let result = this._paraseBuffer(this._instance.clipperInter(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex));
+        const { ptr, bitsize } = this.curvesToBuffer(curves);
+        const result = this._paraseBuffer(this._instance.clipperInter(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex));
         this._instance._free(ptr);
         return result;
     }
 
     private _clipperDiff(curves: C2d[], tol: number, tolAngle: number, scanLineBegin: number, scanLineEnd: number, performCross: boolean, midIndex: number = 0): C2d[][][] {
-        let { ptr, bitsize } = this.curvesToBuffer(curves);
-        let result = this._paraseBuffer(this._instance.clipperDiff(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex));
+        const { ptr, bitsize } = this.curvesToBuffer(curves);
+        const result = this._paraseBuffer(this._instance.clipperDiff(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex));
         this._instance._free(ptr);
         return result;
     }
 
     private _clipperUnion(curves: C2d[], tol: number, tolAngle: number, scanLineBegin: number, scanLineEnd: number, performCross: boolean, midIndex: number = 0): C2d[][][] {
-        let { ptr, bitsize } = this.curvesToBuffer(curves);
-        let result = this._paraseBuffer(this._instance.clipperUnion(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex));
+        const { ptr, bitsize } = this.curvesToBuffer(curves);
+        const result = this._paraseBuffer(this._instance.clipperUnion(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex));
         this._instance._free(ptr);
         return result;
     }
 
     private _clipperXor(curves: C2d[], tol: number, tolAngle: number, scanLineBegin: number, scanLineEnd: number, performCross: boolean, midIndex: number = 0): C2d[][][] {
-        let { ptr, bitsize } = this.curvesToBuffer(curves);
-        let result = this._instance.clipperXor(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex);
+        const { ptr, bitsize } = this.curvesToBuffer(curves);
+        const result = this._instance.clipperXor(ptr, bitsize, tol, tolAngle, scanLineBegin, scanLineEnd, performCross, midIndex);
         this._instance._free(ptr);
         return result;
     }
 
     private curvesToBuffer(curves: C2d[]) {
-        let buffersize = curves.length * this._instance.getCurveSize();
-        let ptr = this._instance._malloc(buffersize);
-        let type = new Int32Array(this._instance.HEAPF64.buffer, ptr, buffersize / Int32Array.BYTES_PER_ELEMENT);
-        let data = new Float64Array(this._instance.HEAPF64.buffer, ptr, buffersize / Float64Array.BYTES_PER_ELEMENT);
-        let typeStep = this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT;
-        let dataStep = this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT;
+        const buffersize = curves.length * this._instance.getCurveSize();
+        const ptr = this._instance._malloc(buffersize);
+        const type = new Int32Array(this._instance.HEAPF64.buffer, ptr, buffersize / Int32Array.BYTES_PER_ELEMENT);
+        const data = new Float64Array(this._instance.HEAPF64.buffer, ptr, buffersize / Float64Array.BYTES_PER_ELEMENT);
+        const typeStep = this._instance.getCurveSize() / Int32Array.BYTES_PER_ELEMENT;
+        const dataStep = this._instance.getCurveSize() / Float64Array.BYTES_PER_ELEMENT;
         for (let index = 0; index < curves.length; ++index) {
             curves[index].toBuffer(type, data, typeStep, dataStep, index);
         }
@@ -744,13 +742,13 @@ class GeomLibWrapper {
     }
 
     private getPTS(searchRET: any, pointId: Map<number, number | string>, rotateBackMatrix: MathMatrix3) {
-        let pts: IGrapher2DOutPoint[] = [];
+        const pts: IGrapher2DOutPoint[] = [];
 
-        let points = searchRET.points;
-        let list = searchRET.list;
-        let begin = searchRET.begin;
+        const points = searchRET.points;
+        const list = searchRET.list;
+        const begin = searchRET.begin;
         for (let i = 0; i < points.length; ++i) {
-            let oldId: (number | string)[] = [];
+            const oldId: (number | string)[] = [];
             for (let k = begin[i]; k < begin[i + 1]; ++k) {
                 oldId.push(pointId.get(list[k]) as number);
             }
@@ -759,7 +757,7 @@ class GeomLibWrapper {
             pts.push({
                 point,
                 id: i,
-                oldId
+                oldId,
             })
         }
         return pts;

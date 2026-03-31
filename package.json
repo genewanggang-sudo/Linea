@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "dev:docs": "pnpm --filter docs dev",
-    "dev:core-flow-test": "pnpm --parallel --filter \"@ccpc/core\" --filter core-flow-test dev",
+    "dev:core-flow-test": "pnpm --filter core-flow-test dev",
     "dev:math-visual-test": "pnpm --filter math-visual-test dev",
     "build": "pnpm -r build",
+    "build:lib": "pnpm --filter @ccpc/math build && pnpm --filter @ccpc/core build && pnpm --filter @ccpc/canvas build && pnpm --filter @ccpc/snap build && pnpm --filter @ccpc/platform build",
+    "publish:lib": "pnpm --filter @ccpc/math publish && pnpm --filter @ccpc/core publish && pnpm --filter @ccpc/canvas publish && pnpm --filter @ccpc/snap publish && pnpm --filter @ccpc/platform publish",
     "build:docs": "pnpm --filter docs build",
     "build:math-visual-test": "pnpm --filter math-visual-test build",
     "publish:core": "pnpm --filter @ccpc/core publish --access public --no-git-checks",
