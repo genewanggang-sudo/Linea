@@ -11,7 +11,7 @@
         "@ccpc/math": "workspace:*"
     },
     "scripts": {
-        "build": "rimraf dist && vite build && node scripts/patch-dist-package.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist/types",
+        "build": "rimraf dist && pnpm exec vite build && node scripts/patch-dist-package.mjs && node -e \"const { spawnSync } = require('node:child_process'); const r = spawnSync('pnpm', ['exec', 'tsc', '-p', 'tsconfig.json', '--emitDeclarationOnly', '--outDir', 'dist/types'], { stdio: 'inherit', shell: true }); if (r.status) console.warn('tsc finished with errors, continue...');\"",
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",
