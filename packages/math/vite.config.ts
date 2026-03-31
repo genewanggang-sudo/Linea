@@ -3,18 +3,6 @@ import { defineConfig } from 'vite';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import wasm from 'vite-plugin-wasm';
 
-const external = [
-    'uuid',
-    'numeric',
-    'quadtree-lib',
-    'libtess',
-    'earcut',
-    'poly2tri',
-    'priorityqueuejs',
-    'clipper2-wasm',
-    'lodash',
-];
-
 export default defineConfig({
     build: {
         lib: {
@@ -23,17 +11,19 @@ export default defineConfig({
             fileName: () => 'index.cjs',
         },
         rollupOptions: {
-            external,
+            external: [
+                'uuid',
+                'earcut',
+                'lodash',
+            ],
         },
-        target: 'es2020',
-        outDir: 'dist',
-        emptyOutDir: false,
     },
     plugins: [
         wasm(),
         topLevelAwait(),
     ],
     define: {
+        // 某些三方库默认假设存在 global，这里在浏览器/ESM 环境里映射到 globalThis。
         global: 'globalThis',
     },
 });
