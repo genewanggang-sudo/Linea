@@ -21,8 +21,6 @@ import { DiscreteUtil } from '../algorithm/discrete/discrete_util';
 import { Interval } from '../base/interval';
 import { ISurfaceTransformExtra } from '../type_define/i_geometry';
 
-
-
 /**
  *
  * 裁剪曲面，描述无界曲面上的一个有边界的区域
@@ -101,16 +99,16 @@ class TrimmedSurface extends Surface {
     }
 
     // 底层的无限大曲面
-    private _surface: Surface;
+    private _surface!: Surface;
 
     // 正反面标记
     private _bPositive: boolean = true;
 
     // 无限大曲面uv参数域上的边界
-    private _uvPolygon: Polygon;
+    private _uvPolygon!: Polygon;
 
     // 无限大曲面三维上的边界（计算数据）
-    private _loops: Curve3[][];
+    private _loops!: Curve3[][];
 
     constructor();
 

@@ -18,8 +18,6 @@ import { Tol } from '../base/tol';
 import { NurbsCurve2 } from './nurbs_curve2';
 import { Util } from '../util/util';
 
-
-
 @registerGeo
 export class OffsetCurve2 extends Curve2 implements IOffsetCurve<Vec2> {
     public static makeByOffset(curve: Curve2, offset: number = 0): Curve2 {
@@ -58,11 +56,11 @@ export class OffsetCurve2 extends Curve2 implements IOffsetCurve<Vec2> {
         return new OffsetCurve2(curve.clone(), offset);
     }
 
-    private _paramMapper: OffsetParameterMapper;
+    private _paramMapper!: OffsetParameterMapper;
 
-    private _baseCurve: Curve2;
+    private _baseCurve!: Curve2;
 
-    private _offset: number;
+    private _offset!: number;
 
     constructor(curve?: Curve2, offset: number = 0, range?: types.IInterval) {
         super();

@@ -36,10 +36,10 @@ export class Rounding2D extends ShellModelingBase {
     private _useSmooth: boolean;
 
     // 两条边的公共点
-    private _commonV: Vertex;
+    private _commonV!: Vertex;
 
     // 两条边的公共面
-    private _commonF: Face[];
+    private _commonF!: Face[];
 
     constructor(edge1: Edge, edge2: Edge, radius: number, context: Shell[], useSmooth: boolean) {
         super(context);

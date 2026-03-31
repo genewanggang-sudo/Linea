@@ -11,10 +11,10 @@ import { MathAssert } from '../util/assert';
  */
 export abstract class Box<PointType extends Vec> {
     // 右上角的点
-    public max: PointType;
+    public max!: PointType;
 
     // 左下角的点
-    public min: PointType;
+    public min!: PointType;
 
     constructor() {
         this.makeEmpty();

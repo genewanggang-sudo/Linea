@@ -5,8 +5,6 @@ import { EN_GEO_TYPE } from '../type_define/i_element_type';
 import { Coord } from './coord';
 import { registerGeo } from '../loader/register_geo';
 
-
-
 /**
  * 坐标系
  */
@@ -63,12 +61,12 @@ class Coord3 extends Coord<Vec3> {
 
     private _origin: Vec3;
 
-    private _xDir: Vec3;
+    private _xDir!: Vec3;
 
-    private _yDir: Vec3;
+    private _yDir!: Vec3;
 
     // 计算数据
-    private _zDir: Vec3;
+    private _zDir!: Vec3;
 
     constructor();
 

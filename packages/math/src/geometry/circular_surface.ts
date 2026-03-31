@@ -13,17 +13,15 @@ import { NurbsCurve3 } from './nurbs_curve3';
 import { OffsetCurve3 } from './offset_curve3';
 import { PeriodInterval } from '../base/period_inverval';
 
-
-
 /**
  * 基于圆弧构造的曲面
  */
 export abstract class CircularSurface extends CoordBasedSurface {
     // x轴半长
-    protected _a: number;
+    protected _a!: number;
 
     // y轴半长
-    protected _b: number;
+    protected _b!: number;
 
     /**
      * 获取x轴半长
@@ -80,8 +78,8 @@ export abstract class CircularSurface extends CoordBasedSurface {
         const loop2d = loop3d.map(crv3d => {
             const crv2d = this.getCurve2d(crv3d);
             MathAssert.assert(crv2d, 'result crv2d is undefined', crv3d);
-            map.set(crv3d, crv2d!);
-            return crv2d!;
+            map.set(crv3d, crv2d);
+            return crv2d;
         });
 
         const degeleteCurvIndex: number[] = [];

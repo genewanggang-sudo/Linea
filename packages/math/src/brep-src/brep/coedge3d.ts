@@ -20,10 +20,10 @@ import { MathAssert } from '../../util/assert';
 @registerGeo
 class Coedge3d extends TopoObject {
     // 对应Edge的索引
-    private _edgeTag: string;
+    private _edgeTag!: string;
 
     // 与三维边是否同向
-    private _sameDirWithEdge: boolean;
+    private _sameDirWithEdge!: boolean;
 
     // 对应的Edge
     private _edge: Edge | undefined;

@@ -12,8 +12,6 @@ import { ILoopsToPolygonExes } from '../../search_graph/iloops_polygonex';
 import { Tol } from '../../../base/tol';
 import { CurvesX } from '../../intersect/curves_x';
 
-
-
 export interface IFace2D {
     loops: Curve2[][]; // 原始轮廓，第一个是外环，其他的是内环
     bcGroups?: Curve2dGroup[]; // 原始轮廓拆分成多个曲线组
@@ -51,19 +49,19 @@ export class Curve2dGroup {
     public curves: Curve2[];
 
     // 包围盒
-    public box: Box2;
+    public box!: Box2;
 
     // 标记是否有效
-    public bValid: boolean;
+    public bValid!: boolean;
 
     // 当前曲线组在 face2ds 内部
-    public insideFaces: IFace2D[];
+    public insideFaces!: IFace2D[];
 
     // 当前曲线组在 face2ds 边界上
-    public onFaces: IFace2D[];
+    public onFaces!: IFace2D[];
 
     // 当前曲线组在 face2ds 外面
-    public outsideFaces: IFace2D[];
+    public outsideFaces!: IFace2D[];
 
     constructor(face: IFace2D, bcs: Curve2[]) {
         this.face = face;
@@ -89,7 +87,7 @@ export class Curve2dGroup {
     public getReversedCurves(newCurveMap?: Map<Curve2, Curve2>): Curve2[] {
         const result: Curve2[] = [];
         for (const bc of this.curves) {
-            const newBC = bc.clone() as Curve2;
+            const newBC = bc.clone();
             newBC.reverse();
             result.push(newBC);
 
@@ -108,7 +106,7 @@ export class Curve2dGroup {
     public cloneCurves(newCurveMap?: Map<Curve2, Curve2>): Curve2[] {
         const result: Curve2[] = [];
         for (const bc of this.curves) {
-            const newBC = bc.clone() as Curve2;
+            const newBC = bc.clone();
             result.push(newBC);
 
             if (newCurveMap) {
@@ -479,7 +477,7 @@ export function generateResult(
     const validOverlapGroupMap: Map<string, Curve2dGroup[]> = new Map();
     const validBCOriginFacesMap: Map<Curve2, IFace2D[]> = new Map();
     for (const face of allFaces) {
-        let bReversed: Boolean | undefined;
+        let bReversed: boolean | undefined;
         if (type === Bool2dType.difference) {
             bReversed = reverseFaceMap.get(face) === face.bBlankFace;
         } else {
@@ -506,7 +504,7 @@ export function generateResult(
     const validOverlapGroups = validOverlapGroupMap.get(overlapStr);
     if (validOverlapGroups) {
         for (const group of validOverlapGroups) {
-            let bReversed: Boolean | undefined;
+            let bReversed: boolean | undefined;
             if (type === Bool2dType.difference) {
                 bReversed = reverseFaceMap.get(group.face) === group.face.bBlankFace;
             } else {

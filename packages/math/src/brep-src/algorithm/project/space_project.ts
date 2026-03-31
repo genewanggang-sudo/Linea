@@ -22,8 +22,6 @@ import { Face } from '../../brep/face';
 import { IProjectInfo } from '../alg_types';
 import { FaceProject } from './face_project';
 
-
-
 enum BodyPosition {
     UP, // 在投影方向上
     ON, // 横跨投影面
@@ -39,7 +37,7 @@ const ANGLE = (6 / 180) * CONST.PI; // 斜面角度容差，偏差大于此角�
 export class SpaceProject {
     private _canProjectedBody: BrepBody[] = [];
 
-    private _baseLoop: Loop[];
+    private _baseLoop!: Loop[];
 
     private _projectPlane: Plane;
 
@@ -277,7 +275,7 @@ export class SpaceProject {
         }
 
         if (curve instanceof Arc3) {
-            const arc = curve as Arc3;
+            const arc = curve;
             const t = plane.getCoord().getDx().angleTo(arc.getCoord().getDx(), plane.getCoord().getDz());
             const stDis = plane.distanceToPoint(arc.getStartPt());
             const endDis = plane.distanceToPoint(arc.getEndPt());

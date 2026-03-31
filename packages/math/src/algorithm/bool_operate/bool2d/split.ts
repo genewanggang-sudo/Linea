@@ -31,9 +31,9 @@ class UniqueCurveInfo {
 }
 
 class CurveInfo {
-    public uCurve: UniqueCurveInfo;
+    public uCurve!: UniqueCurveInfo;
 
-    public dir: 0 | 1;
+    public dir!: 0 | 1;
 }
 
 function calKey(obj: Curve2 | IFace2D): string {

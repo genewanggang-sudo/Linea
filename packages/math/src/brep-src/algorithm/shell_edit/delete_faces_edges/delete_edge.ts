@@ -19,14 +19,12 @@ import { Wire } from '../../../brep/wire';
 import { VirtualFace, VirtualLoop } from '../smooth/detect_loop_util';
 import { disposeFace } from '../operator/dispose_topo';
 
-
-
 interface IEdgeObj {
     edge: Edge;
     bSameDir: boolean;
 }
 class DeleteEdgeVirtualFace extends VirtualFace {
-    public sourceFace: Face;
+    public sourceFace!: Face;
 }
 export default class DeleteEdges {
     public static execute(deleteEdges: Edge[]): IShellModelingResult {
@@ -55,11 +53,11 @@ export default class DeleteEdges {
         const calConstant = (surface: Surface) => {
             let d!: number;
             if (surface.isPlane()) {
-                const p = surface as Plane;
+                const p = surface;
                 d = p.getOrigin().dot(p.getNorm());
             }
             if (surface.isCylinder()) {
-                const c = surface as Cylinder;
+                const c = surface;
                 d = c.getA() * c.getCoord().getOrigin().dot(c.getCoord().getDz());
             }
             return `${Math.round(Math.abs(d) * 1e5)}`;
@@ -103,8 +101,8 @@ export default class DeleteEdges {
             const curveEdgeMap = new Map<Curve2, IEdgeObj>();
             const candidateLoops: Loop[] = [];
             const candidateCurves: Curve2[] = [];
-            if (surface.isCylinder() && (surface as Cylinder).isEqualAB()) {
-                this._processCylinder(group, surface as Cylinder, deleteEdgeSet, modifyFaces, affectFaces);
+            if (surface.isCylinder() && (surface).isEqualAB()) {
+                this._processCylinder(group, surface, deleteEdgeSet, modifyFaces, affectFaces);
             }
             for (const face of group) {
                 let validCoedges: Coedge3d[] = [];
@@ -369,4 +367,3 @@ export default class DeleteEdges {
         }
     }
 }
-

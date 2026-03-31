@@ -340,19 +340,19 @@ export class NurbsCurve3 extends Curve3 implements INurbsCurve<Vec3> {
     }
 
     // verbNurbs对象
-    private _verbCurve: verb.geom.NurbsCurve;
+    private _verbCurve!: verb.geom.NurbsCurve;
 
     // 曲线的次数
-    private _degree: number;
+    private _degree!: number;
 
     // 节点数组
-    private _knots: number[];
+    private _knots!: number[];
 
     // 控制点
-    private _controlPoints: Vec3[];
+    private _controlPoints!: Vec3[];
 
     // 权值
-    private _weights: number[];
+    private _weights!: number[];
 
     constructor(verbCurve?: verb.geom.NurbsCurve, range?: types.IInterval) {
         super();

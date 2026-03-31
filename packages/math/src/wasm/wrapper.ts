@@ -109,7 +109,7 @@ export interface Grapher2DResultForWasm {
 };
 
 class GeomLibWrapper {
-    private _instance: WasmInstance;
+    private _instance!: WasmInstance;
 
     public get instance() {
         return this._instance

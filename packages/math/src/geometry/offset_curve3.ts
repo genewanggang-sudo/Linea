@@ -123,15 +123,15 @@ export class OffsetCurve3 extends Curve3 implements IOffsetCurve<Vec3> {
         return OffsetCurve3.makeByOffset(curve, dz, ofsXY, ofsZ);
     }
 
-    private _paramMapper: OffsetParameterMapper;
+    private _paramMapper!: OffsetParameterMapper;
 
-    private _baseCurve: Curve3;
+    private _baseCurve!: Curve3;
 
-    private _dz: Vec3;
+    private _dz!: Vec3;
 
-    private _offsetXY: number;
+    private _offsetXY!: number;
 
-    private _offsetZ: number;
+    private _offsetZ!: number;
 
     constructor();
 

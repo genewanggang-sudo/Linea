@@ -17,19 +17,17 @@ import { threeSurfacesIteration, surfaceSurfaceIteration } from '../algorithm/ca
 import { Plane } from './plane';
 import { geom } from '../verb/verb';
 
-
-
 /**
  * ****************************内部使用，用于计算中间形式表达，不让外部使用*****************************
  */
 export class IntersectCurve3 extends Curve3 {
-    private _surface: Surface[];
+    private _surface!: Surface[];
 
-    private _ptsChart: ISurfaceSurfaceIntersectPointInfo[];
+    private _ptsChart!: ISurfaceSurfaceIntersectPointInfo[];
 
-    private _knots: number[];
+    private _knots!: number[];
 
-    private _domain: Interval;
+    private _domain!: Interval;
 
     constructor();
 
@@ -58,7 +56,7 @@ export class IntersectCurve3 extends Curve3 {
         }
     }
 
-    public toVerbNurbs(range?: Interval | undefined): geom.NurbsCurve {
+    public toVerbNurbs(range?: Interval): geom.NurbsCurve {
         throw new Error('Method not implemented.');
     }
 
@@ -826,7 +824,7 @@ export class IntersectCurve3 extends Curve3 {
             if (omigas.length === 0) {
                 MathAssert.warn('getDerivativesAtTangentialPoint: 曲面相切，只有一个孤立的切点，没有切向和曲率');
                 return dvts;
-                // eslint-disable-next-line no-else-return
+
             } else if (omigas.length === 1) {
                 const omiga = omigas[0];
                 const tangentVect = pts1[1].multiplied(omiga).add(pts1[2]);

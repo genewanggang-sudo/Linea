@@ -1,5 +1,4 @@
 
-
 import { Vertex } from './vertex';
 import { Coedge3d } from './coedge3d';
 import { Face } from './face';
@@ -30,7 +29,7 @@ const DEGENERATE_MASK: number = 1 << 1; // 退化边
 @registerGeo
 class Edge extends TopoObject {
     // 三维曲线，无限长
-    private _curve: Curve3;
+    private _curve!: Curve3;
 
     // Edge的起始点
     private _startVertex: Vertex | undefined;

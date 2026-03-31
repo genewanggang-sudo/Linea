@@ -21,8 +21,6 @@ import { Curve3 } from '../../geometry/curve3d';
 import { MathError } from '../../util/math_error';
 import { Box3 } from '../../base/box3';
 
-
-
 enum ArriveBoundaryType {
     ON_AND_NEXT_OUTBOUNDARY = 0, // 在边界上且下一次迭代出边界
     NEXT_OUT_BOUNDARY = 1,
@@ -38,11 +36,11 @@ interface IArriveBoundStruct {
 export class SurfacesXUtil {
     private _surface: Surface[];
 
-    private _surf1BoundaryUVs: { rangeU?: Interval; rangeV?: Interval };
+    private _surf1BoundaryUVs!: { rangeU?: Interval; rangeV?: Interval };
 
-    private _surf2BoundaryUVs: { rangeU?: Interval; rangeV?: Interval };
+    private _surf2BoundaryUVs!: { rangeU?: Interval; rangeV?: Interval };
 
-    private _useHighPrecision: boolean;
+    private _useHighPrecision!: boolean;
 
     private _tol: Tol;
 
@@ -373,8 +371,8 @@ export class SurfacesXUtil {
                 this._shrinkSurfacePatchRangesByAnotherSurfaceBox(intBox, surfPatch1);
             }
         } else if (surf1.isCylinder() && surf2.isCylinder()) {
-            const cyl1 = surf1 as Cylinder;
-            const cyl2 = surf2 as Cylinder;
+            const cyl1 = surf1;
+            const cyl2 = surf2;
             const axis1 = cyl1.getCoord().getDz();
             const axis2 = cyl2.getCoord().getDz();
 

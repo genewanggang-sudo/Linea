@@ -6,8 +6,6 @@ import { CONST } from '../type_define/const';
 import { registerGeo } from '../loader/register_geo';
 import { Matrix3 } from './matrix3';
 
-
-
 /**
  * 二维坐标系
  */
@@ -25,7 +23,7 @@ export class Coord2 extends Coord<Vec2> {
     private _xDir: Vec2;
 
     // 计算出来的数据
-    private _yDir: Vec2;
+    private _yDir!: Vec2;
 
     constructor(origin?: types.IXY, xDir?: types.IXY) {
         super();

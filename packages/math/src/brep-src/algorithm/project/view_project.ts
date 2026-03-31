@@ -36,7 +36,7 @@ interface IProjectLoop {
 export class ViewProject {
     private _canProjectedBody: BrepBody[] = [];
 
-    private _baseLoop: Loop[];
+    private _baseLoop!: Loop[];
 
     private _projectPlane: Plane;
 

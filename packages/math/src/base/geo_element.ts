@@ -20,14 +20,12 @@ import { Cylinder } from '../geometry/cylinder';
 import { IArc, ILine, INurbsCurve, IOffsetCurve } from '../type_define/i_geometry';
 import { Vec } from './vec';
 
-
-
 export abstract class GeoElement implements IGeo {
     // 该字段不会被dump下来，clone时浅拷贝
-    public userData: { [key: string]: any };
+    public userData!: { [key: string]: any };
 
     // 该字段会被dump下来，clone时也会深拷贝
-    public dUserData: { [key: string]: any };
+    public dUserData!: { [key: string]: any };
 
     public abstract getType(): EN_GEO_TYPE;
 

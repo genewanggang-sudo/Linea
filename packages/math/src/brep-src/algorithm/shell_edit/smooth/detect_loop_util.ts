@@ -13,8 +13,6 @@ import {
 import { Edge } from '../../../brep/edge';
 import { Vertex } from '../../../brep/vertex';
 
-
-
 function getHalfEdgeVertex(hf: IHalfEdgeObj, end: boolean = true) {
     return hf.sameDir === end ? hf.edge.getEndVertex() : hf.edge.getStartVertex();
 }
@@ -59,7 +57,7 @@ function getTangentOfHalfEdge(hf: IHalfEdgeObj, start: boolean, step?: number): 
         }
     } else {
         const vertex = hf.sameDir === start ? hf.edge.getStartVertex().getPoint() : hf.edge.getEndVertex().getPoint();
-        const stepParam = hf.sameDir === start ? crvInterval.min + step! : crvInterval.max - step!;
+        const stepParam = hf.sameDir === start ? crvInterval.min + step : crvInterval.max - step;
         stepPoint = crv.getPtAt(stepParam)!;
         if (start === true) {
             hfDir = stepPoint.subtracted(vertex);
@@ -125,7 +123,7 @@ function findMaxTurning(hf: IHalfEdgeObj, candidates: Edge[], srf: Plane, isLeft
             const dt = 0.1; // make a step
             const stepCondidateDir = getTangentOfHalfEdge(he, true, dt);
             const stepChoosedDir = getTangentOfHalfEdge(choosed!, true, dt);
-            const stepHfDir = getTangentOfHalfEdge(hf!, false, dt).reversed();
+            const stepHfDir = getTangentOfHalfEdge(hf, false, dt).reversed();
 
             const turningConditate = stepHfDir.angleTo(stepCondidateDir, refUpper);
             const turningChoosed = stepHfDir.angleTo(stepChoosedDir, refUpper);
@@ -168,7 +166,7 @@ function detectLoop(
             break;
         }
         // 检查是否已经找过了.
-        // eslint-disable-next-line no-loop-func
+
         if (visited.some(he => he.edge === curHalfEdge.edge && he.sameDir === curHalfEdge.sameDir)) {
             break;
         }
@@ -201,11 +199,11 @@ export class VirtualLoop {
 
     public bc3ds: Curve3[];
 
-    public box: Box3;
+    public box!: Box3;
 
-    public bc2ds: Curve2[];
+    public bc2ds!: Curve2[];
 
-    public approxPts: Vec2[];
+    public approxPts!: Vec2[];
 
     private _area?: number;
 
@@ -216,7 +214,7 @@ export class VirtualLoop {
 
     public add(e: Edge, dir: boolean) {
         this.edges.push({ edge: e, bSameDir: dir });
-        const bc = e.getCurve()!.clone();
+        const bc = e.getCurve().clone();
         if (!dir) {
             bc.reverse();
         }
@@ -227,7 +225,7 @@ export class VirtualLoop {
         if (this._area === undefined) {
             this.bc2ds = [];
             for (const bc of this.bc3ds) {
-                this.bc2ds.push(plane.getCurve2d(bc)!);
+                this.bc2ds.push(plane.getCurve2d(bc));
             }
             this._area = alg.LoopArea.areaOfLoop(this.bc2ds);
         }
@@ -239,7 +237,7 @@ export class VirtualLoop {
         this.box = new Box3();
         this.approxPts = [];
         for (const bc of this.bc3ds) {
-            this.bc2ds.push(plane.getCurve2d(bc)!);
+            this.bc2ds.push(plane.getCurve2d(bc));
             this.approxPts.push(plane.getUVAt(bc.getStartPt()));
             this.approxPts.push(plane.getUVAt(bc.getEndPt()));
             this.box.union(bc.getBBox());

@@ -12,8 +12,6 @@ import { Box2 } from '../base/box2';
 import { Matrix4 } from '../base/matrix4';
 // import { Vec3 } from '../index_math';
 
-
-
 /**
  * Nurbs曲线
  */
@@ -77,7 +75,7 @@ export class NurbsCurve2 extends Curve2 implements INurbsCurve<Vec2> {
     }
 
     // verbNurbs对象
-    private _nurbsCurve3d: NurbsCurve3;
+    private _nurbsCurve3d!: NurbsCurve3;
 
     constructor(nurbsCurve3d?: NurbsCurve3) {
         super();

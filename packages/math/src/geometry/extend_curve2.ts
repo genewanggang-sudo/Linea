@@ -14,8 +14,6 @@ import { ICurve2dTransformExtra, IExtendCurve } from '../type_define/i_geometry'
 import { PtToCv2Distance } from '../algorithm/distance/pt_to_curve2_signed_distance';
 import { NurbsCurve2 } from './nurbs_curve2';
 
-
-
 interface IExtension2d {
     curve: Ln2;
     scale: number;
@@ -44,11 +42,11 @@ export class ExtendCurve2 extends Curve2 implements IExtendCurve<Vec2> {
     }
 
     // when curve changed, updateExtension should be called manually
-    private _baseCurve: Curve2;
+    private _baseCurve!: Curve2;
 
-    private _head: IExtension2d;
+    private _head!: IExtension2d;
 
-    private _tail: IExtension2d;
+    private _tail!: IExtension2d;
 
     constructor(baseCurve?: Curve2, range: types.IInterval = [-CONST.MODEL_MAX_LENGTH, CONST.MODEL_MAX_LENGTH]) {
         super();

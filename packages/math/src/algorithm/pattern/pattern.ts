@@ -13,19 +13,19 @@ export class Pattern {
     private precise = 1000000000;
     private recOffset = 1000;
     private jointOffset = 10; // 砖缝扩展，保证砖缝外部区域合并轮廓后不分断
-    private _clip: Paths64;
-    private _clipLines: Paths64;
-    private _unitJoints: Paths64;
-    private _unitsBlock: Paths64[];
-    private _holes: Paths64;
+    private _clip!: Paths64;
+    private _clipLines!: Paths64;
+    private _unitJoints!: Paths64;
+    private _unitsBlock!: Paths64[];
+    private _holes!: Paths64;
 
-    private _unitRect: {
+    private _unitRect!: {
         right: number;
         left: number;
         bottom: number;
         top: number;
     };
-    private _unitsPaths: Path[];
+    private _unitsPaths!: Path[];
     private _bgRects: {
         top: number;
         left: number;

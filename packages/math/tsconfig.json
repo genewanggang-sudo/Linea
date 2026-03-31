@@ -7,7 +7,7 @@
         "declaration": true,
         // "declarationMap": true,
         "emitDeclarationOnly": false,
-        "strictPropertyInitialization": false,
+        "strictPropertyInitialization": true,
         "noImplicitAny": false,
         "outDir": "dist",
         "rootDir": "src",

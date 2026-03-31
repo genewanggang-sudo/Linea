@@ -37,13 +37,13 @@ export class DiscreteRefiner {
 
     // Map coedge of a triangle edge to the another side
     // key & value are coedges' start vertex's index in mesh.faces
-    private _twinMap: Map<number, number>;
+    private _twinMap!: Map<number, number>;
 
     // vertex index => coedgeNode
-    private _nodeMap: Map<number, ICoedgeNode>;
+    private _nodeMap!: Map<number, ICoedgeNode>;
 
     // nodes to split
-    private _queue: PriorityQueue<ICoedgeNode>;
+    private _queue!: PriorityQueue<ICoedgeNode>;
 
     private constructor(surface: Surface, mesh2d: IMesh2d, params = DiscreteParam.NORMAL) {
         this.surface = surface;

@@ -50,9 +50,9 @@ class Interval {
         return result;
     }
 
-    protected _min: number;
+    protected _min!: number;
 
-    protected _max: number;
+    protected _max!: number;
 
     constructor();
 

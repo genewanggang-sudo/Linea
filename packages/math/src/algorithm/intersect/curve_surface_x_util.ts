@@ -107,7 +107,7 @@ export class CurveSurfaceXUtil {
 
     private _surface: Surface;
 
-    private _surfaceRangeUV: Interval[]; // 由于surface自带没有range，所以当传入range的时候，需要记录下来
+    private _surfaceRangeUV!: Interval[]; // 由于surface自带没有range，所以当传入range的时候，需要记录下来
 
     private _tol: Tol;
 

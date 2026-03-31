@@ -41,25 +41,25 @@ interface IVertex {
  */
 export class Extruder {
     // 草图平面
-    private _coord: Coord3;
+    private _coord!: Coord3;
     // 草图轮廓
-    private _loop: Loop;
+    private _loop!: Loop;
     // 拉伸高度
-    private _height: number;
+    private _height!: number;
     // 缓存：局部坐标系下的三维草图轮廓
-    private _localLine3dsCache: Ln3[];
+    private _localLine3dsCache!: Ln3[];
     // 缓存：局部坐标系下的二维草图轮廓
-    private _line2dsCache: Ln2[];
+    private _line2dsCache!: Ln2[];
     // 缓存：草图平面
-    private _planeCache: Plane;
+    private _planeCache!: Plane;
     // 缓存：boundingbox2
-    public boundingBox2: Box2;
+    public boundingBox2!: Box2;
     // 缓存：所有的单边boundingBox2
-    public curveBoundingBoxList: Box2[];
+    public curveBoundingBoxList!: Box2[];
     // 缓存：boundingbox3
     private _boundingBox3: Box3 | undefined;
     // 缓存：草图轮廓顶点缓存
-    private _lpts: types.IXY[];
+    private _lpts!: types.IXY[];
     constructor(_c: Coord3, _l: Loop, _h: number) {
         if (_l.getAllCurves().some(_ => !(_ instanceof Ln2))) {
             console.assert(false, 'mesh clip: given loop should be constructed by line2d!');

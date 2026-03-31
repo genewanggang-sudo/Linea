@@ -96,13 +96,13 @@ export abstract class CurveSegment<VectorType extends Vec> {
         curveSeg.child.push(curSeg2);
     }
 
-    public curve: Curve<VectorType>;
+    public curve!: Curve<VectorType>;
 
-    public range: Interval; // 区间定义域
+    public range!: Interval; // 区间定义域
 
-    public child: CurveSegment<VectorType>[];
+    public child!: CurveSegment<VectorType>[];
 
-    public depth: number; // 细分深度
+    public depth!: number; // 细分深度
 
     protected _box?: Box<VectorType>; // 当前给定参数域的包围盒
 
@@ -346,15 +346,15 @@ export class SurfacePatch {
 
     public surface: Surface;
 
-    public rangeU: Interval;
+    public rangeU!: Interval;
 
-    public rangeV: Interval;
+    public rangeV!: Interval;
 
-    public child: SurfacePatch[];
+    public child!: SurfacePatch[];
 
     // cone: Cone ;      //当前给定参数域的切向锥
 
-    public depth: number; // 细分深度
+    public depth!: number; // 细分深度
 
     private _box?: Box3; // 当前给定参数域的包围盒
 

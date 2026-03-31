@@ -155,11 +155,11 @@ export class Arc3 extends Curve3 implements IArc<Vec3> {
         return new Arc3(coord, a, b, [stAngle, edAngle]);
     }
 
-    protected _range: PeriodInterval;
+    protected _range!: PeriodInterval;
 
-    private _a: number;
+    private _a!: number;
 
-    private _b: number;
+    private _b!: number;
 
     private _coord: Coord3 = new Coord3();
 

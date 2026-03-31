@@ -14,16 +14,16 @@ import { clipBlocks2Geometry, fullBlocks2Geometry } from './blocks2Geometry';
 // // 输出: 相同材质(materialid相同)合并。
 export class RegionMesh {
     buffer = new Object() as types.IFlatMesh;
-    material: number; // 材质id
+    material!: number; // 材质id
 }
 // 描述整个铺贴参数 = 铺贴模版 + 铺贴参数
 export class IPavePattern {
-    gap: {
+    gap!: {
         // 砖缝信息
         unit: number; // 砖缝宽度（单元间的缝隙，不是单元内砖块间的缝隙，砖块间的缝隙要事先算好）
         material: number; // 上层维护的材质id
     };
-    units: {
+    units!: {
         // 铺贴单元
         outer: Curve2[]; // 外轮廓，逆时针
         holes: Curve2[][]; // 内轮廓，顺时针
@@ -31,14 +31,14 @@ export class IPavePattern {
         seed: number; // 材质随机种子, -1 不随机  >0 则材质在materials内随机,种子数字[0,1]
         coord: Coord2; // uvtransform所需要的偏移和旋转
     }[];
-    udir: types.IXY; //沿着U方向重复铺砖时，不考虑砖缝间隔多少铺一块砖正好对齐
-    vdir: types.IXY; //沿着V方向重复铺砖时，不考虑砖缝间隔多少铺一块砖正好对齐
-    coord: Coord2; //使用坐标来描述偏移+旋转两个铺贴参数
+    udir!: types.IXY; //沿着U方向重复铺砖时，不考虑砖缝间隔多少铺一块砖正好对齐
+    vdir!: types.IXY; //沿着V方向重复铺砖时，不考虑砖缝间隔多少铺一块砖正好对齐
+    coord!: Coord2; //使用坐标来描述偏移+旋转两个铺贴参数
 }
 // 描述铺贴区域
 export class IPolygon {
-    outer: Curve2[]; // 逆时针曲线数组描述外边框
-    holes: Curve2[][]; // 顺时针的曲线数组描述洞
+    outer!: Curve2[]; // 逆时针曲线数组描述外边框
+    holes!: Curve2[][]; // 顺时针的曲线数组描述洞
 }
 
 export class PatternUtil {
