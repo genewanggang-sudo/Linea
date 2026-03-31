@@ -12,7 +12,7 @@ const srcPkg = JSON.parse(await fs.readFile(srcPkgPath, 'utf8'));
 
 const distPkg = {
     ...srcPkg,
-    main: './index.cjs',
+    main: './index.js',
     types: './types/index.d.ts',
 };
 
