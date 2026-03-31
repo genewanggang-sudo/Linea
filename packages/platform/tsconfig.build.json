@@ -1,0 +1,20 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@ccpc/canvas": [
+                "../canvas/dist/types/index.d.ts"
+            ],
+            "@ccpc/core": [
+                "../core/dist/types/index.d.ts"
+            ],
+            "@ccpc/math": [
+                "../math/dist/types/index.d.ts"
+            ],
+            "@ccpc/snap": [
+                "../snap/dist/types/index.d.ts"
+            ]
+        }
+    }
+}

@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/core",
-    "version": "0.1.3",
+    "version": "0.1.6",
     "private": false,
     "description": "Core data model layer for editor",
     "license": "MIT",
@@ -11,10 +11,10 @@
         "@ccpc/math": "workspace:*"
     },
     "scripts": {
-        "build": "rimraf dist && pnpm exec vite build && node scripts/patch-dist-package.mjs && node -e \"const { spawnSync } = require('node:child_process'); const r = spawnSync('pnpm', ['exec', 'tsc', '-p', 'tsconfig.json', '--emitDeclarationOnly', '--outDir', 'dist/types'], { stdio: 'inherit', shell: true }); if (r.status) console.warn('tsc finished with errors, continue...');\"",
+        "build": "rimraf dist && pnpm exec vite build && node scripts/patch-dist-package.mjs && node -e \"const { spawnSync } = require('node:child_process'); const r = spawnSync('pnpm', ['exec', 'tsc', '-p', 'tsconfig.build.json', '--emitDeclarationOnly', '--outDir', 'dist/types'], { stdio: 'inherit', shell: true }); if (r.status) console.warn('tsc finished with errors, continue...');\"",
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",
-        "publish": "npm version patch --no-git-tag-version && cd dist && pnpm publish --access public --git-checks=false"
+        "publish": "cd dist && pnpm publish --access public --git-checks=false"
     }
 }

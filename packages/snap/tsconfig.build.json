@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@ccpc/core": [
+                "../core/dist/types/index.d.ts"
+            ],
+            "@ccpc/math": [
+                "../math/dist/types/index.d.ts"
+            ]
+        }
+    }
+}

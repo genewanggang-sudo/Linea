@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/math",
-    "version": "0.1.4",
+    "version": "0.1.7",
     "private": false,
     "description": "2D geometry and curve math library",
     "license": "MIT",
@@ -10,7 +10,7 @@
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
         "build": "rimraf dist && vite build && node scripts/patch-dist-package.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist/types",
-        "publish": "npm version patch --no-git-tag-version && cd dist && pnpm publish --access public --git-checks=false",
+        "publish": "cd dist && pnpm publish --access public --git-checks=false",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",
         "test": "vitest",
