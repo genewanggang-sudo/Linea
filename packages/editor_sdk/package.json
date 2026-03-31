@@ -14,8 +14,8 @@
         }
     },
     "dependencies": {
-        "@ccpc/core": "workspace:*",
-        "@ccpc/math": "workspace:*"
+        "@ccpc/core": "^0.1.9",
+        "@ccpc/math": "^0.1.10"
     },
     "scripts": {
         "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
