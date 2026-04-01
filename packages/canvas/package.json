@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/canvas",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "private": false,
     "description": "Canvas rendering layer for editor",
     "license": "MIT",

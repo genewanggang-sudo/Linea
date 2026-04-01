@@ -141,6 +141,7 @@ export class CmdActionController<T = unknown> extends DefaultController {
      * 清除所有绘制的临时元素
      */
     public clearTmp() {
+        app.highLight.clear()
         for (const painter of this._tmpElementPainters) {
             if (painter) {
                 painter.clearTmp()
@@ -159,7 +160,9 @@ export class CmdActionController<T = unknown> extends DefaultController {
      * 结束cmd
      */
     protected _resolve(data?: T) {
+        this.clearTmp()
         if (this._status.finish) return
+
         this._status.finish = true
         this._status.resolve(data)
         this.onDestroy()
