@@ -16,19 +16,37 @@ export enum EN_SNAP_HELP_OBJ {
  * 吸附计算的输入信息，snap引擎根据这些输入信息，计算得到吸附结果
  */
 export class SnapContext {
-    private _snappableGNodes!: GNode[] // pick得到的GNode
+    /**
+     * pick得到的GNode
+     */
+    private _snappableGNodes!: GNode[]
 
-    private _cursorWorld!: Vec2 // 当前光标在工作平面上的二维坐标
+    /**
+     * 当前光标在工作平面上的二维坐标
+     */
+    private _cursorWorld!: Vec2
 
-    private _previousPoint: Vec2 | undefined // pickPoint中上一个获取的点，需要吸附平行/延长等方式时，需要设置此项
+    /**
+     * pickPoint中上一个获取的点，需要吸附平行/延长等方式时，需要设置此项
+     */
+    private _previousPoint: Vec2 | undefined
 
-    private _previousLineDir: Vec2 | undefined // 画线操作中，上一条线的方向
+    /**
+     * 画线操作中，上一条线的方向
+     */
+    private _previousLineDir: Vec2 | undefined
 
-    private _firstPoint: Vec2 | undefined // 连续取点中，获取的第一个点
+    /**
+     * 连续取点中，获取的第一个点
+     */
+    private _firstPoint: Vec2 | undefined
 
     private _snapHelpers: Map<EN_SNAP_HELP_OBJ, (Vec2 | Curve2[])[]> = new Map()
 
-    private _snapSort: ((a: SnapResult, b: SnapResult) => number) | undefined // 自定义吸附结果排序规则
+    /**
+     * 自定义吸附结果排序规则
+     */
+    private _snapSort: ((a: SnapResult, b: SnapResult) => number) | undefined
 
     constructor()
 
