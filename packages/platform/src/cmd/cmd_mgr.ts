@@ -1,5 +1,5 @@
 import { IKeyboardEvent, IMouseEvent, IProcessEvent } from '@ccpc/canvas';
-import { ClassManager, DebugUtil, IConstructor } from '@ccpc/core'
+import { ClassManager, DebugUtil, IConstructor, Signal } from '@ccpc/core'
 import { Cmd } from './cmd';
 import { CmdActionController } from './cmd_action_controller';
 
@@ -11,6 +11,8 @@ export class CmdMgr implements IProcessEvent {
     private _currentCmd?: Cmd
 
     private _clsMgr = new ClassManager<string, IConstructor<Cmd>>()
+
+    public readonly signalCmdFinish = new Signal(this)
 
     public static instance() {
         if (!this._instance) {
@@ -59,7 +61,8 @@ export class CmdMgr implements IProcessEvent {
         cmd.onDestroy();
         delete this._currentCmd;
         delete this._busy;
-        // TODO 发送结束的事件
+        // 发送命令结束事件
+        this.signalCmdFinish.dispatch()
         return true;
     }
 
