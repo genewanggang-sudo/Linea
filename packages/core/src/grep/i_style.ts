@@ -26,7 +26,10 @@ export type IPointStyle = Partial<{
 export type ILineStyle = Partial<{
     opacity: number,
     color: number | string,
-    width: number
+    width: number,
+    dashed: boolean,
+    dashSize: number,
+    gapSize: number
 }>
 
 export type IFaceStyle = Partial<{

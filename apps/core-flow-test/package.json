@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ccpc/canvas": "*",
-    "@ccpc/core": "*",
-    "@ccpc/editor_sdk": "*",
-    "@ccpc/math": "*",
-    "@ccpc/platform": "*",
+    "@ccpc/canvas": "workspace:*",
+    "@ccpc/core": "workspace:*",
+    "@ccpc/editor_sdk": "workspace:*",
+    "@ccpc/math": "workspace:*",
+    "@ccpc/platform": "workspace:*",
     "naive-ui": "^2.44.1",
     "vue": "^3.5.30"
   },

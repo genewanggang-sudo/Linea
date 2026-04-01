@@ -168,6 +168,7 @@ export class RenderHub {
             }
 
             text.sync()
+
             return text
         }
 
