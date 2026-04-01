@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { types } from 'node:util';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgDir = path.resolve(__dirname, '..');
@@ -20,6 +21,7 @@ const mathPkg = await readJson(mathPkgPath);
 const distPkg = {
     ...srcPkg,
     main: './index.js',
+    types: './types/index.d.ts',
     peerDependencies: {
         ...srcPkg.peerDependencies,
         '@ccpc/math': `^${mathPkg.version}`,
