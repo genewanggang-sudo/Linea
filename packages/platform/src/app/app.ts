@@ -24,6 +24,10 @@ export class App {
         this.highLight = HighLight.instance()
     }
 
+    public get cmdMgr() {
+        return this._cmdMgr
+    }
+
     public static instance() {
         if (!this._instance) {
             this._instance = new App()
