@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/math",
-    "version": "0.1.18",
+    "version": "0.1.21",
     "private": false,
     "description": "2D geometry and curve math library",
     "license": "MIT",
