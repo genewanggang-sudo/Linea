@@ -55,6 +55,13 @@ export class CmdActionController<T = unknown> extends DefaultController {
     }
 
     /**
+     * 命令是否已结束
+     */
+    public isFinished() {
+        return this._status.finish === true
+    }
+
+    /**
      * 执行动作
      */
     public async runAction<T>(action: CmdActionController<ActionResult<T>>) {
