@@ -40,6 +40,13 @@ export class App {
         return this._curDoc
     }
 
+    /**
+     * 获取画布
+     */
+    public getCanvas() {
+        return this._curCanvas!
+    }
+
     public start(doc: IDocument) {
         this._curDoc = doc
         doc.isMainDoc = true
@@ -54,13 +61,6 @@ export class App {
         this._curDoc?.destroy()
         delete this._curCanvas
         delete this._curDoc
-    }
-
-    /**
-     * 获取画布
-     */
-    public getCanvas() {
-        return this._curCanvas!
     }
 
     /**

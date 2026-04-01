@@ -34,3 +34,16 @@ export type IDBEleId = {
 export type IJSON = {
     [key: string]: unknown
 }
+
+export interface I_SignalEvent<S, D> {
+    type?: string
+    subject?: S
+    data?: D
+}
+
+export type T_SignalCallbackFn<S = unknown, D = unknown> = (data: I_SignalEvent<S, D>) => void
+
+export interface I_SignalCallbackItem<S = unknown, D = unknown> {
+    listener?: unknown
+    fn: T_SignalCallbackFn<S, D>;
+}
