@@ -42,20 +42,20 @@ importers:
   apps/core-flow-test:
     dependencies:
       '@ccpc/canvas':
-        specifier: ^0.1.8
+        specifier: '*'
         version: 0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)
       '@ccpc/core':
-        specifier: ^0.1.11
+        specifier: '*'
         version: 0.1.11(@ccpc/math@0.1.14)
       '@ccpc/editor_sdk':
-        specifier: ^0.1.0
+        specifier: '*'
         version: 0.1.0
       '@ccpc/math':
-        specifier: ^0.1.14
+        specifier: '*'
         version: 0.1.14
       '@ccpc/platform':
-        specifier: ^0.1.8
-        version: 0.1.8(@ccpc/canvas@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)(@ccpc/snap@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))
+        specifier: '*'
+        version: 0.1.8(@ccpc/canvas@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)(@ccpc/snap@0.1.10(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))
       naive-ui:
         specifier: ^2.44.1
         version: 2.44.1(vue@3.5.30(typescript@5.9.3))
@@ -126,10 +126,10 @@ importers:
   packages/editor_sdk:
     dependencies:
       '@ccpc/core':
-        specifier: ^0.1.11
+        specifier: '*'
         version: 0.1.11(@ccpc/math@0.1.14)
       '@ccpc/math':
-        specifier: ^0.1.14
+        specifier: '*'
         version: 0.1.14
 
   packages/math:
@@ -268,11 +268,11 @@ packages:
       '@ccpc/math': ^0.1.14
       '@ccpc/snap': ^0.1.8
 
-  '@ccpc/snap@0.1.8':
-    resolution: {integrity: sha512-RqAoq5yKFyXps+77y6VuS05ppM3FdDrILOV+pJTQ0k6CH5uLQCg7Z1KF/Ht7JtTjliwyicLQGe1vm5UYLVLy9w==}
+  '@ccpc/snap@0.1.10':
+    resolution: {integrity: sha512-DGcbJQKqIU6S1L2PUXgrAmavN86HBytUY7oVIduT6d4D3b/7bIyIyJ0bHJARtj+jcAvoprYKoWeJE8FjMdWD2w==}
     peerDependencies:
-      '@ccpc/core': ^0.1.11
-      '@ccpc/math': ^0.1.14
+      '@ccpc/core': ^0.1.13
+      '@ccpc/math': ^0.1.16
 
   '@css-render/plugin-bem@0.15.14':
     resolution: {integrity: sha512-QK513CJ7yEQxm/P3EwsI+d+ha8kSOcjGvD6SevM41neEMxdULE+18iuQK6tEChAWMOQNQPLG/Rw3Khb69r5neg==}
@@ -1775,14 +1775,14 @@ snapshots:
       quadtree-lib: 1.0.9
       uuid: 10.0.0
 
-  '@ccpc/platform@0.1.8(@ccpc/canvas@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)(@ccpc/snap@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))':
+  '@ccpc/platform@0.1.8(@ccpc/canvas@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)(@ccpc/snap@0.1.10(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14))':
     dependencies:
       '@ccpc/canvas': 0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)
       '@ccpc/core': 0.1.11(@ccpc/math@0.1.14)
       '@ccpc/math': 0.1.14
-      '@ccpc/snap': 0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)
+      '@ccpc/snap': 0.1.10(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)
 
-  '@ccpc/snap@0.1.8(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)':
+  '@ccpc/snap@0.1.10(@ccpc/core@0.1.11(@ccpc/math@0.1.14))(@ccpc/math@0.1.14)':
     dependencies:
       '@ccpc/core': 0.1.11(@ccpc/math@0.1.14)
       '@ccpc/math': 0.1.14

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "dev:docs": "pnpm --filter docs dev",
-    "dev:core-flow-test": "pnpm --filter core-flow-test dev",
+    "dev:core-test": "pnpm --filter core-flow-test dev",
     "dev:math-visual-test": "pnpm --filter math-visual-test dev",
     "build": "pnpm -r build",
     "build:lib": "pnpm --filter @ccpc/math build && pnpm --filter @ccpc/core build && pnpm --filter @ccpc/canvas build && pnpm --filter @ccpc/snap build && pnpm --filter @ccpc/platform build",

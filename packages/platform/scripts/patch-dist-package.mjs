@@ -25,6 +25,7 @@ const snapPkg = await readJson(snapPkgPath);
 const distPkg = {
     ...srcPkg,
     main: './index.js',
+    types: './types/index.d.ts',
     peerDependencies: {
         '@ccpc/canvas': `^${canvasPkg.version}`,
         '@ccpc/core': `^${corePkg.version}`,
@@ -36,7 +37,6 @@ const distPkg = {
 delete distPkg.scripts;
 delete distPkg.devDependencies;
 delete distPkg.private;
-delete distPkg.types;
 delete distPkg.exports;
 delete distPkg.dependencies?.['@ccpc/canvas'];
 delete distPkg.dependencies?.['@ccpc/core'];

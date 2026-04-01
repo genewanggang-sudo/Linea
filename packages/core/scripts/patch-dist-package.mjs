@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { types } from 'node:util';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgDir = path.resolve(__dirname, '..');
@@ -31,7 +30,6 @@ const distPkg = {
 delete distPkg.scripts;
 delete distPkg.devDependencies;
 delete distPkg.private;
-delete distPkg.types;
 
 await fs.mkdir(distDir, { recursive: true });
 await fs.writeFile(distPkgPath, `${JSON.stringify(distPkg, null, 2)}\n`);

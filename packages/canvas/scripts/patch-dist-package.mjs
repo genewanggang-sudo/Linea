@@ -21,6 +21,7 @@ const mathPkg = await readJson(mathPkgPath);
 const distPkg = {
     ...srcPkg,
     main: './index.js',
+    types: './types/index.d.ts',
     peerDependencies: {
         '@ccpc/core': `^${corePkg.version}`,
         '@ccpc/math': `^${mathPkg.version}`,
@@ -30,7 +31,6 @@ const distPkg = {
 delete distPkg.scripts;
 delete distPkg.devDependencies;
 delete distPkg.private;
-delete distPkg.types;
 delete distPkg.exports;
 delete distPkg.dependencies?.['@ccpc/core'];
 delete distPkg.dependencies?.['@ccpc/math'];
