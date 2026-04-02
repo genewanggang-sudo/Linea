@@ -253,7 +253,7 @@ export class CRenderer extends IRender {
         this._renderer.setSize(this._width, this._height)
 
         const aspect = this._width / this._height
-        const vh = 1000
+        const vh = 300
         const vw = vh * aspect
         this._camera.left = -vw / 2
         this._camera.right = vw / 2

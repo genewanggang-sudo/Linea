@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/platform",
-    "version": "0.1.25",
+    "version": "0.1.27",
     "private": false,
     "description": "Platform command interaction layer for editor",
     "license": "MIT",

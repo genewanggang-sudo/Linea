@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/core",
-    "version": "0.1.25",
+    "version": "0.1.27",
     "private": false,
     "description": "Core data model layer for editor",
     "license": "MIT",
