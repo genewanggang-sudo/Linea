@@ -1,6 +1,6 @@
 {
     "name": "@ccpc/snap",
-    "version": "0.1.27",
+    "version": "0.1.28",
     "private": false,
     "description": "Snap interaction layer for editor",
     "license": "MIT",
