@@ -1,5 +1,5 @@
 import { ElementId } from '../element/element_id'
-import type { IElement } from '../element/i_element'
+import type { IElement, IElementCtor } from '../element/i_element'
 import { ModelView } from '../model_view/model_view';
 import { RequestMgr } from '../request/request_mgr';
 import { TransactionMgr } from '../transaction/transaction_mgr';
@@ -53,15 +53,16 @@ export interface IDocument {
     getElementsByIds(eleIds: Array<ElementId | number>): IElement[]
 
     /**
-     * 根据序列化id获取Element的类
-     */
-    // getElementClsByCtor(ctor: string): IElementCtor
-
-    /**
      * 返回文档中满足filter条件的Element
      * filter为空返回所有Element
      */
     filterElements(filter?: (ele: IElement) => boolean): IElement[]
+
+    /**
+     * 获取Class下的所有实例Element
+     * 不能获取基类的所有子类
+     */
+    getAllElementsByCtor<T extends IElement>(eleCtor?: IElementCtor<T>): T[]
 
     /**
      * 检测是否允许修改文档

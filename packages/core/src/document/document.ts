@@ -1,4 +1,4 @@
-import type { IElement } from '../element/i_element'
+import type { IElement, IElementCtor } from '../element/i_element'
 import type { IDocFile, IDocument } from './i_document'
 import { elementMgr } from './element_mgr'
 import { IDPool } from './id_pool'
@@ -117,15 +117,19 @@ export class Document implements IDocument {
         return result
     }
 
-    // public getElementClsByCtor(ctor:string) {
-    //     return this
-    // }
-
     public filterElements(filter?: (ele: IElement) => boolean) {
         if (!filter) {
             return this.elementMgr.getAllElements()
         }
         return this.elementMgr.getAllElements().filter(filter)
+    }
+
+    public getAllElementsByCtor<T extends IElement>(eleCtor?: IElementCtor<T>): T[] {
+        if (!eleCtor) {
+            return this.filterElements() as T[]
+        }
+        const ctorStr = eleCtor.serializedId.ctor
+        return this.elementMgr.getElementsByCtor(ctorStr) as T[]
     }
 
     public checkIfCanModifyDoc(): void {
