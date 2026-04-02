@@ -64,7 +64,7 @@ export class CRenderer extends IRender {
         this._activeScene = new Scene()
 
         const aspect = this._width / this._height
-        const vh = 500
+        const vh = 300
         const vw = vh * aspect
         this._camera = new OrthographicCamera(-vw / 2, vw / 2, vh / 2, -vh / 2, 0.1, 100)
         this._camera.position.set(0, 0, 20)
