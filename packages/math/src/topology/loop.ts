@@ -8,8 +8,6 @@ import { registerGeo } from '../loader/register_geo';
 import { Tol } from '../base/tol';
 import { DiscreteParam } from '../base/discrete_param';
 
-
-
 /**
  * 环，封闭且无自交的曲线序列
  */
