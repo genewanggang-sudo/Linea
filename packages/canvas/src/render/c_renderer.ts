@@ -5,6 +5,7 @@ import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IR
 import { RenderHub } from './render_hub'
 import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
 import { ActiveSelectionOp } from './active_selection_op'
+import { DisplayObjectImplMgr } from '../display/display_object_impl_mgr'
 
 export class CRenderer extends IRender {
     private static readonly PICK_TOLERANCE = 16
@@ -76,6 +77,8 @@ export class CRenderer extends IRender {
         this._renderHub = new RenderHub()
         this._activeSelectionOp = new ActiveSelectionOp(this._activeScene)
 
+        DisplayObjectImplMgr.instance().setRender(this)
+
         // TODO 测试代码
         // this._scene.add(new AxesHelper(30))
 
@@ -138,7 +141,8 @@ export class CRenderer extends IRender {
     public render = () => {
         requestAnimationFrame(this.render)
 
-        const { update, remove } = DisplayObjectMgr.instance().onBeforeRender()
+        const { update, remove } = DisplayObjectImplMgr.instance().onBeforeRender()
+
         remove.forEach(dId => {
             this._removeGrepByDisplayId(dId)
         })

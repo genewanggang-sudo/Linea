@@ -6,6 +6,7 @@ import { IProcessEvent } from '../controller/i_process_event'
 import { WorkPlane } from './work_plane'
 import { alg, CONST, Ln3, Plane, Vec2, Vec3 } from '@ccpc/math'
 import { KeyboardInteractor } from '../controller/keyboard_interactor'
+import { DisplayObjectImplMgr } from '../display/display_object_impl_mgr'
 
 // TODO 先简单分层，canvas中只持有renderer
 export class CCanvas implements ICCanvas {
@@ -31,6 +32,7 @@ export class CCanvas implements ICCanvas {
         this._mouseInteractor = new MouseInteractor(this, this._container, evtProcess)
         this._keyboardInteractor = new KeyboardInteractor(evtProcess)
         this._renderer = new CRenderer(this._container)
+        DisplayObjectImplMgr.instance().setCanvas(this)
     }
 
     public get container() {

@@ -50,19 +50,6 @@ export abstract class DisplayObject extends StateObject {
         return true
     }
 
-    public onBeforeRender(rebuild = false): IDisplayRenderData | null {
-        if (rebuild || this.isDirty()) {
-            const data = this.onRender()
-            this.unDirty()
-            return data
-        }
-        return null
-    }
-
-    public onRender(): IDisplayRenderData | null {
-        return null
-    }
-
     public override dispose(): void {
         super.dispose()
     }

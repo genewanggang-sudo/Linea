@@ -1,6 +1,5 @@
 import { GRep } from '../grep/grep'
 import { dirtyProp } from './dirty_prop'
-import type { IDisplayRenderData } from './display_object'
 import { DisplayObject } from './display_object'
 
 export class GrepDisplay extends DisplayObject {
@@ -15,12 +14,4 @@ export class GrepDisplay extends DisplayObject {
      * 先保留，便于继续兼容当前 ModelView 链路。
      */
     public eId!: number
-
-    public getGRep(): GRep {
-        return this.gRep
-    }
-
-    public override onRender(): IDisplayRenderData | null {
-        return { gRep: this.gRep }
-    }
 }
