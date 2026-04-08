@@ -16,6 +16,13 @@ export class DisplayObjectMgr {
         this._removedSet = new Set()
     }
 
+    public static instance(): DisplayObjectMgr {
+        if (!this._instance) {
+            this._instance = new DisplayObjectMgr()
+        }
+        return this._instance
+    }
+
     public addDisplay(display: DisplayObject): void {
         this._displayMap.set(display.id, display)
     }
@@ -65,10 +72,4 @@ export class DisplayObjectMgr {
         this._displayMap.clear()
     }
 
-    public static instance(): DisplayObjectMgr {
-        if (!this._instance) {
-            this._instance = new DisplayObjectMgr()
-        }
-        return this._instance
-    }
 }
