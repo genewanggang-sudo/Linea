@@ -1,6 +1,6 @@
-import type { GRep } from '../grep'
-import { dirtyProp } from '../../display/dirty_prop'
-import { StateObject } from '../../display/state_object'
+import { GRep } from '../grep/grep'
+import { dirtyProp } from './dirty_prop'
+import { StateObject } from './state_object'
 
 export interface IDisplayRenderData {
     gRep?: GRep
@@ -12,20 +12,20 @@ export interface IMgrDisplayRenderData extends IDisplayRenderData {
 
 /**
  * 最小单类显示对象。
- * 当前只保留跑通 GRep 渲染链路需要的公共能力。
+ * 当前只保留 grep 渲染链路需要的公共能力。
  */
 export abstract class DisplayObject extends StateObject {
     private static _dID = 0
 
     /**
-     * 统一显示对象 id，后续可作为渲染层主键。
+     * 统一显示对象 id，后续可作渲染层主键。
      */
     public readonly id: number
 
     /**
-     * 在render层创建出group后，设置visible属性。
-     * display 直接改，modelview里 updateElementVisible。
-     * 控制整棵树显隐，grep中的visible控制图元是否参与渲染。
+     * 在 render 层创建出 group 后，设置 visible 属性。
+     * display 直接改，modelview 里 updateElementVisible。
+     * 控制整棵树显隐，grep 中的 visible 控制图元是否参与渲染。
      */
     @dirtyProp()
     public visible?: boolean

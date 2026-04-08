@@ -2,13 +2,13 @@ import type { IMgrDisplayRenderData } from './display_object'
 import { DisplayObject } from './display_object'
 
 export class DisplayObjectMgr {
-    /** 显示对象集合。 */
+    /** 显示对象集合。*/
     private _displayMap: Map<number, DisplayObject>
 
-    /** 本轮被移除的显示对象 id。 */
+    /** 本轮被移除的显示对象 id。*/
     private _removedSet: Set<number>
 
-    /** 单例实例。 */
+    /** 单例实例。*/
     private static _instance: DisplayObjectMgr
 
     constructor() {
@@ -36,7 +36,7 @@ export class DisplayObjectMgr {
     }
 
     /**
-     * 渲染前准备
+     * 渲染前准备。
      */
     public onBeforeRender(rebuild = false): {
         update: IMgrDisplayRenderData[]
