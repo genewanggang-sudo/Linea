@@ -14,11 +14,11 @@ export const RegisterElement = (ctorStr: string) => {
         Document.canCreate = false;
 
         const props = Object.keys(tmpEle).filter(key => !key.startsWith('_'))
-        const defaults = new Map<string, unknown>()
+        // const defaults = new Map<string, unknown>()
 
-        props.forEach(propName => {
-            defaults.set(propName, (tmpEle as Record<string, unknown>)[propName])
-        })
+        // props.forEach(propName => {
+        //     defaults.set(propName, (tmpEle as Record<string, unknown>)[propName])
+        // })
 
         props.forEach(propName => {
             Object.defineProperty(Ctor.prototype, propName, {
@@ -41,6 +41,7 @@ export const RegisterElement = (ctorStr: string) => {
                         }
 
                     } else {
+                        console.log('设置db中的属性', propName);
                         this.db[propName] = value;
                     }
                 },
@@ -56,12 +57,12 @@ export const RegisterElement = (ctorStr: string) => {
 
         // Remove the temp instance's own fields and assign again so the default
         // values are redirected into the prototype accessors we just installed.
-        props.forEach(propName => {
-            delete (tmpEle as Record<string, unknown>)[propName]
-            const value = defaults.get(propName)
-            if (value !== undefined) {
-                (tmpEle as Record<string, unknown>)[propName] = value
-            }
-        })
+        // props.forEach(propName => {
+        //     delete (tmpEle as Record<string, unknown>)[propName]
+        //     const value = defaults.get(propName)
+        //     if (value !== undefined) {
+        //         (tmpEle as Record<string, unknown>)[propName] = value
+        //     }
+        // })
     }
 }
