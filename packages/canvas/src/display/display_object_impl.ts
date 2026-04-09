@@ -83,6 +83,9 @@ export abstract class DisplayObjectImpl<T extends DisplayObject = DisplayObject>
         return null;
     }
 
+    /**
+     * 显示变更处理
+     */
     public abstract onDisplayChange(): void;
 
     /**
