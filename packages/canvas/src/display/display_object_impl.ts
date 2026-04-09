@@ -7,7 +7,7 @@ import { IMouseEvent, IKeyboardEvent } from '../types/type_define';
  * 显示上下文
  */
 export interface IDisplayContext {
-    readonly skCanvas: CCanvas;
+    readonly cCanvas: CCanvas;
 }
 
 export interface IDisplayRenderData {

@@ -39,6 +39,10 @@ export class CCanvas implements ICCanvas {
         return this._container
     }
 
+    public get renderer() {
+        return this._renderer
+    }
+
     /**
      * 开启事件监听
      */

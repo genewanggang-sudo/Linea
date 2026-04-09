@@ -1,7 +1,7 @@
 import { Group, OrthographicCamera, Raycaster, Scene, SRGBColorSpace, Vector2, Vector3, WebGLRenderer } from 'three'
 import { canvasConfig } from '../toolkit/canvas_config'
 import { OrbitControls } from 'three/examples/jsm/Addons.js'
-import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IRender } from '@ccpc/core'
+import { DisplayObject, DisplayObjectMgr, GNode, GRep, IMgrDisplayRenderData, IRender, Signal } from '@ccpc/core'
 import { RenderHub } from './render_hub'
 import { CONST, Ln3, Vec2, Vec3 } from '@ccpc/math'
 import { ActiveSelectionOp } from './active_selection_op'
@@ -41,6 +41,9 @@ export class CRenderer extends IRender {
     // TODO 相关逻辑移动到canvas
     private _resizeObserver: ResizeObserver
 
+    /**相机变化事件*/
+    public readonly signalCameraChanged = new Signal(this)
+
     constructor(_container: HTMLElement) {
         super()
         this._container = _container
@@ -73,6 +76,9 @@ export class CRenderer extends IRender {
         this._cameraControls = new OrbitControls(this._camera, this._renderer.domElement)
         this._cameraControls.enableRotate = false
         this._cameraControls.enablePan = true
+        this._cameraControls.addEventListener('change', () => {
+            this.signalCameraChanged.dispatch()
+        })
 
         this._renderHub = new RenderHub()
         this._activeSelectionOp = new ActiveSelectionOp(this._activeScene)
@@ -271,5 +277,6 @@ export class CRenderer extends IRender {
         this._resizeObserver.disconnect()
         this._renderer.dispose()
         this._renderer.domElement.remove()
+        this.signalCameraChanged.dispose()
     }
 }
