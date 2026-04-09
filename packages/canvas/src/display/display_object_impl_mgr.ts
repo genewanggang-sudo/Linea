@@ -24,7 +24,7 @@ export class DisplayObjectImplMgr implements IProcessEvent, IDisplayObjectImplMg
     /** 渲染器 */
     private _render!: CRenderer;
     /** canvas */
-    private _skCanvas!: CCanvas;
+    private _cCanvas!: CCanvas;
 
     /** 当前处理id */
     // private _curProcessingId: number;
@@ -62,7 +62,7 @@ export class DisplayObjectImplMgr implements IProcessEvent, IDisplayObjectImplMg
      * @param canvas
      */
     public setCanvas(canvas: CCanvas): void {
-        this._skCanvas = canvas;
+        this._cCanvas = canvas;
     }
 
     /**
@@ -90,7 +90,9 @@ export class DisplayObjectImplMgr implements IProcessEvent, IDisplayObjectImplMg
         const displayImplClass = this._registerMap.get(display.constructor as IConstructor<DisplayObject>);
         if (displayImplClass) {
             const displayImpl = new displayImplClass();
-            displayImpl.init(display, { skCanvas: this._skCanvas });
+            displayImpl.init(display, {
+                cCanvas: this._cCanvas,
+            });
             this._displayImplMap.set(id, displayImpl);
         }
         if (updateView) {
