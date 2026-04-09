@@ -83,3 +83,13 @@ export type IKeyboardEvent = {
     domEvent: KeyboardEvent,
     fnKey: FnKey
 }
+
+/** gizmos 回调状态 */
+export enum EN_GIZMOS_STATUS {
+    // 开始
+    start,
+    // 处理
+    process,
+    // 结束
+    end,
+}
