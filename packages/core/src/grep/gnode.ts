@@ -42,6 +42,8 @@ export abstract class GNode {
      */
     protected _style: IStyle = {}
 
+    protected _visible = true
+
     protected _canPick = true
 
     protected _canSnap = true
@@ -92,6 +94,15 @@ export abstract class GNode {
         return this.parent ? this.parent.canPick : true
     }
 
+    public get visible() {
+        if (!this._visible) return false
+        return this.parent ? this.parent.visible : true
+    }
+
+    public set visible(visible: boolean) {
+        this._visible = visible
+    }
+
     public set canPick(canPick: boolean) {
         this._canPick = canPick
     }
@@ -122,6 +133,7 @@ export abstract class GNode {
             this._renderNode = this._toRenderNodeWithoutMatrix(discreteParams)
         }
         this._renderNode.gnode = this
+        this._renderNode.visible = this.visible
         if (this._globalMatrix) {
             this._renderNode.copyWorldMatrix(this._globalMatrix)
         }
@@ -233,6 +245,7 @@ export abstract class GNode {
         this._style = { ...another._style }
         this._localMatrix = another._localMatrix?.clone()
         this._globalMatrix = another._globalMatrix?.clone()
+        this._visible = another._visible
         this._canPick = another._canPick
         this._canSnap = another._canSnap
         return this

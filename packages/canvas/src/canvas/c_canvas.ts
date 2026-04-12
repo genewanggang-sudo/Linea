@@ -1,4 +1,4 @@
-import { GNode, ModelView } from '@ccpc/core'
+import { DisplayObject, DisplayObjectMgr, GNode, ModelView } from '@ccpc/core'
 import { ICCanvas } from './i_c_canvas'
 import { CRenderer } from '../render/c_renderer'
 import { MouseInteractor } from '../controller/mouse_interactor'
@@ -159,6 +159,24 @@ export class CCanvas implements ICCanvas {
 
     public pick(screenX: number, screenY: number): GNode[] {
         return this._renderer.pick(screenX, screenY)
+    }
+
+    /**
+     * 添加显示内容。
+     * @param viewItem 显示对象
+     */
+    public addViewItem(viewItem: DisplayObject): void {
+        if (viewItem) {
+            DisplayObjectMgr.instance().addDisplay(viewItem);
+        }
+    }
+
+    /**
+     * 删除场景中的一个 显示内容。
+     * @param id 编号
+     */
+    public removeViewItem(id: number): boolean {
+        return DisplayObjectMgr.instance().removeDisplayById(id);
     }
 
     // TODO 补充完整

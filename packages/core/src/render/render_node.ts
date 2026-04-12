@@ -11,6 +11,8 @@ export class RenderNode {
 
     public gnode!: GNode;
 
+    public visible = true
+
     public style: IStyle = {}
 
     public type: EN_RNODE_TYPE = EN_RNODE_TYPE.UNKOWN;
@@ -35,6 +37,7 @@ export class RenderNode {
         const copy = new Ctor()
         copy.parent = this.parent
         copy.gnode = this.gnode
+        copy.visible = this.visible
         copy.globalMatrix = this.globalMatrix?.clone()
         return copy
     }

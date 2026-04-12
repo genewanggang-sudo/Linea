@@ -1,4 +1,4 @@
-import { EN_AnchorX, EN_AnchorY, GNode, GRep, RenderEdge, RenderGroup, RenderMesh, RenderNode, RenderPoint, RenderText } from '@ccpc/core'
+import { EN_AnchorX, EN_AnchorY, GNode, GRep, RenderEdge, RenderMesh, RenderNode, RenderNodeUtil, RenderPoint, RenderText } from '@ccpc/core'
 import { Vec3 } from '@ccpc/math'
 import { BufferAttribute, BufferGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, Object3D, Points, PointsMaterial } from 'three'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
@@ -22,7 +22,7 @@ export class RenderHub {
      */
     public addGrep(grep: GRep) {
         const rNode = grep.toRenderNode()
-        const allNodes = this._flatLeafRNodes(rNode)
+        const allNodes = RenderNodeUtil.flatLeafRNodes(rNode)
 
         const group = new Group()
         for (const node of allNodes) {
@@ -59,19 +59,6 @@ export class RenderHub {
     /**
      * 叶子节点拍平
      */
-    private _flatLeafRNodes(rNode: RenderNode) {
-        const result: Array<RenderNode> = []
-        if (rNode instanceof RenderGroup) {
-            rNode.children.forEach(child => {
-                result.push(...this._flatLeafRNodes(child))
-            })
-            return result
-        }
-
-        result.push(rNode)
-        return result
-    }
-
     /**
      * 根据叶子 RenderNode 构建对应的 three Object3D
      */

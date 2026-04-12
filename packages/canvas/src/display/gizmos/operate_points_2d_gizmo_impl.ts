@@ -1,10 +1,12 @@
 import { dirtyProp, GCurve2d, GPoint2d, GPolycurve, GRep } from '@ccpc/core';
 import { IMouseEvent, IKeyboardEvent } from '../../types/type_define';
 import { IDisplayRenderData } from '../display_object_impl';
+import { registerDisplayImplement } from '../register_display_impl';
 import { Gizmo2dImpl } from './gizmo_2d_impl';
 import { IOperatePoints2DGizmoStyle, OperatePoints2DGizmo } from './operate_points_2d_gizmo';
 import { Box2, Curve2, Ln2, Plane, PolyCurve, Vec2 } from '@ccpc/math';
 
+@registerDisplayImplement(OperatePoints2DGizmo)
 export class OperatePoints2DGizmoImpl extends Gizmo2dImpl<OperatePoints2DGizmo> {
     private _grep!: GRep
 
@@ -38,7 +40,7 @@ export class OperatePoints2DGizmoImpl extends Gizmo2dImpl<OperatePoints2DGizmo> 
     /**拖拽增量起点*/
     private _lastDragPos: Vec2
 
-    private _pointSize = new Vec2(8, 8);
+    private _pointSize = new Vec2(20, 20);
 
     /**
      * 获取显示样式
@@ -214,6 +216,7 @@ export class OperatePoints2DGizmoImpl extends Gizmo2dImpl<OperatePoints2DGizmo> 
     }
 
     public onDisplayChange(): void {
+
         const { points } = this._display;
         const curves = this._getCurves();
         const boundCurve = this._getBoundCurves();
@@ -227,7 +230,7 @@ export class OperatePoints2DGizmoImpl extends Gizmo2dImpl<OperatePoints2DGizmo> 
                     continue;
                 }
                 this._gPoints[i].geo = point
-                this._gPoints[i].geo.visible = true
+                this._gPoints[i].visible = true
             }
         } else {
             this._gPoints.forEach(_ => {

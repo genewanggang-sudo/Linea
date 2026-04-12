@@ -18,7 +18,7 @@ import {
     TmpElementPainter,
     requestMgr,
 } from '@ccpc/core'
-import type { IMouseEvent } from '@ccpc/canvas'
+import { OperatePoints2DGizmo, type IMouseEvent } from '@ccpc/canvas'
 import { Arc2, Coord2, Ln2, Loop, NurbsCurve2, Plane, PolyCurve, Vec2 } from '@ccpc/math'
 import { app, Cmd, cmdMgr, PickPointAction, PickPointContext, registerCmd } from '@ccpc/platform'
 import type { IPickedResult } from '@ccpc/platform'
@@ -80,6 +80,8 @@ const shapeSteps: Record<ShapeKind, string[]> = {
 let activeDoc: Document | undefined
 let canvasBootstrapped = false
 let mountNode: HTMLElement | undefined
+let activeOperatePointsGizmo: OperatePoints2DGizmo | undefined
+let operatePointsGizmoTimer: number | undefined
 
 const engineeringSheetFrame = {
     minX: -148.5,
@@ -1480,6 +1482,17 @@ function clearCursor() {
     setCursorWorld(null)
 }
 
+function clearOperatePointsGizmoDemo() {
+    if (operatePointsGizmoTimer != null) {
+        window.clearTimeout(operatePointsGizmoTimer)
+        operatePointsGizmoTimer = undefined
+    }
+    if (activeOperatePointsGizmo) {
+        app.getCanvas().removeViewItem(activeOperatePointsGizmo.id)
+        activeOperatePointsGizmo = undefined
+    }
+}
+
 function fitEngineeringDemoView() {
     if (!mountNode) {
         return
@@ -1602,6 +1615,7 @@ export function insertRandomPolygon() {
 }
 
 export function loadEngineeringDemo() {
+    clearOperatePointsGizmoDemo()
     syncSelection()
     syncHighLight()
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
@@ -1612,6 +1626,7 @@ export function loadEngineeringDemo() {
 }
 
 export function loadStyleDemo() {
+    clearOperatePointsGizmoDemo()
     syncSelection()
     syncHighLight()
     requestMgr.executeReq(requestMgr.createReq(ClearTestShapesReq), true)
@@ -1622,9 +1637,55 @@ export function loadStyleDemo() {
 }
 
 export function clearAllShapes() {
+    clearOperatePointsGizmoDemo()
     syncSelection()
     syncHighLight()
     void cmdMgr.sendCmd(ClearShapesCmd)
+}
+
+export function loadOperatePointsGizmoDemo() {
+    if (!activeDoc) {
+        return
+    }
+
+    clearOperatePointsGizmoDemo()
+
+    const gizmo = new OperatePoints2DGizmo([
+        new Vec2(-90, -30),
+        new Vec2(10, -55),
+        new Vec2(120, 0),
+        new Vec2(45, 85),
+    ])
+    gizmo.isShowBoundCurves = true
+    gizmo.isShowOutlineCurves = true
+    gizmo.style = {
+        curveColor: 0x22c55e,
+        curveWidth: 1.5,
+        boundCurveColor: 0xf97316,
+        boundCurveWidth: 1,
+    }
+
+    app.getCanvas().addViewItem(gizmo)
+    activeDoc.updateView()
+    activeOperatePointsGizmo = gizmo
+
+    operatePointsGizmoTimer = window.setTimeout(() => {
+        if (!activeOperatePointsGizmo || !activeDoc) {
+            return
+        }
+
+        activeOperatePointsGizmo.points = [
+            new Vec2(-110, -15),
+            new Vec2(-5, -70),
+            new Vec2(135, 15),
+            new Vec2(60, 105),
+        ]
+        activeDoc.updateView()
+        setToast('OperatePoints2DGizmo 已自动更新一次点位')
+    }, 800)
+
+    resetDrawingStatus('已加载 OperatePoints2DGizmo，可观察点、连线和包围框；0.8 秒后会自动更新一次点位。')
+    setToast('OperatePoints2DGizmo 已挂载')
 }
 
 export function cancelActiveCommand() {

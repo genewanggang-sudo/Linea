@@ -1,6 +1,6 @@
 export type ShapeKind = 'line' | 'polyline' | 'rectLine' | 'circle' | 'arc' | 'ellipse' | 'ellipseArc' | 'bspline'
 
-export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'clear'
+export type ToolId = ShapeKind | 'polygon' | 'demo' | 'styleDemo' | 'gizmo' | 'clear'
 
 export type CursorPoint = {
     x: number
@@ -33,5 +33,6 @@ export const toolMeta: Record<ToolId, { label: string, accent: string, subtitle:
     polygon: { label: '插入轮廓', accent: '#a78bfa', subtitle: '插入随机测试轮廓' },
     demo: { label: '加载图框', accent: '#fbbf24', subtitle: '显示工程图图框与投影视图' },
     styleDemo: { label: '样式测试', accent: '#22d3ee', subtitle: '验证 style 机制链路' },
+    gizmo: { label: 'Gizmo 测试', accent: '#f97316', subtitle: '验证 OperatePoints2DGizmo 的渲染与更新' },
     clear: { label: '清空画布', accent: '#f87171', subtitle: '删除当前测试图形' },
 }

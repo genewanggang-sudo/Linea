@@ -26,5 +26,10 @@ export type { IDisplayContext, IDisplayRenderData } from './display/display_obje
 export { DisplayObjectImplMgr } from './display/display_object_impl_mgr'
 export type { IMgrDisplayRenderData } from './display/display_object_impl_mgr'
 export { GrepDisplayImpl } from './display/grep_display_impl'
+export {
+    type IOperatePoints2DGizmoStyle,
+    OperatePoints2DGizmo,
+} from './display/gizmos/operate_points_2d_gizmo'
+export { OperatePoints2DGizmoImpl } from './display/gizmos/operate_points_2d_gizmo_impl'
 export { registerDisplayImplement } from './display/register_display_impl'
 export { canvasConfig } from './toolkit/canvas_config'
