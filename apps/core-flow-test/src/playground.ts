@@ -1682,7 +1682,7 @@ export function loadOperatePointsGizmoDemo() {
         ]
         activeDoc.updateView()
         setToast('OperatePoints2DGizmo 已自动更新一次点位')
-    }, 800)
+    }, 2000)
 
     resetDrawingStatus('已加载 OperatePoints2DGizmo，可观察点、连线和包围框；0.8 秒后会自动更新一次点位。')
     setToast('OperatePoints2DGizmo 已挂载')

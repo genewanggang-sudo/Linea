@@ -261,7 +261,7 @@ export class OperatePoints2DGizmoImpl extends Gizmo2dImpl<OperatePoints2DGizmo> 
         this._boundPolyCurve.visible = this._display.isShowBoundCurves;
 
         //阵列中的svg需要单独clearRenderNode才生效，原因待查
-        this._grep.clearRenderNode()
+        this._grep.clearRenderNode(true)
     }
 
     public onRender(): IDisplayRenderData | null {
