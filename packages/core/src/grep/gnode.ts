@@ -244,7 +244,7 @@ export abstract class GNode {
     protected _copyFrom(another: GNode) {
         this._style = { ...another._style }
         this._localMatrix = another._localMatrix?.clone()
-        this._globalMatrix = another._globalMatrix?.clone()
+        // this._globalMatrix = another._globalMatrix?.clone()
         this._visible = another._visible
         this._canPick = another._canPick
         this._canSnap = another._canSnap
